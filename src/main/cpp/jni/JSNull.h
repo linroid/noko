@@ -1,0 +1,19 @@
+//
+// Created by linroid on 2019-10-23.
+//
+
+#ifndef NODE_JSNULL_H
+#define NODE_JSNULL_H
+
+#include <jni.h>
+#include "V8Runtime.h"
+
+class JSNull {
+public:
+    static jobject New(JNIEnv *env, V8Runtime *runtime);
+
+    static jint OnLoad(JNIEnv *env);
+};
+
+
+#endif //NODE_JSNULL_H

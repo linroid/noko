@@ -1,0 +1,71 @@
+//
+// Created by linroid on 2019-10-19.
+//
+
+#include <jni.h>
+#include <NodeRuntime.h>
+#include "JSValue.h"
+#include "macros.h"
+#include "JSString.h"
+
+const constexpr char *kJSValueClass = "com/linroid/knode/js/JSValue";
+
+struct JSValueClass {
+    jclass clazz;
+    jmethodID constructor;
+    jfieldID reference;
+    jfieldID context;
+} valueClass;
+
+jint JSValue::OnLoad(JNIEnv *env) {
+    jclass clazz = env->FindClass(kJSValueClass);
+    if (!clazz) {
+        return JNI_ERR;
+    }
+    valueClass.clazz = (jclass) env->NewGlobalRef(clazz);
+    valueClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
+    valueClass.reference = env->GetFieldID(clazz, "reference", "J");
+    valueClass.context = env->GetFieldID(clazz, "context", "Lcom/linroid/knode/js/JSContext;");
+    JNINativeMethod methods[] = {
+            {"nativeToString", "()Ljava/lang/String;", (void *) JSValue::ToString},
+            {"nativeToJSON",   "()Ljava/lang/String;", (void *) JSValue::ToJSON},
+    };
+
+    int rc = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
+    if (rc != JNI_OK) {
+        return rc;
+    }
+    return JNI_OK;
+}
+
+jobject JSValue::ReadContext(JNIEnv *env, jobject javaObj) {
+    return env->GetObjectField(javaObj, valueClass.context);
+}
+
+jlong JSValue::ReadReference(JNIEnv *env, jobject javaObj) {
+    return env->GetLongField(javaObj, valueClass.reference);
+}
+
+jobject JSValue::New(JNIEnv *env, V8Runtime *runtime) {
+    return env->NewObject(valueClass.clazz, valueClass.constructor, reinterpret_cast<jlong>(runtime));
+}
+
+jstring JSValue::ToString(JNIEnv *env, jobject thiz) {
+    V8_ENV(env, thiz, v8::Value)
+    v8::MaybeLocal<v8::String> str = value->ToString(context);
+    if (str.IsEmpty()) {
+        return JSString::Empty(env);
+    }
+    v8::String::Value unicodeString(str.ToLocalChecked());
+    return env->NewString(*unicodeString, unicodeString.length());
+}
+
+jstring JSValue::ToJSON(JNIEnv *env, jobject thiz) {
+    V8_ENV(env, thiz, v8::Value)
+    auto str = v8::JSON::Stringify(context, value);
+    if (str.IsEmpty()) {
+        return JSString::Empty(env);
+    }
+    v8::String::Value unicodeString(str.ToLocalChecked());
+    return env->NewString(*unicodeString, unicodeString.length());
+}

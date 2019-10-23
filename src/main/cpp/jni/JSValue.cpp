@@ -28,7 +28,7 @@ jint JSValue::OnLoad(JNIEnv *env) {
     valueClass.context = env->GetFieldID(clazz, "context", "Lcom/linroid/knode/js/JSContext;");
     JNINativeMethod methods[] = {
             {"nativeToString", "()Ljava/lang/String;", (void *) JSValue::ToString},
-            {"nativeToJSON",   "()Ljava/lang/String;", (void *) JSValue::ToJSON},
+            {"nativeToJson",   "()Ljava/lang/String;", (void *) JSValue::ToJson},
     };
 
     int rc = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
@@ -60,7 +60,7 @@ jstring JSValue::ToString(JNIEnv *env, jobject thiz) {
     return env->NewString(*unicodeString, unicodeString.length());
 }
 
-jstring JSValue::ToJSON(JNIEnv *env, jobject thiz) {
+jstring JSValue::ToJson(JNIEnv *env, jobject thiz) {
     V8_ENV(env, thiz, v8::Value)
     auto str = v8::JSON::Stringify(context, value);
     if (str.IsEmpty()) {

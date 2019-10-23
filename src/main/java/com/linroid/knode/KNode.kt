@@ -104,7 +104,7 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
     @Suppress("unused")
     private fun onContextReady(context: JSContext) {
         Log.i(TAG, "onContextReady")
-        Log.i(TAG, "context=${context.toJSON()}")
+        Log.i(TAG, "context=${context.toJson()}")
         // val process = context.get("process")
         // Log.i(TAG, "process=$process")
         // Log.i(TAG, "JSON.stringify(process)=${process.toJSON()}")
@@ -249,22 +249,22 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
 
     companion object {
         private const val READY_METHOD_NAME = "__onNodeReady"
-        private const val TAG = "NodeJS"
+        private const val TAG = "KNodeKNode"
 
         private val engineVersions = HashMap<String, String>()
         private val envs = HashMap<String, String>()
-
-        @Suppress("unused")
-        const val kMediaAccessPermissionsNone = 0
-        @Suppress("unused")
-        const val kMediaAccessPermissionsRead = 1
-        @Suppress("unused")
-        const val kMediaAccessPermissionsWrite = 2
-        @Suppress("unused")
-        const val kMediaAccessPermissionsRW = 3
+        //
+        // @Suppress("unused")
+        // const val kMediaAccessPermissionsNone = 0
+        // @Suppress("unused")
+        // const val kMediaAccessPermissionsRead = 1
+        // @Suppress("unused")
+        // const val kMediaAccessPermissionsWrite = 2
+        // @Suppress("unused")
+        // const val kMediaAccessPermissionsRW = 3
 
         init {
-            System.loadLibrary("node")
+            System.loadLibrary("knode")
         }
 
         fun setEnv(key: String, value: String) {

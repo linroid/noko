@@ -14,7 +14,7 @@ public:
 
     JNICALL static jstring ToString(JNIEnv *env, jobject thiz);
 
-    JNICALL static jstring ToJSON(JNIEnv *env, jobject thiz);
+    JNICALL static jstring ToJson(JNIEnv *env, jobject thiz);
 
     static jint OnLoad(JNIEnv *env);
 

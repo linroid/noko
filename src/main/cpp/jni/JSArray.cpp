@@ -29,7 +29,7 @@ jint JSArray::OnLoad(JNIEnv *env) {
     }
 
     JNINativeMethod methods[] = {
-            {"size", "()I", (void *) (Size)},
+            {"nativeSize", "()I", (void *) (Size)},
     };
     arrayClass.clazz = (jclass) env->NewGlobalRef(clazz);
     arrayClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");

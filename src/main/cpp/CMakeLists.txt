@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.4.1)
 
 set(JS_GENERATE_DIR ${PROJECT_SOURCE_DIR}/../../../build/generated/node/${ANDROID_ABI}/)
 
-set(NODE_SOURCE ../../../../deps/node)
+set(NODE_SOURCE ${PROJECT_SOURCE_DIR}/../../../../deps/node)
 
 set(UV_SOURCE ${NODE_SOURCE}/deps/uv)
 set(CARES_SOURCE ${NODE_SOURCE}/deps/cares)

@@ -16,6 +16,10 @@
 #include "jni/JSArray.h"
 #include "jni/JSNull.h"
 
+#define LOAD_JNI_CLASS(clazz) if (clazz::OnLoad(env) != JNI_OK) { \
+    return JNI_ERR; \
+}
+
 int pipe_stdout[2];
 int pipe_stderr[2];
 pthread_t thread_stdout;
@@ -148,33 +152,15 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
     nodeClass.onContextReady = env->GetMethodID(clazz, "onContextReady", "(Lcom/linroid/knode/js/JSContext;)V");
     nodeClass.onBeforeExit = env->GetMethodID(clazz, "onBeforeExit", "(I)V");
 
-    if (JSValue::OnLoad(env) != JNI_OK) {
-        return JNI_ERR;
-    }
-    if (JSContext::OnLoad(env) != JNI_OK) {
-        return JNI_ERR;
-    }
-    if (JSObject::OnLoad(env) != JNI_OK) {
-        return JNI_ERR;
-    }
-    if (JSUndefined::OnLoad(env) != JNI_OK) {
-        return JNI_ERR;
-    }
-    if (JSBoolean::OnLoad(env) != JNI_OK) {
-        return JNI_ERR;
-    }
-    if (JSNumber::OnLoad(env) != JNI_OK) {
-        return JNI_ERR;
-    }
-    if (JSString::OnLoad(env) != JNI_OK) {
-        return JNI_ERR;
-    }
-    if (JSArray::OnLoad(env) != JNI_OK) {
-        return JNI_ERR;
-    }
-    if (JSNull::OnLoad(env) != JNI_OK) {
-        return JNI_ERR;
-    }
+    LOAD_JNI_CLASS(JSValue)
+    LOAD_JNI_CLASS(JSContext)
+    LOAD_JNI_CLASS(JSObject)
+    LOAD_JNI_CLASS(JSBoolean)
+    LOAD_JNI_CLASS(JSNumber)
+    LOAD_JNI_CLASS(JSString)
+    LOAD_JNI_CLASS(JSArray)
+    LOAD_JNI_CLASS(JSUndefined)
+    LOAD_JNI_CLASS(JSNull)
 
     return JNI_VERSION_1_6;
 }

@@ -32,7 +32,9 @@ public:
 
     void dispose();
 
-    void beforeStart(const v8::FunctionCallbackInfo<v8::Value> &info);
+    void beforeStart();
+
+    static inline NodeRuntime* GetCurrent(const v8::FunctionCallbackInfo<v8::Value>& info);
 
     void onEnvReady(node::Environment *nodeEnv);
 };

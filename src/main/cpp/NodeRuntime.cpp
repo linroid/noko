@@ -11,6 +11,11 @@
 #include "util.h"
 #include "NodeRuntime.h"
 
+void beforeStartCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
+    NodeRuntime *runtime = NodeRuntime::GetCurrent(info);
+    runtime->beforeStart();
+}
+
 void onExit(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto *env = node::Environment::GetCurrent(args);
     int code = args[0]->Int32Value(env->context()).FromMaybe(0);
@@ -21,7 +26,7 @@ void onExit(const v8::FunctionCallbackInfo<v8::Value> &args) {
     uv_stop(env->event_loop());
 }
 
-void NodeRuntime::beforeStart(const v8::FunctionCallbackInfo<v8::Value> &info) {
+void NodeRuntime::beforeStart() {
     LOGI("beforeStart");
     JNIEnv *env;
     auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);
@@ -71,7 +76,10 @@ void NodeRuntime::onEnvReady(node::Environment *nodeEnv) {
     if (javaContext == nullptr) {
         throwError(env, "Failed to new JSContext instance");
     }
-    global->Set(v8::String::NewFromUtf8(isolate, "__beforeStart"), v8::FunctionTemplate::New(isolate, beforeStart));
+    auto data = v8::External::New(isolate, runtime);
+    global->Set(v8::String::NewFromUtf8(isolate, "__beforeStart",
+                                        v8::NewStringType::kNormal).ToLocalChecked(),
+                v8::FunctionTemplate::New(isolate, beforeStartCallback, data)->GetFunction());
     runtime->javaContext = env->NewGlobalRef(javaContext);
     // env->CallVoidMethod(thiz, onContextReady, javaContext);
 
@@ -137,4 +145,10 @@ NodeRuntime::~NodeRuntime() {
     if (stat == JNI_EDETACHED) {
         vm->DetachCurrentThread();
     }
+}
+
+NodeRuntime *NodeRuntime::GetCurrent(const v8::FunctionCallbackInfo<v8::Value> &info) {
+    CHECK(info.Data()->IsExternal());
+    auto external = info.Data().As<v8::External>();
+    return reinterpret_cast<NodeRuntime *>(external->Value());
 }

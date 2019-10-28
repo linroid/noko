@@ -28,7 +28,7 @@ pthread_t thread_stderr;
 struct JavaNode {
     JNIEnv *env;
     jfieldID ptr;
-    jmethodID onContextReady;
+    jmethodID onBeforeStart;
     jmethodID onBeforeExit;
 } nodeClass;
 
@@ -81,9 +81,6 @@ int start_redirecting_stdout_stderr() {
 }
 
 
-constexpr const char *kNodeClass = "com/linroid/knode/KNode";;
-
-
 JNICALL jint start(JNIEnv *env, jobject thiz, jobjectArray jargs) {
     LOGD("start");
     jlong ptr = env->GetLongField(thiz, nodeClass.ptr);
@@ -117,7 +114,7 @@ JNICALL void dispose(JNIEnv *env, jobject thiz) {
 
 JNICALL jlong nativeInit(JNIEnv *env, jobject thiz) {
     LOGD("nativeInit");
-    auto *node = new NodeRuntime(env, thiz, nodeClass.onContextReady, nodeClass.onBeforeExit);
+    auto *node = new NodeRuntime(env, thiz, nodeClass.onBeforeStart, nodeClass.onBeforeExit);
     return reinterpret_cast<jlong>(node);
 }
 
@@ -139,7 +136,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
     if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
         return JNI_ERR;
     }
-    jclass clazz = env->FindClass(kNodeClass);
+    jclass clazz = env->FindClass("com/linroid/knode/KNode");
     if (clazz == nullptr) {
         return JNI_ERR;
     }
@@ -149,7 +146,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
         return rc;
     }
     nodeClass.ptr = env->GetFieldID(clazz, "ptr", "J");
-    nodeClass.onContextReady = env->GetMethodID(clazz, "onContextReady", "(Lcom/linroid/knode/js/JSContext;)V");
+    nodeClass.onBeforeStart = env->GetMethodID(clazz, "onBeforeStart", "(Lcom/linroid/knode/js/JSContext;)V");
     nodeClass.onBeforeExit = env->GetMethodID(clazz, "onBeforeExit", "(I)V");
 
     LOAD_JNI_CLASS(JSValue)

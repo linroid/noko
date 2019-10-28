@@ -21,7 +21,27 @@ void onExit(const v8::FunctionCallbackInfo<v8::Value> &args) {
     uv_stop(env->event_loop());
 }
 
-void NodeRuntime::onReady(node::Environment *nodeEnv) {
+void NodeRuntime::beforeStart(const v8::FunctionCallbackInfo<v8::Value> &info) {
+    LOGI("beforeStart");
+    JNIEnv *env;
+    auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);
+    if (stat == JNI_EDETACHED) {
+        vm->AttachCurrentThread(&env, nullptr);
+    }
+    auto javaContext = JSContext::NewJava(env, runtime);
+    if (javaContext == nullptr) {
+        throwError(env, "Failed to new JSContext instance");
+    }
+    auto isolate = runtime->isolate;
+    auto global = runtime->global->Get(isolate);
+    global->Set(v8::String::NewFromUtf8(isolate, "__beforeStart"), v8::Undefined(isolate));
+    env->CallVoidMethod(thiz, onBeforeStart, javaContext);
+    if (stat == JNI_EDETACHED) {
+        vm->DetachCurrentThread();
+    }
+}
+
+void NodeRuntime::onEnvReady(node::Environment *nodeEnv) {
     LOGI("onReady");
     v8::HandleScope handleScope(nodeEnv->isolate());
     v8::Context::Scope contextScope(nodeEnv->context());
@@ -51,8 +71,9 @@ void NodeRuntime::onReady(node::Environment *nodeEnv) {
     if (javaContext == nullptr) {
         throwError(env, "Failed to new JSContext instance");
     }
+    global->Set(v8::String::NewFromUtf8(isolate, "__beforeStart"), v8::FunctionTemplate::New(isolate, beforeStart));
     runtime->javaContext = env->NewGlobalRef(javaContext);
-    env->CallVoidMethod(thiz, onContextReady, javaContext);
+    // env->CallVoidMethod(thiz, onContextReady, javaContext);
 
     if (stat == JNI_EDETACHED) {
         vm->DetachCurrentThread();
@@ -78,7 +99,7 @@ int NodeRuntime::start(std::vector<std::string> &args) {
     }
 
     int ret = node::Start(argc, argv, [this](void *env) {
-        onReady(static_cast<node::Environment *>(env));
+        onEnvReady(static_cast<node::Environment *>(env));
     });
     delete[] data;
     return ret;
@@ -98,9 +119,9 @@ void NodeRuntime::dispose() {
     // v8_platform.Dispose();
 }
 
-NodeRuntime::NodeRuntime(JNIEnv *env, jobject thiz, jmethodID onContextReady, jmethodID onBeforeExit) {
+NodeRuntime::NodeRuntime(JNIEnv *env, jobject thiz, jmethodID onBeforeStart, jmethodID onBeforeExit) {
     env->GetJavaVM(&vm);
-    this->onContextReady = onContextReady;
+    this->onBeforeStart = onBeforeStart;
     this->onBeforeExit = onBeforeExit;
     this->thiz = env->NewGlobalRef(thiz);
 }

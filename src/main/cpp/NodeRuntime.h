@@ -17,13 +17,14 @@
 class NodeRuntime {
 private:
     jobject thiz;
-    jmethodID onContextReady;
+    jmethodID onBeforeStart;
     jmethodID onBeforeExit;
 
+    std::vector<std::string> args;
     V8Runtime *runtime = nullptr;
     JavaVM *vm = nullptr;
 public:
-    NodeRuntime(JNIEnv *env, jobject thiz, jmethodID onContextReady, jmethodID onBeforeExit);
+    NodeRuntime(JNIEnv *env, jobject thiz, jmethodID onBeforeStart, jmethodID onBeforeExit);
 
     ~NodeRuntime();
 
@@ -31,7 +32,9 @@ public:
 
     void dispose();
 
-    void onReady(node::Environment *nodeEnv);
+    void beforeStart(const v8::FunctionCallbackInfo<v8::Value> &info);
+
+    void onEnvReady(node::Environment *nodeEnv);
 };
 
 #endif //NODE_NODE_RUNTIME_H

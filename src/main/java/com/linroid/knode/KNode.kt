@@ -102,9 +102,8 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
     private var holdContext: JSObject? = null
 
     @Suppress("unused")
-    private fun onContextReady(context: JSContext) {
-        Log.i(TAG, "onContextReady")
-        Log.i(TAG, "context=${context.toJson()}")
+    private fun onBeforeStart(context: JSContext) {
+        Log.i(TAG, "onBeforeStart: context.toString()=$context, context.toJson()=${context.toJson()}")
         // val process = context.get("process")
         // Log.i(TAG, "process=$process")
         // Log.i(TAG, "JSON.stringify(process)=${process.toJSON()}")

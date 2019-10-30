@@ -103,22 +103,10 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
 
     @Suppress("unused")
     private fun onBeforeStart(context: JSContext) {
-        context.eval("delete __beforeStart;")
-        Log.i(TAG, "onBeforeStart: context.toString()=$context, context.toJson()=${context.toJson()}")
-        // val process = context.get("process")
-        // Log.i(TAG, "process=$process")
-        // Log.i(TAG, "JSON.stringify(process)=${process.toJSON()}")
-        // Log.i(TAG, context.eval("var global = {a:1};").toString())
-        // Log.i(TAG, (context.eval("global;") as JSObject).toJSON())
-        // Log.i(TAG, context.eval("process;").toString())
-        // Log.i(TAG, (context.eval("process;") as JSObject).toJSON())
-        // this.mainContextRef = mainContextRef
-        // active = true
-        // holdContext = object : context(mainContextRef, JSContextGroup(groupRef)) {
-        //     override fun getJSCContext(): Long {
-        //         return jsPtr
-        //     }
-        // }
+        context.eval("console.log(context.eval(\"process.argv\");")
+        val process = context.get("process")
+        Log.i(TAG, "onBeforeStart: context.toString()=$context, process.toJson()=${process.toJson()}")
+        active = true
         // val ctx = holdContext ?: return
         // context = WeakReference(ctx)
         // ctx.property(READY_METHOD_NAME, object : JSFunction(ctx, READY_METHOD_NAME) {

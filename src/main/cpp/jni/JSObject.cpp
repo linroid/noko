@@ -12,10 +12,7 @@
 #include "JSUndefined.h"
 #include "JSNull.h"
 
-struct JSObjectClass {
-    jclass clazz;
-    jmethodID constructor;
-} objectClass;
+JNIClass objectClass;
 
 jobject JSObject::New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);

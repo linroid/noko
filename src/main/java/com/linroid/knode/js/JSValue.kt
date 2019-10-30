@@ -35,6 +35,18 @@ open class JSValue(protected val context: JSContext?, protected val reference: L
         return nativeToJson()
     }
 
+    open fun toInt(): Int {
+        return 0
+    }
+
+    open fun toDouble(): Double {
+        return 0.0
+    }
+
+    open fun toBoolean(): Boolean {
+        return true;
+    }
+
     private external fun nativeToJson(): String
     private external fun nativeToString(): String
 

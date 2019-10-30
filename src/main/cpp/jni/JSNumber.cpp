@@ -4,10 +4,7 @@
 
 #include "JSNumber.h"
 
-struct JSNumberClass {
-    jclass clazz;
-    jmethodID constructor;
-} numberClass;
+JNIClass numberClass;
 
 jobject JSNumber::New(JNIEnv *env, NodeRuntime *runtime) {
     return env->NewObject(numberClass.clazz, numberClass.constructor, reinterpret_cast<jlong>(runtime));

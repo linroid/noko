@@ -7,11 +7,11 @@
 
 #include <jni.h>
 #include "JSContext.h"
-#include "NodeRuntime.h"
+#include "../NodeRuntime.h"
 
 class JSValue {
 public:
-    static jobject New(JNIEnv *env, NodeRuntime *runtime);
+    static jobject New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value);
 
     JNICALL static jstring ToString(JNIEnv *env, jobject thiz);
 

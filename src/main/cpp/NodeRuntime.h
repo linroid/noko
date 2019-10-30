@@ -12,6 +12,14 @@
 #include "env.h"
 #include "util.h"
 
+struct JNIClass {
+    jclass clazz;
+    jmethodID constructor;
+    jfieldID reference;
+    jfieldID context;
+    jfieldID runtimePtr;
+};
+
 class NodeRuntime {
 private:
     jobject thiz;
@@ -48,7 +56,7 @@ public:
 
     jobject Wrap(JNIEnv *env, v8::Local<v8::Value> &value);
 
-    static inline NodeRuntime* GetCurrent(const v8::FunctionCallbackInfo<v8::Value>& info);
+    static inline NodeRuntime *GetCurrent(const v8::FunctionCallbackInfo<v8::Value> &info);
 };
 
 #endif //NODE_NODE_RUNTIME_H

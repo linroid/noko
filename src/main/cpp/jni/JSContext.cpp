@@ -8,15 +8,11 @@
 #include "JSNumber.h"
 #include "JSObject.h"
 #include "JSValue.h"
-#include "NodeRuntime.h"
 #include "macros.h"
 #include "JSString.h"
+#include "../NodeRuntime.h"
 
-struct JSContextClass {
-    jclass clazz;
-    jmethodID constructor;
-    jfieldID runtimePtr;
-} contextClass;
+JNIClass contextClass;
 
 jint JSContext::OnLoad(JNIEnv *env) {
     jclass clazz = env->FindClass(kContextClass);
@@ -38,7 +34,7 @@ jint JSContext::OnLoad(JNIEnv *env) {
     return JNI_OK;
 }
 
-jobject JSContext::NewJava(JNIEnv *env, NodeRuntime *runtime) {
+jobject JSContext::New(JNIEnv *env, NodeRuntime *runtime) {
     return env->NewObject(contextClass.clazz,
                           contextClass.constructor,
                           reinterpret_cast<jlong>(runtime),

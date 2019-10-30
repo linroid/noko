@@ -3,19 +3,14 @@
 //
 
 #include <jni.h>
-#include <NodeRuntime.h>
+#include "../NodeRuntime.h"
 #include "JSValue.h"
 #include "macros.h"
 #include "JSString.h"
 
 const constexpr char *kJSValueClass = "com/linroid/knode/js/JSValue";
 
-struct JSValueClass {
-    jclass clazz;
-    jmethodID constructor;
-    jfieldID reference;
-    jfieldID context;
-} valueClass;
+JNIClass valueClass;
 
 jint JSValue::OnLoad(JNIEnv *env) {
     jclass clazz = env->FindClass(kJSValueClass);
@@ -26,6 +21,7 @@ jint JSValue::OnLoad(JNIEnv *env) {
     valueClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
     valueClass.reference = env->GetFieldID(clazz, "reference", "J");
     valueClass.context = env->GetFieldID(clazz, "context", "Lcom/linroid/knode/js/JSContext;");
+
     JNINativeMethod methods[] = {
             {"nativeToString", "()Ljava/lang/String;", (void *) JSValue::ToString},
             {"nativeToJson",   "()Ljava/lang/String;", (void *) JSValue::ToJson},
@@ -46,8 +42,9 @@ jlong JSValue::ReadReference(JNIEnv *env, jobject javaObj) {
     return env->GetLongField(javaObj, valueClass.reference);
 }
 
-jobject JSValue::New(JNIEnv *env, NodeRuntime *runtime) {
-    return env->NewObject(valueClass.clazz, valueClass.constructor, reinterpret_cast<jlong>(runtime));
+jobject JSValue::New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {
+    auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
+    return env->NewObject(valueClass.clazz, valueClass.constructor, runtime->javaContext, reference);
 }
 
 jstring JSValue::ToString(JNIEnv *env, jobject thiz) {

@@ -4,10 +4,7 @@
 
 #include "JSNull.h"
 
-struct JSNullClass {
-    jclass clazz;
-    jmethodID constructor;
-} nullClass;
+JNIClass nullClass;
 
 jobject JSNull::New(JNIEnv *env, NodeRuntime *runtime) {
     return env->NewObject(nullClass.clazz, nullClass.constructor, runtime->javaContext);

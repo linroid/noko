@@ -6,7 +6,7 @@
 #define NODE_JSARRAY_H
 
 #include <jni.h>
-#include "NodeRuntime.h"
+#include "../NodeRuntime.h"
 #include "macros.h"
 
 class JSArray {

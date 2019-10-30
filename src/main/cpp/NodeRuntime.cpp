@@ -16,6 +16,7 @@
 #include "jni/JSBoolean.h"
 #include "jni/JSNumber.h"
 #include "jni/JSObject.h"
+#include "jni/JSString.h"
 
 void beforeStartCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
     NodeRuntime *instance = NodeRuntime::GetCurrent(info);
@@ -37,8 +38,8 @@ void NodeRuntime::beforeStart() {
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(context.Get(isolate));
 
-    // auto localGlobal = global->Get(isolate);
-    // localGlobal->Delete(v8::String::NewFromUtf8(isolate, "__beforeStart"));
+    auto localGlobal = global->Get(isolate);
+    localGlobal->Delete(v8::String::NewFromUtf8(isolate, "__beforeStart"));
 
     JNIEnv *env;
     auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);
@@ -87,7 +88,7 @@ void NodeRuntime::onEnvReady(node::Environment *nodeEnv) {
     if (stat == JNI_EDETACHED) {
         vm->AttachCurrentThread(&env, nullptr);
     }
-    auto javaContext = JSContext::NewJava(env, this);
+    auto javaContext = JSContext::New(env, this);
     if (javaContext == nullptr) {
         throwError(env, "Failed to new JSContext instance");
     }
@@ -167,11 +168,13 @@ jobject NodeRuntime::Wrap(JNIEnv *env, v8::Local<v8::Value> &value) {
     if (value->IsUndefined()) {
         return JSUndefined::New(env, this);
     } else if (value->IsBoolean()) {
-        return JSBoolean::New(env, this, value->BooleanValue());
+        return JSBoolean::New(env, this, value);
     } else if (value->IsNumber()) {
         return JSNumber::New(env, this);
     } else if (value->IsObject()) {
         return JSObject::New(env, this, value);
+    } else if (value->IsString()) {
+        return JSString::New(env, this, value);
     }
-    return nullptr;
+    return JSValue::New(env, this, value);
 }

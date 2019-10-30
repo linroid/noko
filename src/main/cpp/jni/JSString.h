@@ -7,9 +7,11 @@
 
 #include <jni.h>
 #include "v8.h"
+#include "../NodeRuntime.h"
 
 class JSString {
 public:
+    static jobject New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value);
 
     static jstring Empty(JNIEnv *env);
 

@@ -5,10 +5,7 @@
 #include "JSUndefined.h"
 #include "JSContext.h"
 
-struct JSUndefinedClass {
-    jclass clazz;
-    jmethodID constructor;
-} undefinedClass;
+JNIClass undefinedClass;
 
 jobject JSUndefined::New(JNIEnv *env, NodeRuntime *runtime) {
     return env->NewObject(undefinedClass.clazz, undefinedClass.constructor, runtime->javaContext);

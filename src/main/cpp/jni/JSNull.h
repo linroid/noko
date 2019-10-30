@@ -6,7 +6,7 @@
 #define NODE_JSNULL_H
 
 #include <jni.h>
-#include "NodeRuntime.h"
+#include "../NodeRuntime.h"
 
 class JSNull {
 public:

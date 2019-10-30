@@ -919,7 +919,6 @@ include_directories(
         ${NODE_SOURCE}/deps/openssl/config/archs/${SSL_ARCH}/no-asm/include
         ${NODE_SOURCE}/deps/openssl/config/archs/${SSL_ARCH}/no-asm/crypto
         ${NODE_SOURCE}/deps/openssl/config/archs/${SSL_ARCH}/no-asm/crypto/include/internal
-        ./
 )
 unset(DEFS_RELEASE)
 unset(CFLAGS_RELEASE)

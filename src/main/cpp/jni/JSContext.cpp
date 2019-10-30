@@ -8,7 +8,7 @@
 #include "JSNumber.h"
 #include "JSObject.h"
 #include "JSValue.h"
-#include "V8Runtime.h"
+#include "NodeRuntime.h"
 #include "macros.h"
 #include "JSString.h"
 
@@ -38,20 +38,20 @@ jint JSContext::OnLoad(JNIEnv *env) {
     return JNI_OK;
 }
 
-jobject JSContext::NewJava(JNIEnv *env, V8Runtime *runtime) {
+jobject JSContext::NewJava(JNIEnv *env, NodeRuntime *runtime) {
     return env->NewObject(contextClass.clazz,
                           contextClass.constructor,
                           reinterpret_cast<jlong>(runtime),
                           reinterpret_cast<jlong>(runtime->global));
 }
 
-V8Runtime *JSContext::Runtime(JNIEnv *env, jobject javaObject) {
+NodeRuntime *JSContext::Runtime(JNIEnv *env, jobject javaObject) {
     jobject javaContext = JSValue::ReadContext(env, javaObject);
     if (javaContext == nullptr) {
         javaContext = javaObject;
     }
     jlong runtimePtr = env->GetLongField(javaContext, contextClass.runtimePtr);
-    return reinterpret_cast<V8Runtime *>(runtimePtr);
+    return reinterpret_cast<NodeRuntime *>(runtimePtr);
 }
 
 

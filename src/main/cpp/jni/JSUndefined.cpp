@@ -10,7 +10,7 @@ struct JSUndefinedClass {
     jmethodID constructor;
 } undefinedClass;
 
-jobject JSUndefined::New(JNIEnv *env, V8Runtime *runtime) {
+jobject JSUndefined::New(JNIEnv *env, NodeRuntime *runtime) {
     return env->NewObject(undefinedClass.clazz, undefinedClass.constructor, runtime->javaContext);
 }
 

@@ -9,8 +9,8 @@ struct JSBooleanClass {
     jmethodID constructor;
 } booleanClass;
 
-jobject JSBoolean::New(JNIEnv *env, V8Runtime *runtime) {
-    return env->NewObject(booleanClass.clazz, booleanClass.constructor, reinterpret_cast<jlong>(runtime));
+jobject JSBoolean::New(JNIEnv *env, NodeRuntime *runtime, bool value) {
+    return env->NewObject(booleanClass.clazz, booleanClass.constructor, runtime->javaContext, value);
 }
 
 jint JSBoolean::OnLoad(JNIEnv *env) {

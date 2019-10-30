@@ -6,11 +6,11 @@
 #define NODE_JSNULL_H
 
 #include <jni.h>
-#include "V8Runtime.h"
+#include "NodeRuntime.h"
 
 class JSNull {
 public:
-    static jobject New(JNIEnv *env, V8Runtime *runtime);
+    static jobject New(JNIEnv *env, NodeRuntime *runtime);
 
     static jint OnLoad(JNIEnv *env);
 };

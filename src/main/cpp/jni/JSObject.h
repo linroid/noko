@@ -12,7 +12,7 @@
 class JSObject {
 
 public:
-    static jobject New(JNIEnv *env, V8Runtime *runtime, v8::Local<v8::Value> &value);
+    static jobject New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value);
 
     static jint OnLoad(JNIEnv *env);
 

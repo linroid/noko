@@ -9,7 +9,7 @@ struct JSNumberClass {
     jmethodID constructor;
 } numberClass;
 
-jobject JSNumber::New(JNIEnv *env, V8Runtime *runtime) {
+jobject JSNumber::New(JNIEnv *env, NodeRuntime *runtime) {
     return env->NewObject(numberClass.clazz, numberClass.constructor, reinterpret_cast<jlong>(runtime));
 }
 

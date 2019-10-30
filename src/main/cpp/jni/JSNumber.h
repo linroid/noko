@@ -10,7 +10,7 @@
 
 class JSNumber {
 public:
-    static jobject New(JNIEnv *env, V8Runtime *runtime);
+    static jobject New(JNIEnv *env, NodeRuntime *runtime);
 
     static jint OnLoad(JNIEnv *env);
 };

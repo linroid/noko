@@ -46,7 +46,7 @@ jlong JSValue::ReadReference(JNIEnv *env, jobject javaObj) {
     return env->GetLongField(javaObj, valueClass.reference);
 }
 
-jobject JSValue::New(JNIEnv *env, V8Runtime *runtime) {
+jobject JSValue::New(JNIEnv *env, NodeRuntime *runtime) {
     return env->NewObject(valueClass.clazz, valueClass.constructor, reinterpret_cast<jlong>(runtime));
 }
 

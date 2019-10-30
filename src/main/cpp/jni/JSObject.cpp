@@ -17,7 +17,7 @@ struct JSObjectClass {
     jmethodID constructor;
 } objectClass;
 
-jobject JSObject::New(JNIEnv *env, V8Runtime *runtime, v8::Local<v8::Value> &value) {
+jobject JSObject::New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
     return env->NewObject(objectClass.clazz, objectClass.constructor, runtime->javaContext, (jlong) reference);
 }

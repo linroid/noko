@@ -17,7 +17,7 @@ jint JSArray::Size(JNIEnv *env, jobject thiz) {
     return value->Length();
 }
 
-jobject JSArray::New(JNIEnv *env, V8Runtime *runtime, v8::Local<v8::Array> &value) {
+jobject JSArray::New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Array> &value) {
     auto reference = new v8::Persistent<v8::Array>(runtime->isolate, value);
     return env->NewObject(arrayClass.clazz, arrayClass.constructor, runtime->javaContext, (jlong) reference);
 }

@@ -13,7 +13,6 @@ set(SOURCES
         __onload.cpp
         util.h
         NodeRuntime.cpp
-        V8Runtime.cpp
         jni/JSContext.cpp
         jni/JSValue.cpp
         jni/JSObject.cpp

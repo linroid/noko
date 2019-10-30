@@ -6,11 +6,11 @@
 #define NODE_JSBOOLEAN_H
 
 #include <jni.h>
-#include "V8Runtime.h"
+#include "NodeRuntime.h"
 
 class JSBoolean {
 public:
-    static jobject New(JNIEnv *env, V8Runtime *runtime);
+    static jobject New(JNIEnv *env, NodeRuntime *runtime, bool value);
 
     static jint OnLoad(JNIEnv *env);
 };

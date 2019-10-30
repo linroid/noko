@@ -9,7 +9,7 @@ struct JSNullClass {
     jmethodID constructor;
 } nullClass;
 
-jobject JSNull::New(JNIEnv *env, V8Runtime *runtime) {
+jobject JSNull::New(JNIEnv *env, NodeRuntime *runtime) {
     return env->NewObject(nullClass.clazz, nullClass.constructor, runtime->javaContext);
 }
 

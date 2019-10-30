@@ -5,6 +5,11 @@ package com.linroid.knode.js
  * @since 2019-10-21
  */
 class JSUndefined(context: JSContext) : JSPrimitive(context) {
+
+    override fun toJson(): String {
+        return ""
+    }
+
     override fun isUndefined(): Boolean {
         return true
     }

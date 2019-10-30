@@ -31,7 +31,7 @@ open class JSValue(protected val context: JSContext?, protected val reference: L
         return nativeToString()
     }
 
-    fun toJson(): String {
+    open fun toJson(): String {
         return nativeToJson()
     }
 

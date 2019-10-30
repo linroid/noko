@@ -8,6 +8,8 @@ import com.linroid.knode.js.JSContext
 import java.io.Closeable
 import java.io.File
 import java.lang.ref.WeakReference
+import android.os.Process
+import android.os.Process.THREAD_PRIORITY_FOREGROUND
 
 /**
  * @author linroid
@@ -30,8 +32,9 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
         this.file = file
         this.argv = argv
         Thread({
-            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_FOREGROUND)
-            val exitCode = start(arrayOf(file.absolutePath, *argv))
+            Process.setThreadPriority(THREAD_PRIORITY_FOREGROUND)
+            // val exitCode = start(arrayOf(file.absolutePath, *argv))
+            val exitCode = start(arrayOf("-e", "global.__beforeStart();"))
             eventOnExit(exitCode)
         }, "node").start()
     }
@@ -103,7 +106,6 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
 
     @Suppress("unused")
     private fun onBeforeStart(context: JSContext) {
-        context.eval("console.log(context.eval(\"process.argv\");")
         val process = context.get("process")
         Log.i(TAG, "onBeforeStart: context.toString()=$context, process.toJson()=${process.toJson()}")
         active = true

@@ -29,7 +29,6 @@ private:
 
     bool running;
 
-    std::vector<std::string> args;
 public:
     jobject javaContext;
 

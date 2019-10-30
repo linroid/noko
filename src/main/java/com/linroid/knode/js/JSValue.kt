@@ -6,7 +6,7 @@ import java.io.Closeable
  * @author linroid
  * @since 2019-10-19
  */
-open class JSValue(protected val context: JSContext?, protected val reference: Long) : Closeable {
+open class JSValue(protected val context: JSContext?, protected var reference: Long) : Closeable {
 
     override fun close() {
         dispose(reference)

@@ -3,6 +3,8 @@
 //
 
 #include "JSString.h"
+#include "JSValue.h"
+#include "macros.h"
 #include <string>
 
 JNIClass stringClass;
@@ -14,6 +16,16 @@ jint JSString::OnLoad(JNIEnv *env) {
     }
     stringClass.clazz = (jclass) env->NewGlobalRef(clazz);
     stringClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
+
+    JNINativeMethod methods[] = {
+            {"nativeInit", "(Ljava/lang/String;)V", (void *) JSString::NativeInit},
+    };
+
+    int rc = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
+    if (rc != JNI_OK) {
+        return rc;
+    }
+
     return JNI_OK;
 }
 
@@ -34,4 +46,11 @@ jstring JSString::Empty(JNIEnv *env) {
 jobject JSString::New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
     return env->NewObject(stringClass.clazz, stringClass.constructor, runtime->javaContext, reference, value->BooleanValue());
+}
+
+void JSString::NativeInit(JNIEnv *env, jobject thiz, jstring content) {
+    auto runtime = JSContext::Runtime(env, thiz);
+    auto value = JSString::ToV8(env, runtime->isolate, content);
+    auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
+    JSValue::SetReference(env, thiz, (jlong) reference);
 }

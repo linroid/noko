@@ -19,9 +19,11 @@ public:
 
     static jint OnLoad(JNIEnv *env);
 
-    static jobject ReadContext(JNIEnv *env, jobject javaObj);
+    static jobject GetContext(JNIEnv *env, jobject javaObj);
 
-    static jlong ReadReference(JNIEnv *env, jobject javaObj);
+    static jlong GetReference(JNIEnv *env, jobject javaObj);
+
+    static void SetReference(JNIEnv *env, jobject javaObj, jlong value);
 };
 
 #endif //NODE_JSVALUE_H

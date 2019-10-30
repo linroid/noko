@@ -28,6 +28,7 @@ private:
     JavaVM *vm = nullptr;
 
     bool running;
+    std::vector<std::string> args;
 
 public:
     jobject javaContext;

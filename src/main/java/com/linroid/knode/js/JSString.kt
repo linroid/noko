@@ -6,6 +6,10 @@ package com.linroid.knode.js
  */
 class JSString(context: JSContext, reference: Long) : JSValue(context, reference) {
 
+    constructor(context: JSContext, content: String) : this(context, 0) {
+        nativeInit(content)
+    }
+
     override fun toInt(): Int {
         return toString().toInt()
     }
@@ -17,4 +21,6 @@ class JSString(context: JSContext, reference: Long) : JSValue(context, reference
     override fun toDouble(): Double {
         return toString().toDouble()
     }
+
+    external fun nativeInit(content: String)
 }

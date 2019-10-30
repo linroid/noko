@@ -22,4 +22,5 @@ inline void throwError(JNIEnv *env, const char *message) {
 //    (env)->ThrowNew(errorCls, message);
 }
 
+
 #endif //NODE_LOG_H

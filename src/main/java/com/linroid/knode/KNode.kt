@@ -102,8 +102,6 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
         // setFs(obj.valueHash())
     }
 
-    private var holdContext: JSObject? = null
-
     @Suppress("unused")
     private fun onBeforeStart(context: JSContext) {
         val process = context.get("process")

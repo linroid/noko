@@ -42,7 +42,7 @@ jobject JSContext::New(JNIEnv *env, NodeRuntime *runtime) {
 }
 
 NodeRuntime *JSContext::Runtime(JNIEnv *env, jobject javaObject) {
-    jobject javaContext = JSValue::ReadContext(env, javaObject);
+    jobject javaContext = JSValue::GetContext(env, javaObject);
     if (javaContext == nullptr) {
         javaContext = javaObject;
     }

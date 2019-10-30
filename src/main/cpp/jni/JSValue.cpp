@@ -34,12 +34,16 @@ jint JSValue::OnLoad(JNIEnv *env) {
     return JNI_OK;
 }
 
-jobject JSValue::ReadContext(JNIEnv *env, jobject javaObj) {
+jobject JSValue::GetContext(JNIEnv *env, jobject javaObj) {
     return env->GetObjectField(javaObj, valueClass.context);
 }
 
-jlong JSValue::ReadReference(JNIEnv *env, jobject javaObj) {
+jlong JSValue::GetReference(JNIEnv *env, jobject javaObj) {
     return env->GetLongField(javaObj, valueClass.reference);
+}
+
+void JSValue::SetReference(JNIEnv *env, jobject javaObj, jlong value) {
+    env->SetLongField(javaObj, valueClass.reference, value);
 }
 
 jobject JSValue::New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {

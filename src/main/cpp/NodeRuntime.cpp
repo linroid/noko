@@ -17,6 +17,7 @@
 #include "jni/JSNumber.h"
 #include "jni/JSObject.h"
 #include "jni/JSString.h"
+#include "jni/macros.h"
 
 void beforeStartCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
     NodeRuntime *instance = NodeRuntime::GetCurrent(info);
@@ -46,12 +47,13 @@ void NodeRuntime::beforeStart() {
     if (stat == JNI_EDETACHED) {
         vm->AttachCurrentThread(&env, nullptr);
     }
-
     env->CallVoidMethod(thiz, onBeforeStart, javaContext);
-
     if (stat == JNI_EDETACHED) {
         vm->DetachCurrentThread();
     }
+    auto process = nodeEnv->process_object();
+    auto argv = process->Get(V8_KEY("argv"));
+
 }
 
 void NodeRuntime::onEnvReady(node::Environment *nodeEnv) {
@@ -69,9 +71,7 @@ void NodeRuntime::onEnvReady(node::Environment *nodeEnv) {
     nodeEnv->SetMethod(process, "_kill", beforeExitCallback);
 
     auto data = v8::External::New(isolate, this);
-    global->Set(v8::String::NewFromUtf8(isolate, "__beforeStart",
-                                        v8::NewStringType::kNormal).ToLocalChecked(),
-                v8::FunctionTemplate::New(isolate, beforeStartCallback, data)->GetFunction());
+    global->Set(V8_KEY("__beforeStart"), v8::FunctionTemplate::New(isolate, beforeStartCallback, data)->GetFunction());
 
     this->isolate = isolate;
     this->nodeEnv = nodeEnv;
@@ -100,9 +100,16 @@ void NodeRuntime::onEnvReady(node::Environment *nodeEnv) {
 }
 
 int NodeRuntime::start(std::vector<std::string> &args) {
-    int argc = args.size();
-    int len = argc;
-    for (auto &arg : args) {
+    this->args = args;
+
+    std::vector<std::string> bootArgs;
+    bootArgs.push_back(std::string("node"));
+    bootArgs.push_back(std::string("-e"));
+    bootArgs.push_back(std::string("global.__beforeStart();"));
+
+    auto argc = bootArgs.size();
+    int len = static_cast<int>(argc);
+    for (auto &arg : bootArgs) {
         len += arg.size();
     }
     char *data = new char[len];
@@ -111,10 +118,9 @@ int NodeRuntime::start(std::vector<std::string> &args) {
     char **argv = new char *[argc];
     for (auto i = 0; i < argc; ++i) {
         argv[i] = data + offset;
-        strcpy(data + offset, args[i].c_str());
-        offset += args[i].size();
-        data[offset + 1] = '\0';
-        ++offset;
+        strcpy(data + offset, bootArgs[i].c_str());
+        offset += bootArgs[i].size();
+        data[++offset] = '\0';
     }
 
     int ret = node::Start(argc, argv, [this](void *env) {

@@ -36,9 +36,6 @@ void beforeExitCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
 void NodeRuntime::beforeStart() {
     LOGI("beforeStart");
-    v8::HandleScope handleScope(isolate);
-    v8::Context::Scope contextScope(context.Get(isolate));
-
     auto localGlobal = global->Get(isolate);
     localGlobal->Delete(v8::String::NewFromUtf8(isolate, "__beforeStart"));
 
@@ -51,9 +48,6 @@ void NodeRuntime::beforeStart() {
     if (stat == JNI_EDETACHED) {
         vm->DetachCurrentThread();
     }
-    auto process = nodeEnv->process_object();
-    auto argv = process->Get(V8_KEY("argv"));
-
 }
 
 void NodeRuntime::onEnvReady(node::Environment *nodeEnv) {
@@ -71,7 +65,7 @@ void NodeRuntime::onEnvReady(node::Environment *nodeEnv) {
     nodeEnv->SetMethod(process, "_kill", beforeExitCallback);
 
     auto data = v8::External::New(isolate, this);
-    global->Set(V8_KEY("__beforeStart"), v8::FunctionTemplate::New(isolate, beforeStartCallback, data)->GetFunction());
+    global->Set(V8_UTF_STRING("__beforeStart"), v8::FunctionTemplate::New(isolate, beforeStartCallback, data)->GetFunction());
 
     this->isolate = isolate;
     this->nodeEnv = nodeEnv;
@@ -99,34 +93,24 @@ void NodeRuntime::onEnvReady(node::Environment *nodeEnv) {
     }
 }
 
-int NodeRuntime::start(std::vector<std::string> &args) {
-    this->args = args;
-
-    std::vector<std::string> bootArgs;
-    bootArgs.push_back(std::string("node"));
-    bootArgs.push_back(std::string("-e"));
-    bootArgs.push_back(std::string("global.__beforeStart();"));
-
-    auto argc = bootArgs.size();
-    int len = static_cast<int>(argc);
-    for (auto &arg : bootArgs) {
-        len += arg.size();
-    }
-    char *data = new char[len];
-    int offset = 0;
+int NodeRuntime::start() {
     // Make argv memory adjacent
-    char **argv = new char *[argc];
-    for (auto i = 0; i < argc; ++i) {
-        argv[i] = data + offset;
-        strcpy(data + offset, bootArgs[i].c_str());
-        offset += bootArgs[i].size();
-        data[++offset] = '\0';
+    char cmd[40];
+    strcpy(cmd, "node -e global.__beforeStart();");
+    int argc = 0;
+    char *argv[32];
+    char *p2 = strtok(cmd, " ");
+    while (p2 && argc < 32 - 1) {
+        argv[argc++] = p2;
+        p2 = strtok(0, " ");
     }
+    argv[argc] = 0;
 
-    int ret = node::Start(argc, argv, [this](void *env) {
+    int ret = node::Start(static_cast<int>(argc), argv, [this](void *env) {
         onEnvReady(static_cast<node::Environment *>(env));
     });
-    delete[] data;
+    // delete[] data;
+    // delete[] argv;
     return ret;
 }
 
@@ -144,10 +128,9 @@ void NodeRuntime::dispose() {
     // v8_platform.Dispose();
 }
 
-NodeRuntime::NodeRuntime(JNIEnv *env, jobject thiz, jmethodID onBeforeStart, jmethodID onBeforeExit) {
+NodeRuntime::NodeRuntime(JNIEnv *env, jobject thiz, jmethodID onBeforeStart, jmethodID onBeforeExit)
+        : onBeforeStart(onBeforeStart), onBeforeExit(onBeforeExit) {
     env->GetJavaVM(&vm);
-    this->onBeforeStart = onBeforeStart;
-    this->onBeforeExit = onBeforeExit;
     this->thiz = env->NewGlobalRef(thiz);
 }
 

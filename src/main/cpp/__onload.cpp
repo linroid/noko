@@ -81,20 +81,20 @@ int start_redirecting_stdout_stderr() {
 }
 
 
-JNICALL jint start(JNIEnv *env, jobject thiz, jobjectArray jargs) {
+JNICALL jint start(JNIEnv *env, jobject thiz) {
     LOGD("start");
     jlong ptr = env->GetLongField(thiz, nodeClass.ptr);
-    int argc = env->GetArrayLength(jargs);
-    auto args = std::vector<std::string>(static_cast<unsigned int>(argc));
-    for (int i = 0; i < argc; ++i) {
-        auto element = (jstring) (env->GetObjectArrayElement(jargs, i));
-        auto chars = env->GetStringUTFChars(element, nullptr);
-        args[i] = std::string(chars);
-        env->ReleaseStringUTFChars(element, chars);
-    }
+    // auto argc = env->GetArrayLength(j_args);
+    // auto args = std::vector<const uint16_t *>(argc);
+    // for (int i = 0; i < argc; ++i) {
+    //     auto j_element = (jstring) (env->GetObjectArrayElement(j_args, i));
+    //     int len = env->GetStringLength(j_element);
+    //     uint16_t *element = new uint16_t[len + 1];
+    //     env->GetStringRegion(j_element, 0, len, element);
+    //     args[i] = element;
+    // }
     auto node = reinterpret_cast<NodeRuntime *>(ptr);
-    args.insert(args.begin(), "node");
-    return jint(node->start(args));
+    return jint(node->start());
 }
 
 JNICALL void setFs(JNIEnv *env, jobject thiz, jlong fsPtr) {
@@ -106,6 +106,10 @@ JNICALL void setFs(JNIEnv *env, jobject thiz, jlong fsPtr) {
 JNICALL void dispose(JNIEnv *env, jobject thiz) {
     LOGD("dispose");
     jlong ptr = env->GetLongField(thiz, nodeClass.ptr);
+    if (ptr == 0) {
+        LOGE("dispose but ptr is 0");
+        return;
+    }
     auto node = reinterpret_cast<NodeRuntime *>(ptr);
     node->dispose();
     delete node;
@@ -114,15 +118,16 @@ JNICALL void dispose(JNIEnv *env, jobject thiz) {
 
 JNICALL jlong nativeInit(JNIEnv *env, jobject thiz) {
     LOGD("nativeInit");
-    auto *node = new NodeRuntime(env, thiz, nodeClass.onBeforeStart, nodeClass.onBeforeExit);
+    auto *node = new NodeRuntime(env, thiz, nodeClass.onBeforeStart,
+                                 nodeClass.onBeforeExit);
     return reinterpret_cast<jlong>(node);
 }
 
 static JNINativeMethod nodeMethods[] = {
-        {"nativeInit", "()J",                    (void *) nativeInit},
-        {"start",      "([Ljava/lang/String;)I", (void *) start},
-        {"setFs",      "(J)V",                   (void *) setFs},
-        {"dispose",    "()V",                    (void *) dispose},
+        {"nativeInit",    "()J",  (void *) nativeInit},
+        {"nativeStart",   "()I",  (void *) start},
+        {"nativeSetFs",   "(J)V", (void *) setFs},
+        {"nativeDispose", "()V",  (void *) dispose},
 };
 
 
@@ -141,12 +146,14 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
         return JNI_ERR;
     }
 
-    int rc = env->RegisterNatives(clazz, nodeMethods, sizeof(nodeMethods) / sizeof(JNINativeMethod));
+    int rc = env->RegisterNatives(clazz, nodeMethods,
+                                  sizeof(nodeMethods) / sizeof(JNINativeMethod));
     if (rc != JNI_OK) {
         return rc;
     }
     nodeClass.ptr = env->GetFieldID(clazz, "ptr", "J");
-    nodeClass.onBeforeStart = env->GetMethodID(clazz, "onBeforeStart", "(Lcom/linroid/knode/js/JSContext;)V");
+    nodeClass.onBeforeStart = env->GetMethodID(clazz, "onBeforeStart",
+                                               "(Lcom/linroid/knode/js/JSContext;)V");
     nodeClass.onBeforeExit = env->GetMethodID(clazz, "onBeforeExit", "(I)V");
 
     LOAD_JNI_CLASS(JSValue)

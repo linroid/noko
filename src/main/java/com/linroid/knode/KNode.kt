@@ -1,15 +1,15 @@
 package com.linroid.knode
 
+import android.os.Process
+import android.os.Process.THREAD_PRIORITY_FOREGROUND
 import android.util.Log
 import androidx.annotation.Keep
+import com.linroid.knode.js.JSContext
 import com.linroid.knode.js.JSException
 import com.linroid.knode.js.JSObject
-import com.linroid.knode.js.JSContext
 import java.io.Closeable
 import java.io.File
 import java.lang.ref.WeakReference
-import android.os.Process
-import android.os.Process.THREAD_PRIORITY_FOREGROUND
 
 /**
  * @author linroid
@@ -34,7 +34,7 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
         Thread({
             Process.setThreadPriority(THREAD_PRIORITY_FOREGROUND)
             // val exitCode = start(arrayOf(file.absolutePath, *argv))
-            val exitCode = start(arrayOf("-e", "global.__beforeStart();"))
+            val exitCode = nativeStart()
             eventOnExit(exitCode)
         }, "node").start()
     }
@@ -104,68 +104,21 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
 
     @Suppress("unused")
     private fun onBeforeStart(context: JSContext) {
-        val process = context.get("process")
+        val process = context.get("process") as JSObject
+        val env = process.get("env")
         Log.i(TAG, "onBeforeStart: context.toString()=$context, process.toJson()=${process.toJson()}")
         active = true
-        // val ctx = holdContext ?: return
-        // context = WeakReference(ctx)
-        // ctx.property(READY_METHOD_NAME, object : JSFunction(ctx, READY_METHOD_NAME) {
-        //     @Suppress("unused")
-        //     fun __onNodeReady() {
-        //         if (!isActive()) {
-        //             return
-        //         }
-        //         ctx.deleteProperty(READY_METHOD_NAME)
-        //         attachOutput(ctx)
-        //
-        //         eventOnBooted(ctx)
-        //
-        //         val onExitFunc = object : JSFunction(ctx, "onExit") {
-        //             @SuppressWarnings("unused")
-        //             fun onExit(code: Long) {
-        //                 eventOnFinished(code)
-        //             }
-        //         }
-        //         JSFunction(ctx, "__onExit", arrayOf("exitFunc"), "process.on('exit', exitFunc);", null, 0)
-        //             .call(null, onExitFunc)
-        //
-        //         val onUncaughtException = object : JSFunction(ctx, "onUncaughtException") {
-        //             @SuppressWarnings("unused")
-        //             fun onUncaughtException(error: JSObject) {
-        //                 eventOnError(JSException(error))
-        //                 ctx.evaluateScript("process.exit(process.exitCode === undefined ? -1 : process.exitCode)")
-        //             }
-        //         }
-        //         JSFunction(ctx, "__onUncaughtException", arrayOf("handleFunc"), "process.on('uncaughtException',handleFunc);", null, 0)
-        //             .call(null, onUncaughtException)
-        //
-        //
-        //         val process = ctx.property("process").toObject()
-        //         if (engineVersions.size > 0) {
-        //             val versions = process.property("versions").toObject()
-        //             engineVersions.forEach { versions.property(it.key, it.value) }
-        //         }
-        //
-        //         val env = process.property("env").toObject()
-        //         envs.forEach { env.property(it.key, it.value) }
-        //         env.property("PWD", pwd.absolutePath)
-        //         // env.property("_", "/bin/node")
-        //
-        //
-        //         process.property("argv", arrayOf("node", file.absolutePath, *argv))
-        //
-        //
-        //         val script = "(() => {" +
-        //                 "  process.chdir(\"${pwd.absolutePath}\");" +
-        //                 "  const fs = require('fs'), vm = require('vm'); " +
-        //                 "  (new vm.Script(fs.readFileSync('${file.absolutePath}'), " +
-        //                 "     {filename: '${file.name}'} )).runInThisContext();" +
-        //                 "})()"
-        //         ctx.evaluateScript(script)
-        //
-        //         holdContext = null
-        //     }
-        // })
+        eventOnBeforeStart(context)
+        val script = """(() => {
+process.chdir("${pwd.absolutePath}");  
+const fs = require('fs');
+const vm = require('vm');  
+(new vm.Script(
+fs.readFileSync('${file.absolutePath}'),
+{ filename: '${file.name}'} )).runInThisContext();
+})()
+ """
+        context.eval(script, file.absolutePath, 0)
     }
 
     private fun attachOutput(context: JSObject) {
@@ -193,13 +146,14 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
         active = false
         context = WeakReference<JSContext>(null)
         done = true
-        dispose()
+        nativeDispose()
+
         eventOnExit(exitCode)
     }
 
-    private fun eventOnBooted(context: JSObject) {
-        Log.i(TAG, "eventOnBooted")
-        listeners.forEach { it.onNodeBooted(context) }
+    private fun eventOnBeforeStart(context: JSContext) {
+        Log.i(TAG, "eventOnBeforeStart")
+        listeners.forEach { it.onNodeBeforeStart(context) }
     }
 
     private fun eventOnFinished(exitCode: Int) {
@@ -219,14 +173,14 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
 
     private external fun nativeInit(): Long
 
-    private external fun start(args: Array<String>): Int
+    private external fun nativeStart(): Int
 
-    private external fun dispose()
+    private external fun nativeDispose()
 
-    private external fun setFs(fsPtr: Long)
+    private external fun nativeSetFs(fsPtr: Long)
 
     interface EventListener {
-        fun onNodeBooted(context: JSObject)
+        fun onNodeBeforeStart(context: JSContext)
 
         fun onNodeFinished(exitCode: Int)
 

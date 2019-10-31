@@ -25,6 +25,7 @@
 //     auto value = v8::Local<v8::Value>::New(runtime->isolate, reinterpret_cast<v8::Persistent<v8::Value> *>());
 
 
-#define V8_KEY(key) v8::String::NewFromUtf8(isolate, key, v8::NewStringType::kNormal).ToLocalChecked()
+#define V8_UTF_STRING(str) v8::String::NewFromUtf8(isolate, str, v8::NewStringType::kNormal).ToLocalChecked()
+#define V8_STRING(str) v8::String::NewFromTwoByte(isolate, str, v8::NewStringType::kNormal).ToLocalChecked()
 
 #endif //NODE_MACROS_H

@@ -28,7 +28,6 @@ private:
     JavaVM *vm = nullptr;
 
     bool running;
-    std::vector<std::string> args;
 
 public:
     jobject javaContext;
@@ -46,7 +45,7 @@ public:
 
     ~NodeRuntime();
 
-    int start(std::vector<std::string> &args);
+    int start();
 
     void dispose();
 

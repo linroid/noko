@@ -6,7 +6,9 @@ import java.io.Closeable
  * @author linroid
  * @since 2019-10-19
  */
-open class JSValue(protected val context: JSContext?, protected var reference: Long) : Closeable {
+@Suppress("LeakingThis")
+open class JSValue(context: JSContext?, protected var reference: Long) : Closeable {
+    protected val context: JSContext = context ?: this as JSContext
 
     override fun close() {
         dispose(reference)

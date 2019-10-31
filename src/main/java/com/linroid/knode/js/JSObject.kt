@@ -15,8 +15,12 @@ open class JSObject(context: JSContext?, reference: Long) : JSValue(context, ref
         nativeSet(key, value)
     }
 
-    fun get(key: String): JSValue {
-        return nativeGet(key)
+    fun set(key: String, value: String) {
+        set(key, JSString(context, value))
+    }
+
+    fun <T : JSValue> get(key: String): T {
+        return nativeGet(key) as T
     }
 
     fun keys(): Array<String> {
@@ -33,5 +37,5 @@ open class JSObject(context: JSContext?, reference: Long) : JSValue(context, ref
     private external fun nativeRegisterMethod(name: String, method: Method)
     private external fun nativeHas(key: String): Boolean
     private external fun nativeGet(key: String): JSValue
-    private external fun nativeSet(key: String, value: JSValue): Boolean
+    private external fun nativeSet(key: String, value: JSValue)
 }

@@ -104,10 +104,18 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
 
     @Suppress("unused")
     private fun onBeforeStart(context: JSContext) {
-        val process = context.get("process") as JSObject
-        val env = process.get("env")
+        val process: JSObject = context.get("process")
+        val env: JSObject = process.get("env")
+        val versions: JSObject = process.get("versions")
+
         Log.i(TAG, "onBeforeStart: context.toString()=$context, process.toJson()=${process.toJson()}")
         active = true
+        envs.forEach {
+            env.set(it.key, it.value)
+        }
+        engineVersions.forEach {
+            versions.set(it.key, it.value)
+        }
         eventOnBeforeStart(context)
         val script = """(() => {
 process.chdir("${pwd.absolutePath}");  

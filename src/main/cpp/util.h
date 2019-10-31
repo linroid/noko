@@ -19,7 +19,7 @@
 
 
 inline void throwError(JNIEnv *env, const char *message) {
-//    (env)->ThrowNew(errorCls, message);
+    env->ThrowNew(env->FindClass("java/lang/Exception"), message);
 }
 
 

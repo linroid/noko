@@ -5,10 +5,6 @@
 #include <jni.h>
 #include <mutex>
 #include <uv.h>
-#include "node.h"
-#include "v8.h"
-#include "util.h"
-#include "util.h"
 #include "NodeRuntime.h"
 #include "jni/JSContext.h"
 #include "jni/JSValue.h"
@@ -18,6 +14,7 @@
 #include "jni/JSObject.h"
 #include "jni/JSString.h"
 #include "jni/macros.h"
+#include "jni/JSFunction.h"
 
 void beforeStartCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
     NodeRuntime *instance = NodeRuntime::GetCurrent(info);
@@ -106,7 +103,7 @@ int NodeRuntime::start() {
     }
     argv[argc] = 0;
 
-    int ret = node::Start(static_cast<int>(argc), argv, [this](void *env) {
+    int ret = node::Start(argc, argv, [this](void *env) {
         onEnvReady(static_cast<node::Environment *>(env));
     });
     // delete[] data;
@@ -152,7 +149,6 @@ NodeRuntime *NodeRuntime::GetCurrent(const v8::FunctionCallbackInfo<v8::Value> &
     return reinterpret_cast<NodeRuntime *>(external->Value());
 }
 
-
 jobject NodeRuntime::Wrap(JNIEnv *env, v8::Local<v8::Value> &value) {
     if (value->IsUndefined()) {
         return JSUndefined::New(env, this);
@@ -161,9 +157,19 @@ jobject NodeRuntime::Wrap(JNIEnv *env, v8::Local<v8::Value> &value) {
     } else if (value->IsNumber()) {
         return JSNumber::New(env, this);
     } else if (value->IsObject()) {
+        if (value->IsFunction()) {
+            return JSFunction::New(env, this, value);
+        }
         return JSObject::New(env, this, value);
     } else if (value->IsString()) {
         return JSString::New(env, this, value);
     }
     return JSValue::New(env, this, value);
+}
+
+void NodeRuntime::throwJSError(JNIEnv *env, v8::TryCatch &tryCatch) {
+    LOGE("JSError");
+    auto exception = tryCatch.Exception();
+    v8::String::Utf8Value exceptionStr(exception);
+    throwError(env, *exceptionStr);
 }

@@ -2,10 +2,11 @@
 // Created by linroid on 2019-10-21.
 //
 
+#include <string>
 #include "JSString.h"
 #include "JSValue.h"
 #include "macros.h"
-#include <string>
+#include "JSContext.h"
 
 JNIClass stringClass;
 

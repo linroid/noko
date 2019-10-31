@@ -4,13 +4,14 @@
 
 #include "JSArray.h"
 #include "JSValue.h"
+#include "JSContext.h"
 
 static JNIClass arrayClass;
 
 jint JSArray::Size(JNIEnv *env, jobject thiz) {
     V8_ENV(env, thiz, v8::Array)
     // auto array = v8::Local<v8::Array>::Cast(value);
-    return value->Length();
+    return that->Length();
 }
 
 jobject JSArray::New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Array> &value) {

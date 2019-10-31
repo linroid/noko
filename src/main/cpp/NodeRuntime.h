@@ -55,6 +55,8 @@ public:
 
     jobject Wrap(JNIEnv *env, v8::Local<v8::Value> &value);
 
+    void throwJSError(JNIEnv *env, v8::TryCatch &tryCatch);
+
     static inline NodeRuntime *GetCurrent(const v8::FunctionCallbackInfo<v8::Value> &info);
 };
 

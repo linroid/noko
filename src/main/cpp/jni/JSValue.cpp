@@ -7,6 +7,7 @@
 #include "JSValue.h"
 #include "macros.h"
 #include "JSString.h"
+#include "JSContext.h"
 
 const constexpr char *kJSValueClass = "com/linroid/knode/js/JSValue";
 
@@ -53,7 +54,7 @@ jobject JSValue::New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &va
 
 jstring JSValue::ToString(JNIEnv *env, jobject thiz) {
     V8_ENV(env, thiz, v8::Value)
-    v8::MaybeLocal<v8::String> str = value->ToString(context);
+    v8::MaybeLocal<v8::String> str = that->ToString(context);
     if (str.IsEmpty()) {
         return JSString::Empty(env);
     }
@@ -63,10 +64,18 @@ jstring JSValue::ToString(JNIEnv *env, jobject thiz) {
 
 jstring JSValue::ToJson(JNIEnv *env, jobject thiz) {
     V8_ENV(env, thiz, v8::Value)
-    auto str = v8::JSON::Stringify(context, value);
+    auto str = v8::JSON::Stringify(context, that);
     if (str.IsEmpty()) {
         return JSString::Empty(env);
     }
     v8::String::Value unicodeString(str.ToLocalChecked());
     return env->NewString(*unicodeString, unicodeString.length());
+}
+
+v8::Local<v8::Value> JSValue::GetV8Value(JNIEnv *env, v8::Isolate *isolate, jobject javaObj) {
+    v8::EscapableHandleScope handleScope(isolate);
+    jlong reference = JSValue::GetReference(env, javaObj);
+    auto persistent = reinterpret_cast<v8::Persistent<v8::Value> *>(reference);
+    auto that = v8::Local<v8::Value>::New(isolate, *persistent);
+    return handleScope.Escape(that);
 }

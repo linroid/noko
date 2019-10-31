@@ -6,7 +6,6 @@
 #define NODE_JSVALUE_H
 
 #include <jni.h>
-#include "JSContext.h"
 #include "../NodeRuntime.h"
 
 class JSValue {
@@ -22,6 +21,8 @@ public:
     static jobject GetContext(JNIEnv *env, jobject javaObj);
 
     static jlong GetReference(JNIEnv *env, jobject javaObj);
+
+    static v8::Local<v8::Value> GetV8Value(JNIEnv *env, v8::Isolate *isolate, jobject javaObj);
 
     static void SetReference(JNIEnv *env, jobject javaObj, jlong value);
 };

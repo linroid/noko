@@ -14,7 +14,7 @@
     auto context = runtime->context.Get(runtime->isolate); \
     jlong reference_ = JSValue::GetReference(env, thiz); \
     auto persistent = reinterpret_cast<v8::Persistent<type> *>(reference_); \
-    auto value = v8::Local<type>::New(runtime->isolate, *persistent);
+    auto that = v8::Local<type>::New(runtime->isolate, *persistent);
 //
 // #define V8_ENV(env, thiz) \
 //     auto runtime = JSContext::Runtime(env, thiz); \

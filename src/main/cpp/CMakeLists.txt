@@ -22,6 +22,7 @@ set(SOURCES
         jni/JSString.cpp
         jni/JSArray.cpp
         jni/JSNull.cpp
+        jni/JSFunction.cpp
 
         # uv
         ${UV_SOURCE}/src/fs-poll.c

@@ -15,6 +15,7 @@
 #include "jni/JSBoolean.h"
 #include "jni/JSArray.h"
 #include "jni/JSNull.h"
+#include "jni/JSFunction.h"
 
 #define LOAD_JNI_CLASS(clazz) if (clazz::OnLoad(env) != JNI_OK) { \
     return JNI_ERR; \
@@ -165,6 +166,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
     LOAD_JNI_CLASS(JSArray)
     LOAD_JNI_CLASS(JSUndefined)
     LOAD_JNI_CLASS(JSNull)
+    LOAD_JNI_CLASS(JSFunction)
 
     return JNI_VERSION_1_6;
 }

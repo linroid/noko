@@ -4,9 +4,7 @@ import android.os.Process
 import android.os.Process.THREAD_PRIORITY_FOREGROUND
 import android.util.Log
 import androidx.annotation.Keep
-import com.linroid.knode.js.JSContext
-import com.linroid.knode.js.JSException
-import com.linroid.knode.js.JSObject
+import com.linroid.knode.js.*
 import java.io.Closeable
 import java.io.File
 import java.lang.ref.WeakReference
@@ -36,7 +34,7 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
             // val exitCode = start(arrayOf(file.absolutePath, *argv))
             val exitCode = nativeStart()
             eventOnExit(exitCode)
-        }, "node").start()
+        }, "knode").start()
     }
 
     fun addEventListener(listener: EventListener) = synchronized(this) {
@@ -104,21 +102,26 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
 
     @Suppress("unused")
     private fun onBeforeStart(context: JSContext) {
+        Log.i(TAG, "onBeforeStart: context.toString()=$context")
+
         val process: JSObject = context.get("process")
         val env: JSObject = process.get("env")
         val versions: JSObject = process.get("versions")
-
-        Log.i(TAG, "onBeforeStart: context.toString()=$context, process.toJson()=${process.toJson()}")
         active = true
-        envs.forEach {
-            env.set(it.key, it.value)
-        }
+        env.set("PWD", pwd.absolutePath)
+        envs.forEach { env.set(it.key, it.value) }
+        process.set("argv0", "node")
         engineVersions.forEach {
             versions.set(it.key, it.value)
         }
+        val chdir: JSFunction = process.get("chdir")
+        chdir.call(process, JSString(context, pwd.absolutePath))
+
         eventOnBeforeStart(context)
+        val cwdFunc: JSFunction = process.get("cwd")
+        val cwdRet = cwdFunc.call(process)
+        Log.w(TAG, "cwdRet=${cwdRet}")
         val script = """(() => {
-process.chdir("${pwd.absolutePath}");  
 const fs = require('fs');
 const vm = require('vm');  
 (new vm.Script(

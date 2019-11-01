@@ -53,4 +53,11 @@ open class JSValue(context: JSContext?, protected var reference: Long) : Closeab
     private external fun nativeToString(): String
 
     private external fun dispose(reference: Long)
+    fun empty(): Boolean {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    fun isPromise(): Boolean {
+        return false
+    }
 }

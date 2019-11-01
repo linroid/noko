@@ -170,7 +170,7 @@ fs.readFileSync('${file.absolutePath}'),
 
     private fun eventOnBeforeStart(context: JSContext) {
         Log.i(TAG, "eventOnBeforeStart")
-        listeners.forEach { it.onNodeBeforeStart(context) }
+        listeners.forEach { it.onNodePrepared(context) }
     }
 
     private fun eventOnFinished(exitCode: Int) {
@@ -197,7 +197,7 @@ fs.readFileSync('${file.absolutePath}'),
     private external fun nativeSetFs(fsPtr: Long)
 
     interface EventListener {
-        fun onNodeBeforeStart(context: JSContext)
+        fun onNodePrepared(context: JSContext)
 
         fun onNodeFinished(exitCode: Int)
 

@@ -6,13 +6,13 @@ package com.linroid.knode.js
  */
 class JSContext(@Suppress("unused") private val runtimePtr: Long, reference: Long) : JSObject(null, reference) {
 
-    fun eval(code: String, source: String = "", line: Int = 0): Any {
+    fun eval(code: String, source: String = "", line: Int = 0): JSValue {
         return nativeEval(code, source, line)
     }
 
-    fun newObject(ob: Any) {
-
+    fun setExceptionHandler(handler: Any) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    private external fun nativeEval(code: String, source: String, line: Int): Any
+    private external fun nativeEval(code: String, source: String, line: Int): JSValue
 }

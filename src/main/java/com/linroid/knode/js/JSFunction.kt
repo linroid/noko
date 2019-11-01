@@ -16,23 +16,27 @@ open class JSFunction : JSObject {
         name = ""
     }
 
-    constructor(context: JSContext, name: String, callable: Callable) : super(context, 0) {
+    constructor(context: JSContext, name: String, callable: Callable? = null) : super(context, 0) {
         this.callable = callable
         this.name = name
         nativeInit()
     }
 
-    open fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
+    protected open fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
         if (callable != null) {
             return callable.invoke(receiver, parameters)
         }
         return null
     }
 
-    fun call(receiver: JSValue, vararg parameters: JSValue): JSValue? {
-        return nativeCall(receiver, parameters)
+//    fun call(receiver: JSValue, vararg parameters: JSValue): JSValue? {
+//        return nativeCall(receiver, parameters)
+//    }
+
+    fun call(receiver: JSValue, vararg parameters: Any): JSValue? {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    external fun nativeCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue?
-    external fun nativeInit()
+    private external fun nativeCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue?
+    private external fun nativeInit()
 }

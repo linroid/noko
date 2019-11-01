@@ -103,7 +103,7 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
     @Suppress("unused")
     private fun onBeforeStart(context: JSContext) {
         Log.i(TAG, "onBeforeStart: context.toString()=$context")
-
+        attachOutput(context)
         val process: JSObject = context.get("process")
         val env: JSObject = process.get("env")
         val versions: JSObject = process.get("versions")
@@ -116,6 +116,12 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
         }
         val chdir: JSFunction = process.get("chdir")
         chdir.call(process, JSString(context, pwd.absolutePath))
+
+        val func = JSFunction(context, "test") { receiver, parameters ->
+            Log.i(TAG, "call test($receiver, $parameters)")
+            return@JSFunction JSString(context, "Hello World")
+        }
+        context.set("test", func)
 
         eventOnBeforeStart(context)
         val cwdFunc: JSFunction = process.get("cwd")
@@ -133,23 +139,23 @@ fs.readFileSync('${file.absolutePath}'),
     }
 
     private fun attachOutput(context: JSObject) {
-        // val process = context.property("process").toObject()
-        // val stdout = process.property("stdout").toObject()
-        // stdout.property("write", object : JSFunction(stdout.context, "write") {
-        //     @jsexport
-        //     @Suppress("unused")
-        //     fun write(string: String) {
-        //         output.stdout(string)
-        //     }
-        // })
-        //
-        // val stderr = process.property("stderr").toObject()
-        // stderr.property("write", object : JSFunction(stderr.context, "write") {
-        //     @jsexport
-        //     fun write(string: String) {
-        //         output.stderr(string)
-        //     }
-        // })
+        val process: JSObject = context.get("process")
+        val stdout: JSObject = process.get("stdout")
+//        stdout.property("write", object : JSFunction(stdout.context, "write") {
+//            @jsexport
+//            @Suppress("unused")
+//            fun write(string: String) {
+//                output.stdout(string)
+//            }
+//        })
+//
+//        val stderr = process.property("stderr").toObject()
+//        stderr.property("write", object : JSFunction(stderr.context, "write") {
+//            @jsexport
+//            fun write(string: String) {
+//                output.stderr(string)
+//            }
+//        })
     }
 
     @Suppress("unused")

@@ -9,6 +9,8 @@
 
 JNIClass functionClass;
 
+jmethodID functionOnCallMethod;
+
 jobject JSFunction::New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
     return env->NewObject(functionClass.clazz, functionClass.constructor, runtime->javaContext, reference);
@@ -22,9 +24,12 @@ jint JSFunction::OnLoad(JNIEnv *env) {
 
     JNINativeMethod methods[] = {
             {"nativeCall", "(Lcom/linroid/knode/js/JSValue;[Lcom/linroid/knode/js/JSValue;)Lcom/linroid/knode/js/JSValue;", (void *) (Call)},
+            {"nativeInit", "()V",                                                                                           (void *) JSFunction::Init},
     };
     functionClass.clazz = (jclass) env->NewGlobalRef(clazz);
     functionClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
+    functionOnCallMethod = env->GetMethodID(clazz, "onCall",
+                                            "(Lcom/linroid/knode/js/JSValue;[Lcom/linroid/knode/js/JSValue;)Lcom/linroid/knode/js/JSValue;");
     env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
     return JNI_OK;
 }
@@ -49,4 +54,68 @@ jobject JSFunction::Call(JNIEnv *env, jobject thiz, jobject j_recv, jobjectArray
     };
     auto retValue = ret.ToLocalChecked();
     return runtime->Wrap(env, retValue);
+}
+
+class JniCallback {
+private:
+    NodeRuntime *runtime;
+    JavaVM *vm;
+    jobject that;
+    jmethodID methodId;
+public:
+    JniCallback(NodeRuntime *runtime, JNIEnv *env, jobject that, jmethodID methodId)
+            : runtime(runtime), that(env->NewGlobalRef(that)), methodId(methodId) {
+        env->GetJavaVM(&vm);
+    }
+
+    void call(const v8::FunctionCallbackInfo<v8::Value> &info) {
+        JNIEnv *env;
+        auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);
+        if (stat == JNI_EDETACHED) {
+            vm->AttachCurrentThread(&env, nullptr);
+        }
+
+        auto parameters = env->NewObjectArray(info.kArgsLength, JSValue::Class().clazz, nullptr);
+        for (int i = 0; i < info.kArgsLength; ++i) {
+            v8::Local<v8::Value> element = info[i];
+            env->SetObjectArrayElement(parameters, i, runtime->Wrap(env, element));
+        }
+        auto caller = (v8::Local<v8::Value>)info.This();
+        auto j_ret = env->CallObjectMethod(that, methodId, runtime->Wrap(env, caller), parameters);
+        if (j_ret != 0) {
+            auto ret = JSValue::GetV8Value(env, runtime->isolate, j_ret);
+            info.GetReturnValue().Set(ret);
+        }
+        if (stat == JNI_EDETACHED) {
+            vm->DetachCurrentThread();
+        }
+    }
+
+    ~JniCallback() {
+        JNIEnv *env;
+        auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);
+        if (stat == JNI_EDETACHED) {
+            vm->AttachCurrentThread(&env, nullptr);
+        }
+        env->DeleteGlobalRef(that);
+        if (stat == JNI_EDETACHED) {
+            vm->DetachCurrentThread();
+        }
+    }
+};
+
+
+void onCall(const v8::FunctionCallbackInfo<v8::Value> &info) {
+    CHECK(info.Data()->IsExternal());
+    auto external = info.Data().As<v8::External>();
+    JniCallback *callback = reinterpret_cast<JniCallback * >(external->Value());
+    callback->call(info);
+}
+
+void JSFunction::Init(JNIEnv *env, jobject thiz) {
+    auto runtime = JSContext::Runtime(env, thiz);
+    auto data = v8::External::New(runtime->isolate, new JniCallback(runtime, env, thiz, functionOnCallMethod));
+    auto func = v8::FunctionTemplate::New(runtime->isolate, onCall, data)->GetFunction();
+    auto reference = new v8::Persistent<v8::Value>(runtime->isolate, func);
+    JSValue::SetReference(env, thiz, (jlong) reference);
 }

@@ -50,7 +50,6 @@ NodeRuntime *JSContext::Runtime(JNIEnv *env, jobject javaObject) {
     return reinterpret_cast<NodeRuntime *>(runtimePtr);
 }
 
-
 jobject JSContext::Get(JNIEnv *env, jobject thiz, jstring key) {
     return nullptr;
 }

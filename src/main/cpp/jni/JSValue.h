@@ -18,6 +18,8 @@ public:
 
     static jint OnLoad(JNIEnv *env);
 
+    static JNIClass& Class();
+
     static jobject GetContext(JNIEnv *env, jobject javaObj);
 
     static jlong GetReference(JNIEnv *env, jobject javaObj);

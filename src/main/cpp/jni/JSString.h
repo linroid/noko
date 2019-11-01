@@ -17,7 +17,7 @@ public:
 
     static v8::Local<v8::String> ToV8(JNIEnv *env, v8::Isolate *isolate, jstring &string);
 
-    JNICALL static void NativeInit(JNIEnv *env, jobject thiz, jstring content);
+    JNICALL static void Init(JNIEnv *env, jobject thiz, jstring content);
 
     static jint OnLoad(JNIEnv *env);
 };

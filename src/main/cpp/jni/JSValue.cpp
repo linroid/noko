@@ -79,3 +79,7 @@ v8::Local<v8::Value> JSValue::GetV8Value(JNIEnv *env, v8::Isolate *isolate, jobj
     auto that = v8::Local<v8::Value>::New(isolate, *persistent);
     return handleScope.Escape(that);
 }
+
+JNIClass &JSValue::Class() {
+    return valueClass;
+}

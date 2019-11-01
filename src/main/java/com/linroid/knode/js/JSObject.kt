@@ -1,5 +1,6 @@
 package com.linroid.knode.js
 
+import com.google.gson.JsonElement
 import java.lang.reflect.Method
 
 /**
@@ -15,12 +16,20 @@ open class JSObject(context: JSContext?, reference: Long) : JSValue(context, ref
         return nativeHas(key)
     }
 
-    fun set(key: String, value: JSValue) {
+    fun set(key: String, value: JSValue?) {
         nativeSet(key, value)
     }
 
     fun set(key: String, value: String) {
         set(key, JSString(context, value))
+    }
+
+    fun set(key: String, value: Int) {
+        set(key, JSNumber(context, value))
+    }
+
+    fun set(key: String, json: JsonElement) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     fun <T : JSValue> get(key: String): T {
@@ -29,12 +38,6 @@ open class JSObject(context: JSContext?, reference: Long) : JSValue(context, ref
 
     fun keys(): Array<String> {
         return nativeKeys()
-    }
-
-    fun registerMethod(obj: Any, methodName: String, jsFunctionName: String) {
-        val method = obj.javaClass.getMethod(methodName)
-        method.isAccessible = true
-        nativeRegisterMethod(jsFunctionName, method)
     }
 
     inline fun <reified T> opt(key: String): T? {
@@ -60,11 +63,7 @@ open class JSObject(context: JSContext?, reference: Long) : JSValue(context, ref
     }
 
     private external fun nativeKeys(): Array<String>
-    private external fun nativeRegisterMethod(name: String, method: Method)
     private external fun nativeHas(key: String): Boolean
     private external fun nativeGet(key: String): JSValue
-    private external fun nativeSet(key: String, value: JSValue)
-    fun set(s: String, toJsonTree: Any) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    private external fun nativeSet(key: String, value: JSValue?)
 }

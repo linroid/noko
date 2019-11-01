@@ -24,7 +24,7 @@ jint JSContext::OnLoad(JNIEnv *env) {
     contextClass.runtimePtr = env->GetFieldID(clazz, "runtimePtr", "J");
 
     JNINativeMethod methods[] = {
-            {"nativeEval", "(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/Object;", (void *) Eval},
+            {"nativeEval", "(Ljava/lang/String;Ljava/lang/String;I)Lcom/linroid/knode/js/JSValue;", (void *) Eval},
     };
 
     int rc = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));

@@ -4,7 +4,16 @@ package com.linroid.knode.js
  * @author linroid
  * @since 2019-10-23
  */
-class JSArray(context: JSContext, reference: Long) : JSObject(context, reference), MutableList<JSValue> {
+class JSArray : JSObject, MutableList<JSValue> {
+
+    private constructor(context: JSContext, reference: Long) : super(context, reference)
+
+    constructor(context: JSContext, data: Iterator<*>) : super(context, 0) {
+        nativeInit()
+        data.forEach {
+            add(context.from(it))
+        }
+    }
 
     override val size: Int
         get() = nativeSize()
@@ -95,4 +104,5 @@ class JSArray(context: JSContext, reference: Long) : JSObject(context, reference
     private external fun nativeIndexOf(element: JSValue): Int
     private external fun nativeLastIndexOf(element: JSValue): Int
     private external fun nativeSize(): Int
+    private external fun nativeInit()
 }

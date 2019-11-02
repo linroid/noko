@@ -7,7 +7,6 @@ import androidx.annotation.Keep
 import com.linroid.knode.js.*
 import java.io.Closeable
 import java.io.File
-import java.lang.ref.WeakReference
 
 /**
  * @author linroid
@@ -21,7 +20,7 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
     private val listeners = HashSet<EventListener>()
     private var active = false
     private var done = false
-    private var context = WeakReference<JSContext>(null)
+    private lateinit var context: JSContext
 
     private lateinit var file: File
     private lateinit var argv: Array<out String>
@@ -31,7 +30,6 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
         this.argv = argv
         Thread({
             Process.setThreadPriority(THREAD_PRIORITY_FOREGROUND)
-            // val exitCode = start(arrayOf(file.absolutePath, *argv))
             val exitCode = nativeStart()
             eventOnExit(exitCode)
         }, "knode").start()
@@ -39,14 +37,6 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
 
     fun addEventListener(listener: EventListener) = synchronized(this) {
         listeners.add(listener)
-        // val ctx = context.get()
-        // if (isActive() && ctx != null) {
-        //     ctx.sync(Runnable {
-        //         if (isActive()) {
-        //             listener.onNodeBooted(ctx)
-        //         }
-        //     })
-        // }
     }
 
     /**
@@ -63,8 +53,8 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
      * state.
      * @return true if active, false otherwise
      */
-    fun isActive(): Boolean {
-        return active && context.get() != null
+    private fun isActive(): Boolean {
+        return active && ::context.isInitialized
     }
 
     /**
@@ -72,9 +62,8 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
      * @param exitCode The exit code
      */
     fun exit(exitCode: Int) {
-        val ctx = context.get()
-        if (isActive() && ctx != null) {
-            ctx.eval("process.exit($exitCode);")
+        if (isActive() && ::context.isInitialized) {
+            context.eval("process.exit($exitCode);")
         }
     }
 
@@ -102,8 +91,9 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
 
     @Suppress("unused")
     private fun onBeforeStart(context: JSContext) {
+        this.context = context
         Log.i(TAG, "onBeforeStart: context.toString()=$context")
-        attachOutput(context)
+        attachStdOutput(context)
         val process: JSObject = context.get("process")
         val env: JSObject = process.get("env")
         val versions: JSObject = process.get("versions")
@@ -122,8 +112,7 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
             return@JSFunction JSString(context, "Hello World")
         }
         context.set("test", func)
-
-        eventOnBeforeStart(context)
+        eventOnPrepared(context)
         val cwdFunc: JSFunction = process.get("cwd")
         val cwdRet = cwdFunc.call(process)
         Log.w(TAG, "cwdRet=${cwdRet}")
@@ -138,38 +127,34 @@ fs.readFileSync('${file.absolutePath}'),
         context.eval(script, file.absolutePath, 0)
     }
 
-    private fun attachOutput(context: JSObject) {
+    private fun attachStdOutput(context: JSContext) {
         val process: JSObject = context.get("process")
         val stdout: JSObject = process.get("stdout")
-//        stdout.property("write", object : JSFunction(stdout.context, "write") {
-//            @jsexport
-//            @Suppress("unused")
-//            fun write(string: String) {
-//                output.stdout(string)
-//            }
-//        })
-//
-//        val stderr = process.property("stderr").toObject()
-//        stderr.property("write", object : JSFunction(stderr.context, "write") {
-//            @jsexport
-//            fun write(string: String) {
-//                output.stderr(string)
-//            }
-//        })
+        stdout.set("write", object : JSFunction(context, "write") {
+            override fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
+                output.stdout(parameters[0].toString())
+                return null
+            }
+        })
+        val stderr: JSObject = process.get("stderr")
+        stderr.set("write", object : JSFunction(context, "write") {
+            override fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
+                output.stderr(parameters[0].toString())
+                return null
+            }
+        })
     }
 
     @Suppress("unused")
     private fun onBeforeExit(exitCode: Int) {
         active = false
-        context = WeakReference<JSContext>(null)
         done = true
         nativeDispose()
-
         eventOnExit(exitCode)
     }
 
-    private fun eventOnBeforeStart(context: JSContext) {
-        Log.i(TAG, "eventOnBeforeStart")
+    private fun eventOnPrepared(context: JSContext) {
+        Log.i(TAG, "eventOnPrepared")
         listeners.forEach { it.onNodePrepared(context) }
     }
 
@@ -211,15 +196,6 @@ fs.readFileSync('${file.absolutePath}'),
 
         private val engineVersions = HashMap<String, String>()
         private val envs = HashMap<String, String>()
-        //
-        // @Suppress("unused")
-        // const val kMediaAccessPermissionsNone = 0
-        // @Suppress("unused")
-        // const val kMediaAccessPermissionsRead = 1
-        // @Suppress("unused")
-        // const val kMediaAccessPermissionsWrite = 2
-        // @Suppress("unused")
-        // const val kMediaAccessPermissionsRW = 3
 
         init {
             System.loadLibrary("knode")

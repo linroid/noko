@@ -1,35 +1,29 @@
 package com.linroid.knode.js
 
-import com.google.gson.JsonElement
-import java.lang.reflect.Method
+import com.google.gson.JsonObject
 
 /**
  * @author linroid
  * @since 2019-10-19
  */
-open class JSObject(context: JSContext?, reference: Long) : JSValue(context, reference) {
+open class JSObject : JSValue {
 
-    constructor(context: JSContext?) : this(context, 0) {
+    protected constructor(context: JSContext?, reference: Long) : super(context, reference)
+
+    constructor(context: JSContext) : this(context, 0) {
+        nativeInit()
+    }
+
+    constructor(context: JSContext, data: JsonObject) : this(context, 0) {
+        nativeInit()
     }
 
     fun has(key: String): Boolean {
         return nativeHas(key)
     }
 
-    fun set(key: String, value: JSValue?) {
-        nativeSet(key, value)
-    }
-
-    fun set(key: String, value: String) {
-        set(key, JSString(context, value))
-    }
-
-    fun set(key: String, value: Int) {
-        set(key, JSNumber(context, value))
-    }
-
-    fun set(key: String, json: JsonElement) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun set(key: String, value: Any) {
+        nativeSet(key, from(context, value))
     }
 
     fun <T : JSValue> get(key: String): T {
@@ -66,4 +60,5 @@ open class JSObject(context: JSContext?, reference: Long) : JSValue(context, ref
     private external fun nativeHas(key: String): Boolean
     private external fun nativeGet(key: String): JSValue
     private external fun nativeSet(key: String, value: JSValue?)
+    private external fun nativeInit()
 }

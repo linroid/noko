@@ -26,6 +26,7 @@ jint JSValue::OnLoad(JNIEnv *env) {
     JNINativeMethod methods[] = {
             {"nativeToString", "()Ljava/lang/String;", (void *) JSValue::ToString},
             {"nativeToJson",   "()Ljava/lang/String;", (void *) JSValue::ToJson},
+            {"nativeDispose",  "()V",                  (void *) JSValue::Dispose},
     };
 
     int rc = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
@@ -82,4 +83,13 @@ v8::Local<v8::Value> JSValue::GetV8Value(JNIEnv *env, v8::Isolate *isolate, jobj
 
 JNIClass &JSValue::Class() {
     return valueClass;
+}
+
+void JSValue::Dispose(JNIEnv *env, jobject thiz) {
+    auto runtime = JSContext::Runtime(env, thiz);
+    v8::Locker locker_(runtime->isolate);
+    jlong reference_ = JSValue::GetReference(env, thiz);
+    auto persistent = reinterpret_cast<v8::Persistent<v8::Value> *>(reference_);
+    persistent->Reset();
+    JSValue::SetReference(env, thiz, 0);
 }

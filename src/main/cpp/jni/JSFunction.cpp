@@ -6,6 +6,7 @@
 #include "macros.h"
 #include "JSValue.h"
 #include "JSContext.h"
+#include "JSString.h"
 
 JNIClass functionClass;
 
@@ -13,7 +14,9 @@ jmethodID functionOnCallMethod;
 
 jobject JSFunction::New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
-    return env->NewObject(functionClass.clazz, functionClass.constructor, runtime->javaContext, reference);
+    auto func = value.As<v8::Function>();
+    auto name = func->GetConstructorName();
+    return env->NewObject(functionClass.clazz, functionClass.constructor, runtime->javaContext, reference, JSString::Value(env, name));
 }
 
 jint JSFunction::OnLoad(JNIEnv *env) {
@@ -27,7 +30,7 @@ jint JSFunction::OnLoad(JNIEnv *env) {
             {"nativeInit", "()V",                                                                                           (void *) JSFunction::Init},
     };
     functionClass.clazz = (jclass) env->NewGlobalRef(clazz);
-    functionClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
+    functionClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;Ljava/lang/String;J)V");
     functionOnCallMethod = env->GetMethodID(clazz, "onCall",
                                             "(Lcom/linroid/knode/js/JSValue;[Lcom/linroid/knode/js/JSValue;)Lcom/linroid/knode/js/JSValue;");
     env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
@@ -80,7 +83,7 @@ public:
             v8::Local<v8::Value> element = info[i];
             env->SetObjectArrayElement(parameters, i, runtime->Wrap(env, element));
         }
-        auto caller = (v8::Local<v8::Value>)info.This();
+        auto caller = (v8::Local<v8::Value>) info.This();
         auto j_ret = env->CallObjectMethod(that, methodId, runtime->Wrap(env, caller), parameters);
         if (j_ret != 0) {
             auto ret = JSValue::GetV8Value(env, runtime->isolate, j_ret);

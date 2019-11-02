@@ -16,6 +16,8 @@ public:
 
     JNICALL static jstring ToJson(JNIEnv *env, jobject thiz);
 
+    JNICALL static void Dispose(JNIEnv *env, jobject thiz);
+
     static jint OnLoad(JNIEnv *env);
 
     static JNIClass& Class();

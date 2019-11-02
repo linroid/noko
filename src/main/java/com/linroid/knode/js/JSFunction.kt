@@ -11,9 +11,9 @@ open class JSFunction : JSObject {
     private val callable: Callable?
     private val name: String
 
-    constructor(context: JSContext, reference: Long) : super(context, reference) {
-        callable = null
-        name = ""
+    constructor(context: JSContext, name: String, reference: Long) : super(context, reference) {
+        this.callable = null
+        this.name = name
     }
 
     constructor(context: JSContext, name: String, callable: Callable? = null) : super(context, 0) {
@@ -29,12 +29,9 @@ open class JSFunction : JSObject {
         return null
     }
 
-//    fun call(receiver: JSValue, vararg parameters: JSValue): JSValue? {
-//        return nativeCall(receiver, parameters)
-//    }
-
     fun call(receiver: JSValue, vararg parameters: Any): JSValue? {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val v8Parameters = Array(parameters.size) { from(context, parameters[it]) }
+        return nativeCall(receiver, v8Parameters)
     }
 
     private external fun nativeCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue?

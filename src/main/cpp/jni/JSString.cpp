@@ -44,9 +44,9 @@ jstring JSString::Empty(JNIEnv *env) {
     return env->NewStringUTF(str.c_str());
 }
 
-jobject JSString::New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {
+jobject JSString::New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::String> &value) {
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
-    return env->NewObject(stringClass.clazz, stringClass.constructor, runtime->javaContext, reference, value->BooleanValue());
+    return env->NewObject(stringClass.clazz, stringClass.constructor, runtime->javaContext, reference, JSString::Value(env, value));
 }
 
 void JSString::Init(JNIEnv *env, jobject thiz, jstring content) {
@@ -54,4 +54,9 @@ void JSString::Init(JNIEnv *env, jobject thiz, jstring content) {
     auto value = JSString::ToV8(env, runtime->isolate, content);
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
     JSValue::SetReference(env, thiz, (jlong) reference);
+}
+
+jstring JSString::Value(JNIEnv *env, v8::Local<v8::String> &value) {
+    v8::String::Value unicodeString(value);
+    return env->NewString(*unicodeString, unicodeString.length());
 }

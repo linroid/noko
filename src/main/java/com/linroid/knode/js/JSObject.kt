@@ -22,7 +22,7 @@ open class JSObject : JSValue {
         return nativeHas(key)
     }
 
-    fun set(key: String, value: Any) {
+    fun set(key: String, value: Any?) {
         nativeSet(key, from(context, value))
     }
 

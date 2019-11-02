@@ -162,7 +162,8 @@ jobject NodeRuntime::Wrap(JNIEnv *env, v8::Local<v8::Value> &value) {
         }
         return JSObject::New(env, this, value);
     } else if (value->IsString()) {
-        return JSString::New(env, this, value);
+        auto casted = value.As<v8::String>();
+        return JSString::New(env, this, casted);
     }
     return JSValue::New(env, this, value);
 }

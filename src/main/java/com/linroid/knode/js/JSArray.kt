@@ -11,7 +11,7 @@ class JSArray : JSObject, MutableList<JSValue> {
     constructor(context: JSContext, data: Iterator<*>) : super(context, 0) {
         nativeInit()
         data.forEach {
-            add(context.from(it))
+            add(from(context, it))
         }
     }
 

@@ -50,20 +50,20 @@ NodeRuntime *JSContext::GetRuntime(JNIEnv *env, jobject javaObject) {
     return reinterpret_cast<NodeRuntime *>(runtimePtr);
 }
 
-jobject JSContext::Get(JNIEnv *env, jobject thiz, jstring key) {
+jobject JSContext::Get(JNIEnv *env, jobject jthis, jstring key) {
     return nullptr;
 }
 
-jobject JSContext::Get(JNIEnv *env, jobject thiz, jstring key, jobject value) {
+jobject JSContext::Get(JNIEnv *env, jobject jthis, jstring key, jobject value) {
     return nullptr;
 }
 
-jlong JSContext::Bind(JNIEnv *env, jobject thiz, jlong contextPtr) {
+jlong JSContext::Bind(JNIEnv *env, jobject jthis, jlong contextPtr) {
     return 0;
 }
 
-jobject JSContext::Eval(JNIEnv *env, jstring thiz, jstring jcode, jstring jsource, jint jline) {
-    V8_ENV(env, thiz, v8::Object)
+jobject JSContext::Eval(JNIEnv *env, jstring jthis, jstring jcode, jstring jsource, jint jline) {
+    V8_ENV(env, jthis, v8::Object)
     v8::TryCatch tryCatch(runtime->isolate);
     v8::ScriptOrigin scriptOrigin(JSString::From(env, runtime->isolate, jsource),
                                   v8::Integer::New(runtime->isolate, jline));

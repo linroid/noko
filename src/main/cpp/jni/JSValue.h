@@ -12,11 +12,11 @@ class JSValue {
 public:
     static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value);
 
-    JNICALL static jstring ToString(JNIEnv *env, jobject thiz);
+    JNICALL static jstring ToString(JNIEnv *env, jobject jthis);
 
-    JNICALL static jstring ToJson(JNIEnv *env, jobject thiz);
+    JNICALL static jstring ToJson(JNIEnv *env, jobject jthis);
 
-    JNICALL static void Dispose(JNIEnv *env, jobject thiz);
+    JNICALL static void Dispose(JNIEnv *env, jobject jthis);
 
     static jint OnLoad(JNIEnv *env);
 

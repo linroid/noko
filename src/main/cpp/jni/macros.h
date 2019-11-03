@@ -7,17 +7,17 @@
 
 #include "v8.h"
 
-#define V8_ENV(env, thiz, type) \
-    auto runtime = JSContext::GetRuntime(env, thiz); \
+#define V8_ENV(env, jthis, type) \
+    auto runtime = JSContext::GetRuntime(env, jthis); \
     v8::Locker locker_(runtime->isolate); \
     v8::HandleScope handleScope_(runtime->isolate); \
     auto context = runtime->context.Get(runtime->isolate); \
-    jlong reference_ = JSValue::GetReference(env, thiz); \
+    jlong reference_ = JSValue::GetReference(env, jthis); \
     auto persistent = reinterpret_cast<v8::Persistent<type> *>(reference_); \
     auto that = v8::Local<type>::New(runtime->isolate, *persistent);
 //
-// #define V8_ENV(env, thiz) \
-//     auto runtime = JSContext::Runtime(env, thiz); \
+// #define V8_ENV(env, jthis) \
+//     auto runtime = JSContext::Runtime(env, jthis); \
 //     v8::Locker locker_(runtime->isolate); \
 //     v8::HandleScope handleScope_(runtime->isolate); \
 //     auto context = runtime->context.Get(runtime->isolate); \

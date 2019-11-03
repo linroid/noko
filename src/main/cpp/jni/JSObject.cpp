@@ -19,15 +19,15 @@ jobject JSObject::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &
     return env->NewObject(objectClass.clazz, objectClass.constructor, runtime->javaContext, (jlong) reference);
 }
 
-JNICALL void JSObject::Set(JNIEnv *env, jobject thiz, jstring j_key, jobject j_value) {
-    V8_ENV(env, thiz, v8::Object)
+JNICALL void JSObject::Set(JNIEnv *env, jobject jthis, jstring j_key, jobject j_value) {
+    V8_ENV(env, jthis, v8::Object)
     auto target = reinterpret_cast<v8::Persistent<v8::Value> *>(JSValue::GetReference(env, j_value));
     v8::Local<v8::String> key = JSString::From(env, runtime->isolate, j_key);
     that->Set(key, target->Get(runtime->isolate));
 }
 
-JNICALL jobject JSObject::Get(JNIEnv *env, jobject thiz, jstring j_key) {
-    V8_ENV(env, thiz, v8::Object)
+JNICALL jobject JSObject::Get(JNIEnv *env, jobject jthis, jstring j_key) {
+    V8_ENV(env, jthis, v8::Object)
     v8::Local<v8::String> key = JSString::From(env, runtime->isolate, j_key);
     auto result = that->Get(key);
     if (result->IsUndefined()) {

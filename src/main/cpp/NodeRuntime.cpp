@@ -41,7 +41,7 @@ void NodeRuntime::OnPrepared() {
     if (stat == JNI_EDETACHED) {
         vm->AttachCurrentThread(&env, nullptr);
     }
-    env->CallVoidMethod(thiz, onBeforeStart, javaContext);
+    env->CallVoidMethod(jthis, onBeforeStart, javaContext);
     if (stat == JNI_EDETACHED) {
         vm->DetachCurrentThread();
     }
@@ -125,10 +125,10 @@ void NodeRuntime::Dispose() {
     // v8_platform.Dispose();
 }
 
-NodeRuntime::NodeRuntime(JNIEnv *env, jobject thiz, jmethodID onBeforeStart, jmethodID onBeforeExit)
+NodeRuntime::NodeRuntime(JNIEnv *env, jobject jthis, jmethodID onBeforeStart, jmethodID onBeforeExit)
         : onBeforeStart(onBeforeStart), onBeforeExit(onBeforeExit) {
     env->GetJavaVM(&vm);
-    this->thiz = env->NewGlobalRef(thiz);
+    this->jthis = env->NewGlobalRef(jthis);
 }
 
 NodeRuntime::~NodeRuntime() {
@@ -137,7 +137,7 @@ NodeRuntime::~NodeRuntime() {
     if (stat == JNI_EDETACHED) {
         vm->AttachCurrentThread(&env, nullptr);
     }
-    env->DeleteGlobalRef(thiz);
+    env->DeleteGlobalRef(jthis);
     if (stat == JNI_EDETACHED) {
         vm->DetachCurrentThread();
     }

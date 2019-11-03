@@ -27,18 +27,18 @@ jobject JSFunction::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value>
     return env->NewObject(functionClass.clazz, functionClass.constructor, runtime->javaContext, reference, JSString::Value(env, name));
 }
 
-void JSFunction::New(JNIEnv *env, jobject thiz, jstring jname) {
-    auto runtime = JSContext::GetRuntime(env, thiz);
+void JSFunction::New(JNIEnv *env, jobject jthis, jstring jname) {
+    auto runtime = JSContext::GetRuntime(env, jthis);
     auto name = JSString::From(env, runtime->isolate, jname);
-    auto data = v8::External::New(runtime->isolate, new JavaCallback(runtime, env, thiz, functionClass.clazz, functionOnCallMethod));
+    auto data = v8::External::New(runtime->isolate, new JavaCallback(runtime, env, jthis, functionClass.clazz, functionOnCallMethod));
     auto func = v8::FunctionTemplate::New(runtime->isolate, staticCallback, data)->GetFunction();
     func->SetName(name);
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, func);
-    JSValue::SetReference(env, thiz, (jlong) reference);
+    JSValue::SetReference(env, jthis, (jlong) reference);
 }
 
-jobject JSFunction::Call(JNIEnv *env, jobject thiz, jobject j_recv, jobjectArray j_parameters) {
-    V8_ENV(env, thiz, v8::Function)
+jobject JSFunction::Call(JNIEnv *env, jobject jthis, jobject j_recv, jobjectArray j_parameters) {
+    V8_ENV(env, jthis, v8::Function)
     int argc = env->GetArrayLength(j_parameters);
     v8::Local<v8::Value> *argv = new v8::Local<v8::Value>[argc];
     for (int i = 0; i < argc; ++i) {

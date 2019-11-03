@@ -11,7 +11,7 @@
 
 class JSString {
 public:
-    JNICALL static void New(JNIEnv *env, jobject thiz, jstring content);
+    JNICALL static void New(JNIEnv *env, jobject jthis, jstring content);
 
     static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::String> &value);
 
@@ -21,7 +21,7 @@ public:
     static v8::Local<v8::String> From(JNIEnv *env, v8::Isolate *isolate, jstring &string);
 
     static jstring Value(JNIEnv *env, v8::Local<v8::String> &value);
-    
+
     static jint OnLoad(JNIEnv *env);
 };
 

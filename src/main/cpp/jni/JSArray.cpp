@@ -8,8 +8,8 @@
 
 static JNIClass arrayClass;
 
-jint JSArray::Size(JNIEnv *env, jobject thiz) {
-    V8_ENV(env, thiz, v8::Array)
+jint JSArray::Size(JNIEnv *env, jobject jthis) {
+    V8_ENV(env, jthis, v8::Array)
     // auto array = v8::Local<v8::Array>::Cast(value);
     return that->Length();
 }

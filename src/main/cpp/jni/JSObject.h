@@ -16,9 +16,9 @@ public:
 
     static jint OnLoad(JNIEnv *env);
 
-    static JNICALL jobject Get(JNIEnv *env, jobject thiz, jstring key);
+    static JNICALL jobject Get(JNIEnv *env, jobject jthis, jstring key);
 
-    static JNICALL void Set(JNIEnv *env, jobject thiz, jstring key, jobject);
+    static JNICALL void Set(JNIEnv *env, jobject jthis, jstring key, jobject);
 };
 
 #endif //NODE_JSOBJECT_H

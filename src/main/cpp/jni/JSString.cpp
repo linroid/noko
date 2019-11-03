@@ -44,11 +44,11 @@ jobject JSString::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::String> 
     return env->NewObject(stringClass.clazz, stringClass.constructor, runtime->javaContext, reference, JSString::Value(env, value));
 }
 
-void JSString::New(JNIEnv *env, jobject thiz, jstring content) {
-    auto runtime = JSContext::GetRuntime(env, thiz);
+void JSString::New(JNIEnv *env, jobject jthis, jstring content) {
+    auto runtime = JSContext::GetRuntime(env, jthis);
     auto value = JSString::From(env, runtime->isolate, content);
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
-    JSValue::SetReference(env, thiz, (jlong) reference);
+    JSValue::SetReference(env, jthis, (jlong) reference);
 }
 
 jstring JSString::Value(JNIEnv *env, v8::Local<v8::String> &value) {

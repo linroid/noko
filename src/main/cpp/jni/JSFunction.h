@@ -14,8 +14,8 @@ public:
 
     static jint OnLoad(JNIEnv *env);
 
-    JNICALL static void New(JNIEnv *env, jobject thiz, jstring jname);
+    JNICALL static void New(JNIEnv *env, jobject jthis, jstring jname);
 
-    JNICALL static jobject Call(JNIEnv *env, jobject thiz, jobject j_recv, jobjectArray j_parameters);
+    JNICALL static jobject Call(JNIEnv *env, jobject jthis, jobject j_recv, jobjectArray j_parameters);
 };
 #endif //DORA_JSFUNCTION_H

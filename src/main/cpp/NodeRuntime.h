@@ -22,7 +22,7 @@ struct JNIClass {
 
 class NodeRuntime {
 private:
-    jobject thiz;
+    jobject jthis;
     jmethodID onBeforeStart;
     jmethodID onBeforeExit;
     JavaVM *vm = nullptr;
@@ -41,7 +41,7 @@ public:
     node::IsolateData *isolateData;
     uv_loop_t *uvLoop;
 
-    NodeRuntime(JNIEnv *env, jobject thiz, jmethodID onBeforeStart, jmethodID onBeforeExit);
+    NodeRuntime(JNIEnv *env, jobject jthis, jmethodID onBeforeStart, jmethodID onBeforeExit);
 
     ~NodeRuntime();
 

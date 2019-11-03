@@ -51,8 +51,8 @@ jobject JSValue::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &v
     return env->NewObject(valueClass.clazz, valueClass.constructor, runtime->javaContext, reference);
 }
 
-jstring JSValue::ToString(JNIEnv *env, jobject thiz) {
-    V8_ENV(env, thiz, v8::Value)
+jstring JSValue::ToString(JNIEnv *env, jobject jthis) {
+    V8_ENV(env, jthis, v8::Value)
     v8::MaybeLocal<v8::String> str = that->ToString(context);
     if (str.IsEmpty()) {
         const char *bytes = new char[0];
@@ -62,8 +62,8 @@ jstring JSValue::ToString(JNIEnv *env, jobject thiz) {
     return env->NewString(*unicodeString, unicodeString.length());
 }
 
-jstring JSValue::ToJson(JNIEnv *env, jobject thiz) {
-    V8_ENV(env, thiz, v8::Value)
+jstring JSValue::ToJson(JNIEnv *env, jobject jthis) {
+    V8_ENV(env, jthis, v8::Value)
     auto str = v8::JSON::Stringify(context, that);
     if (str.IsEmpty()) {
         const char *bytes = new char[0];
@@ -81,11 +81,11 @@ v8::Local<v8::Value> JSValue::GetReference(JNIEnv *env, v8::Isolate *isolate, jo
     return handleScope.Escape(that);
 }
 
-void JSValue::Dispose(JNIEnv *env, jobject thiz) {
-    auto runtime = JSContext::GetRuntime(env, thiz);
+void JSValue::Dispose(JNIEnv *env, jobject jthis) {
+    auto runtime = JSContext::GetRuntime(env, jthis);
     v8::Locker locker_(runtime->isolate);
-    jlong reference_ = JSValue::GetReference(env, thiz);
+    jlong reference_ = JSValue::GetReference(env, jthis);
     auto persistent = reinterpret_cast<v8::Persistent<v8::Value> *>(reference_);
     persistent->Reset();
-    JSValue::SetReference(env, thiz, 0);
+    JSValue::SetReference(env, jthis, 0);
 }

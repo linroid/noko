@@ -82,9 +82,9 @@ int start_redirecting_stdout_stderr() {
 }
 
 
-JNICALL jint start(JNIEnv *env, jobject thiz) {
+JNICALL jint start(JNIEnv *env, jobject jthis) {
     LOGD("start");
-    jlong ptr = env->GetLongField(thiz, nodeClass.ptr);
+    jlong ptr = env->GetLongField(jthis, nodeClass.ptr);
     // auto argc = env->GetArrayLength(j_args);
     // auto args = std::vector<const uint16_t *>(argc);
     // for (int i = 0; i < argc; ++i) {
@@ -98,15 +98,15 @@ JNICALL jint start(JNIEnv *env, jobject thiz) {
     return jint(node->Start());
 }
 
-JNICALL void setFs(JNIEnv *env, jobject thiz, jlong fsPtr) {
+JNICALL void setFs(JNIEnv *env, jobject jthis, jlong fsPtr) {
     LOGD("setFs");
-    jlong ptr = env->GetLongField(thiz, nodeClass.ptr);
+    jlong ptr = env->GetLongField(jthis, nodeClass.ptr);
     auto node = reinterpret_cast<NodeRuntime *>(ptr);
 }
 
-JNICALL void dispose(JNIEnv *env, jobject thiz) {
+JNICALL void dispose(JNIEnv *env, jobject jthis) {
     LOGD("dispose");
-    jlong ptr = env->GetLongField(thiz, nodeClass.ptr);
+    jlong ptr = env->GetLongField(jthis, nodeClass.ptr);
     if (ptr == 0) {
         LOGE("dispose but ptr is 0");
         return;
@@ -114,12 +114,12 @@ JNICALL void dispose(JNIEnv *env, jobject thiz) {
     auto node = reinterpret_cast<NodeRuntime *>(ptr);
     node->Dispose();
     delete node;
-    env->SetLongField(thiz, nodeClass.ptr, 0);
+    env->SetLongField(jthis, nodeClass.ptr, 0);
 }
 
-JNICALL jlong nativeNew(JNIEnv *env, jobject thiz) {
+JNICALL jlong nativeNew(JNIEnv *env, jobject jthis) {
     LOGD("nativeNew");
-    auto *node = new NodeRuntime(env, thiz, nodeClass.onBeforeStart,
+    auto *node = new NodeRuntime(env, jthis, nodeClass.onBeforeStart,
                                  nodeClass.onBeforeExit);
     return reinterpret_cast<jlong>(node);
 }

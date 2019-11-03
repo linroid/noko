@@ -14,15 +14,15 @@ public:
 
     static jobject Wrap(JNIEnv *env, NodeRuntime *runtime);
 
-    static JNICALL jobject Get(JNIEnv *env, jobject thiz, jstring key);
+    static JNICALL jobject Get(JNIEnv *env, jobject jthis, jstring key);
 
-    static JNICALL jobject Get(JNIEnv *env, jobject thiz, jstring key, jobject value);
+    static JNICALL jobject Get(JNIEnv *env, jobject jthis, jstring key, jobject value);
 
-    static JNICALL jlong Bind(JNIEnv *env, jobject thiz, jlong contextPtr);
+    static JNICALL jlong Bind(JNIEnv *env, jobject jthis, jlong contextPtr);
 
-    static JNICALL jobject ParseJSON(JNIEnv *env, jstring thiz, jstring str);
+    static JNICALL jobject ParseJSON(JNIEnv *env, jstring jthis, jstring str);
 
-    static JNICALL jobject Eval(JNIEnv *env, jstring thiz, jstring jcode, jstring jsource, jint jline);
+    static JNICALL jobject Eval(JNIEnv *env, jstring jthis, jstring jcode, jstring jsource, jint jline);
 
     static jint OnLoad(JNIEnv *env);
 };

@@ -22,6 +22,8 @@ public:
 
     static jint OnLoad(JNIEnv *env);
 
+    static jclass & JVMClass();
+
     static jobject GetContext(JNIEnv *env, jobject jobj);
 
     static jlong GetReference(JNIEnv *env, jobject jobj);

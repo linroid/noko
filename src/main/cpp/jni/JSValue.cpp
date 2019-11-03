@@ -96,3 +96,7 @@ void JSValue::Dispose(JNIEnv *env, jobject jthis) {
     persistent->Reset();
     JSValue::SetReference(env, jthis, 0);
 }
+
+jclass &JSValue::JVMClass() {
+    return valueClass.clazz;
+}

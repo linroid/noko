@@ -8,6 +8,7 @@ import com.google.gson.JsonObject
  */
 open class JSObject : JSValue {
 
+    @NativeConstructor
     protected constructor(context: JSContext?, reference: Long) : super(context, reference)
 
     constructor(context: JSContext) : this(context, 0) {

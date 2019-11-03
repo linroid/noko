@@ -6,6 +6,7 @@ package com.linroid.knode.js
  */
 class JSArray : JSObject, MutableList<JSValue> {
 
+    @NativeConstructor
     private constructor(context: JSContext, reference: Long) : super(context, reference)
 
     constructor(context: JSContext, data: Iterator<*>) : super(context, 0) {

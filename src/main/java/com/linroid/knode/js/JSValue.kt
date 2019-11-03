@@ -2,15 +2,19 @@ package com.linroid.knode.js
 
 import com.google.gson.JsonObject
 import java.io.Closeable
+import java.lang.annotation.Native
 
 /**
  * @author linroid
  * @since 2019-10-19
  */
-open class JSValue(context: JSContext?, protected val reference: Long) : Closeable {
+open class JSValue(
+    context: JSContext?,
+    @Native protected val reference: Long
+) : Closeable {
+
     @Suppress("LeakingThis")
     val context: JSContext = context ?: this as JSContext
-
 
     override fun toString(): String {
         return nativeToString()

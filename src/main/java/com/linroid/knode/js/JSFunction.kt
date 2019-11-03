@@ -9,17 +9,16 @@ typealias Callable = (receiver: JSValue, parameters: Array<out JSValue>) -> JSVa
 open class JSFunction : JSObject {
 
     private val callable: Callable?
-    private val name: String
 
-    constructor(context: JSContext, reference: Long, name: String) : super(context, reference) {
+    @NativeConstructor
+    private constructor(context: JSContext, reference: Long) : super(context, reference) {
         this.callable = null
-        this.name = name
     }
 
-    constructor(context: JSContext, name: String, callable: Callable? = null) : super(context, 0) {
+    constructor(context: JSContext, name: String, owner: JSObject, callable: Callable? = null) : super(context, 0) {
         this.callable = callable
-        this.name = name
-        nativeNew()
+        nativeNew(name)
+        context.hold(this)
     }
 
     protected open fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
@@ -35,5 +34,5 @@ open class JSFunction : JSObject {
     }
 
     private external fun nativeCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue?
-    private external fun nativeNew()
+    private external fun nativeNew(name: String)
 }

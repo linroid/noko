@@ -19,7 +19,7 @@ jint JSString::OnLoad(JNIEnv *env) {
     stringClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
 
     JNINativeMethod methods[] = {
-            {"nativeInit", "(Ljava/lang/String;)V", (void *) JSString::Init},
+            {"nativeNew", "(Ljava/lang/String;)V", (void *) JSString::New},
     };
 
     int rc = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
@@ -30,7 +30,7 @@ jint JSString::OnLoad(JNIEnv *env) {
     return JNI_OK;
 }
 
-v8::Local<v8::String> JSString::ToV8(JNIEnv *env, v8::Isolate *isolate, jstring &string) {
+v8::Local<v8::String> JSString::From(JNIEnv *env, v8::Isolate *isolate, jstring &string) {
     const uint16_t *unicodeString = env->GetStringChars(string, nullptr);
     int length = env->GetStringLength(string);
     v8::EscapableHandleScope handleScope(isolate);
@@ -39,19 +39,14 @@ v8::Local<v8::String> JSString::ToV8(JNIEnv *env, v8::Isolate *isolate, jstring 
     return handleScope.Escape(result);
 }
 
-jstring JSString::Empty(JNIEnv *env) {
-    std::string str;
-    return env->NewStringUTF(str.c_str());
-}
-
-jobject JSString::New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::String> &value) {
+jobject JSString::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::String> &value) {
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
     return env->NewObject(stringClass.clazz, stringClass.constructor, runtime->javaContext, reference, JSString::Value(env, value));
 }
 
-void JSString::Init(JNIEnv *env, jobject thiz, jstring content) {
-    auto runtime = JSContext::Runtime(env, thiz);
-    auto value = JSString::ToV8(env, runtime->isolate, content);
+void JSString::New(JNIEnv *env, jobject thiz, jstring content) {
+    auto runtime = JSContext::GetRuntime(env, thiz);
+    auto value = JSString::From(env, runtime->isolate, content);
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
     JSValue::SetReference(env, thiz, (jlong) reference);
 }

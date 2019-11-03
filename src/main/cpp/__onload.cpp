@@ -117,15 +117,15 @@ JNICALL void dispose(JNIEnv *env, jobject thiz) {
     env->SetLongField(thiz, nodeClass.ptr, 0);
 }
 
-JNICALL jlong nativeInit(JNIEnv *env, jobject thiz) {
-    LOGD("nativeInit");
+JNICALL jlong nativeNew(JNIEnv *env, jobject thiz) {
+    LOGD("nativeNew");
     auto *node = new NodeRuntime(env, thiz, nodeClass.onBeforeStart,
                                  nodeClass.onBeforeExit);
     return reinterpret_cast<jlong>(node);
 }
 
 static JNINativeMethod nodeMethods[] = {
-        {"nativeInit",    "()J",  (void *) nativeInit},
+        {"nativeNew",    "()J",  (void *) nativeNew},
         {"nativeStart",   "()I",  (void *) start},
         {"nativeSetFs",   "(J)V", (void *) setFs},
         {"nativeDispose", "()V",  (void *) dispose},

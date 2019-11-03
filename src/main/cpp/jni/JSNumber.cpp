@@ -6,8 +6,9 @@
 
 JNIClass numberClass;
 
-jobject JSNumber::New(JNIEnv *env, NodeRuntime *runtime) {
-    return env->NewObject(numberClass.clazz, numberClass.constructor, reinterpret_cast<jlong>(runtime));
+jobject JSNumber::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Number> &value) {
+    auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
+    return env->NewObject(numberClass.clazz, numberClass.constructor, runtime->javaContext, reference);
 }
 
 jint JSNumber::OnLoad(JNIEnv *env) {

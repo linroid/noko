@@ -79,7 +79,7 @@ void NodeRuntime::onEnvReady(node::Environment *nodeEnv) {
     if (stat == JNI_EDETACHED) {
         vm->AttachCurrentThread(&env, nullptr);
     }
-    auto javaContext = JSContext::New(env, this);
+    auto javaContext = JSContext::Wrap(env, this);
     if (javaContext == nullptr) {
         throwError(env, "Failed to new JSContext instance");
     }
@@ -151,21 +151,22 @@ NodeRuntime *NodeRuntime::GetCurrent(const v8::FunctionCallbackInfo<v8::Value> &
 
 jobject NodeRuntime::Wrap(JNIEnv *env, v8::Local<v8::Value> &value) {
     if (value->IsUndefined()) {
-        return JSUndefined::New(env, this);
+        return JSUndefined::Wrap(env, this);
     } else if (value->IsBoolean()) {
-        return JSBoolean::New(env, this, value);
+        return JSBoolean::Wrap(env, this, value);
     } else if (value->IsNumber()) {
-        return JSNumber::New(env, this);
+        auto casted = value.As<v8::Number>();
+        return JSNumber::Wrap(env, this, casted);
     } else if (value->IsObject()) {
         if (value->IsFunction()) {
-            return JSFunction::New(env, this, value);
+            return JSFunction::Wrap(env, this, value);
         }
-        return JSObject::New(env, this, value);
+        return JSObject::Wrap(env, this, value);
     } else if (value->IsString()) {
         auto casted = value.As<v8::String>();
-        return JSString::New(env, this, casted);
+        return JSString::Wrap(env, this, casted);
     }
-    return JSValue::New(env, this, value);
+    return JSValue::Wrap(env, this, value);
 }
 
 void NodeRuntime::throwJSError(JNIEnv *env, v8::TryCatch &tryCatch) {

@@ -6,7 +6,7 @@
 
 JNIClass nullClass;
 
-jobject JSNull::New(JNIEnv *env, NodeRuntime *runtime) {
+jobject JSNull::Wrap(JNIEnv *env, NodeRuntime *runtime) {
     return env->NewObject(nullClass.clazz, nullClass.constructor, runtime->javaContext);
 }
 

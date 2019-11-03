@@ -15,7 +15,7 @@
 JNIClass contextClass;
 
 jint JSContext::OnLoad(JNIEnv *env) {
-    jclass clazz = env->FindClass(kContextClass);
+    jclass clazz = env->FindClass("com/linroid/knode/js/JSContext");
     if (clazz == nullptr) {
         return JNI_ERR;
     }
@@ -34,14 +34,14 @@ jint JSContext::OnLoad(JNIEnv *env) {
     return JNI_OK;
 }
 
-jobject JSContext::New(JNIEnv *env, NodeRuntime *runtime) {
+jobject JSContext::Wrap(JNIEnv *env, NodeRuntime *runtime) {
     return env->NewObject(contextClass.clazz,
                           contextClass.constructor,
                           reinterpret_cast<jlong>(runtime),
                           reinterpret_cast<jlong>(runtime->global));
 }
 
-NodeRuntime *JSContext::Runtime(JNIEnv *env, jobject javaObject) {
+NodeRuntime *JSContext::GetRuntime(JNIEnv *env, jobject javaObject) {
     jobject javaContext = JSValue::GetContext(env, javaObject);
     if (javaContext == nullptr) {
         javaContext = javaObject;
@@ -65,9 +65,9 @@ jlong JSContext::Bind(JNIEnv *env, jobject thiz, jlong contextPtr) {
 jobject JSContext::Eval(JNIEnv *env, jstring thiz, jstring jcode, jstring jsource, jint jline) {
     V8_ENV(env, thiz, v8::Object)
     v8::TryCatch tryCatch(runtime->isolate);
-    v8::ScriptOrigin scriptOrigin(JSString::ToV8(env, runtime->isolate, jsource),
+    v8::ScriptOrigin scriptOrigin(JSString::From(env, runtime->isolate, jsource),
                                   v8::Integer::New(runtime->isolate, jline));
-    auto code = JSString::ToV8(env, runtime->isolate, jcode);
+    auto code = JSString::From(env, runtime->isolate, jcode);
     auto script = v8::Script::Compile(context, code, &scriptOrigin);
     if (script.IsEmpty()) {
         auto message = tryCatch.Message()->Get();

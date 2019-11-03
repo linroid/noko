@@ -10,7 +10,7 @@
 
 class JSUndefined {
 public:
-    static jobject New(JNIEnv *env, NodeRuntime *runtime);
+    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime);
 
     static jint OnLoad(JNIEnv *env);
 };

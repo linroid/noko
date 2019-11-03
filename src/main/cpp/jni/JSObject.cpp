@@ -14,7 +14,7 @@
 
 JNIClass objectClass;
 
-jobject JSObject::New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {
+jobject JSObject::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
     return env->NewObject(objectClass.clazz, objectClass.constructor, runtime->javaContext, (jlong) reference);
 }
@@ -22,18 +22,18 @@ jobject JSObject::New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &v
 JNICALL void JSObject::Set(JNIEnv *env, jobject thiz, jstring j_key, jobject j_value) {
     V8_ENV(env, thiz, v8::Object)
     auto target = reinterpret_cast<v8::Persistent<v8::Value> *>(JSValue::GetReference(env, j_value));
-    v8::Local<v8::String> key = JSString::ToV8(env, runtime->isolate, j_key);
+    v8::Local<v8::String> key = JSString::From(env, runtime->isolate, j_key);
     that->Set(key, target->Get(runtime->isolate));
 }
 
 JNICALL jobject JSObject::Get(JNIEnv *env, jobject thiz, jstring j_key) {
     V8_ENV(env, thiz, v8::Object)
-    v8::Local<v8::String> key = JSString::ToV8(env, runtime->isolate, j_key);
+    v8::Local<v8::String> key = JSString::From(env, runtime->isolate, j_key);
     auto result = that->Get(key);
     if (result->IsUndefined()) {
-        return JSUndefined::New(env, runtime);
+        return JSUndefined::Wrap(env, runtime);
     } else if (result->IsNull()) {
-        return JSNull::New(env, runtime);
+        return JSNull::Wrap(env, runtime);
     }
     // LOGI("JSObject::Get value.isUndefined()=%d", that->IsUndefined());
     // v8::Local<v8::String> type = value->TypeOf(runtime->isolate);

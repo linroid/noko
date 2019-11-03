@@ -11,7 +11,7 @@
 
 class JSBoolean {
 public:
-    static jobject New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value);
+    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value);
 
     static jint OnLoad(JNIEnv *env);
 };

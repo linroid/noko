@@ -48,7 +48,7 @@ void JSValue::SetReference(JNIEnv *env, jobject javaObj, jlong value) {
     env->SetLongField(javaObj, valueClass.reference, value);
 }
 
-jobject JSValue::New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {
+jobject JSValue::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
     return env->NewObject(valueClass.clazz, valueClass.constructor, runtime->javaContext, reference);
 }
@@ -57,7 +57,8 @@ jstring JSValue::ToString(JNIEnv *env, jobject thiz) {
     V8_ENV(env, thiz, v8::Value)
     v8::MaybeLocal<v8::String> str = that->ToString(context);
     if (str.IsEmpty()) {
-        return JSString::Empty(env);
+        const char *bytes = new char[0];
+        return env->NewStringUTF(bytes);
     }
     v8::String::Value unicodeString(str.ToLocalChecked());
     return env->NewString(*unicodeString, unicodeString.length());
@@ -67,13 +68,14 @@ jstring JSValue::ToJson(JNIEnv *env, jobject thiz) {
     V8_ENV(env, thiz, v8::Value)
     auto str = v8::JSON::Stringify(context, that);
     if (str.IsEmpty()) {
-        return JSString::Empty(env);
+        const char *bytes = new char[0];
+        return env->NewStringUTF(bytes);
     }
     v8::String::Value unicodeString(str.ToLocalChecked());
     return env->NewString(*unicodeString, unicodeString.length());
 }
 
-v8::Local<v8::Value> JSValue::GetV8Value(JNIEnv *env, v8::Isolate *isolate, jobject javaObj) {
+v8::Local<v8::Value> JSValue::GetReference(JNIEnv *env, v8::Isolate *isolate, jobject javaObj) {
     v8::EscapableHandleScope handleScope(isolate);
     jlong reference = JSValue::GetReference(env, javaObj);
     auto persistent = reinterpret_cast<v8::Persistent<v8::Value> *>(reference);
@@ -86,7 +88,7 @@ JNIClass &JSValue::Class() {
 }
 
 void JSValue::Dispose(JNIEnv *env, jobject thiz) {
-    auto runtime = JSContext::Runtime(env, thiz);
+    auto runtime = JSContext::GetRuntime(env, thiz);
     v8::Locker locker_(runtime->isolate);
     jlong reference_ = JSValue::GetReference(env, thiz);
     auto persistent = reinterpret_cast<v8::Persistent<v8::Value> *>(reference_);

@@ -7,7 +7,7 @@
 
 JNIClass undefinedClass;
 
-jobject JSUndefined::New(JNIEnv *env, NodeRuntime *runtime) {
+jobject JSUndefined::Wrap(JNIEnv *env, NodeRuntime *runtime) {
     return env->NewObject(undefinedClass.clazz, undefinedClass.constructor, runtime->javaContext);
 }
 

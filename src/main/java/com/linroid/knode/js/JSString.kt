@@ -8,7 +8,7 @@ class JSString : JSValue {
     private constructor (context: JSContext, reference: Long) : super(context, reference)
 
     constructor(context: JSContext, content: String) : this(context, 0) {
-        nativeInit(content)
+        nativeNew(content)
     }
 
     override fun toInt(): Int {
@@ -23,5 +23,5 @@ class JSString : JSValue {
         return toString().toDouble()
     }
 
-    external fun nativeInit(content: String)
+    external fun nativeNew(content: String)
 }

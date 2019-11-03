@@ -15,7 +15,7 @@ import java.io.File
 @Keep
 class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
     @Suppress
-    private var ptr: Long = nativeInit()
+    private var ptr: Long = nativeNew()
 
     private val listeners = HashSet<EventListener>()
     private var active = false
@@ -173,7 +173,7 @@ fs.readFileSync('${file.absolutePath}'),
         listeners.forEach { it.onNodeError(error) }
     }
 
-    private external fun nativeInit(): Long
+    private external fun nativeNew(): Long
 
     private external fun nativeStart(): Int
 

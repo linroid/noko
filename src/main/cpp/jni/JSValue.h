@@ -10,7 +10,7 @@
 
 class JSValue {
 public:
-    static jobject New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value);
+    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value);
 
     JNICALL static jstring ToString(JNIEnv *env, jobject thiz);
 
@@ -20,15 +20,16 @@ public:
 
     static jint OnLoad(JNIEnv *env);
 
-    static JNIClass& Class();
+    static JNIClass &Class();
 
     static jobject GetContext(JNIEnv *env, jobject javaObj);
 
     static jlong GetReference(JNIEnv *env, jobject javaObj);
 
-    static v8::Local<v8::Value> GetV8Value(JNIEnv *env, v8::Isolate *isolate, jobject javaObj);
+    static v8::Local<v8::Value> GetReference(JNIEnv *env, v8::Isolate *isolate, jobject javaObj);
 
     static void SetReference(JNIEnv *env, jobject javaObj, jlong value);
+
 };
 
 #endif //NODE_JSVALUE_H

@@ -1,7 +1,6 @@
 package com.linroid.knode.js
 
 import com.google.gson.JsonObject
-import com.linroid.knode.BuildConfig
 import java.io.Closeable
 
 /**
@@ -61,12 +60,13 @@ open class JSValue(context: JSContext?, protected val reference: Long) : Closeab
 
     @Throws(Throwable::class)
     protected open fun finalize() {
-        if (BuildConfig.DEBUG) {
-            check(reference != 0L) { "No v8 object referenced" }
-        }
-        if (reference != 0L) {
-            nativeDispose()
-        }
+//        if (BuildConfig.DEBUG) {
+//            check(reference != 0L) { "No v8 object referenced" }
+//        }
+//        if (reference != 0L) {
+//            Log.i("JSValue", "nativeDispose: $reference")
+//            nativeDispose()
+//        }
     }
 
     override fun equals(other: Any?): Boolean {
@@ -77,6 +77,10 @@ open class JSValue(context: JSContext?, protected val reference: Long) : Closeab
             return nativeEquals(other)
         }
         return super.equals(other)
+    }
+
+    override fun hashCode(): Int {
+        return super.hashCode()
     }
 
     private external fun nativeEquals(other: JSValue): Boolean

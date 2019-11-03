@@ -9,7 +9,7 @@ class JSArray : JSObject, MutableList<JSValue> {
     private constructor(context: JSContext, reference: Long) : super(context, reference)
 
     constructor(context: JSContext, data: Iterator<*>) : super(context, 0) {
-        nativeInit()
+        nativeNew()
         data.forEach {
             add(from(context, it))
         }
@@ -104,5 +104,5 @@ class JSArray : JSObject, MutableList<JSValue> {
     private external fun nativeIndexOf(element: JSValue): Int
     private external fun nativeLastIndexOf(element: JSValue): Int
     private external fun nativeSize(): Int
-    private external fun nativeInit()
+    private external fun nativeNew()
 }

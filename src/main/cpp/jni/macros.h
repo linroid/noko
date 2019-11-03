@@ -8,7 +8,7 @@
 #include "v8.h"
 
 #define V8_ENV(env, thiz, type) \
-    auto runtime = JSContext::Runtime(env, thiz); \
+    auto runtime = JSContext::GetRuntime(env, thiz); \
     v8::Locker locker_(runtime->isolate); \
     v8::HandleScope handleScope_(runtime->isolate); \
     auto context = runtime->context.Get(runtime->isolate); \

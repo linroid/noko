@@ -8,13 +8,11 @@
 #include <jni.h>
 #include "../NodeRuntime.h"
 
-constexpr const char *kContextClass = "com/linroid/knode/js/JSContext";
-
 class JSContext {
 public:
-    static NodeRuntime *Runtime(JNIEnv *env, jobject javaObject);
+    static NodeRuntime *GetRuntime(JNIEnv *env, jobject javaObject);
 
-    static jobject New(JNIEnv *env, NodeRuntime *runtime);
+    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime);
 
     static JNICALL jobject Get(JNIEnv *env, jobject thiz, jstring key);
 

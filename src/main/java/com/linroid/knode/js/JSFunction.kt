@@ -11,7 +11,7 @@ open class JSFunction : JSObject {
     private val callable: Callable?
     private val name: String
 
-    constructor(context: JSContext, name: String, reference: Long) : super(context, reference) {
+    constructor(context: JSContext, reference: Long, name: String) : super(context, reference) {
         this.callable = null
         this.name = name
     }
@@ -19,7 +19,7 @@ open class JSFunction : JSObject {
     constructor(context: JSContext, name: String, callable: Callable? = null) : super(context, 0) {
         this.callable = callable
         this.name = name
-        nativeInit()
+        nativeNew()
     }
 
     protected open fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
@@ -35,5 +35,5 @@ open class JSFunction : JSObject {
     }
 
     private external fun nativeCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue?
-    private external fun nativeInit()
+    private external fun nativeNew()
 }

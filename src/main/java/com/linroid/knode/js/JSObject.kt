@@ -11,11 +11,11 @@ open class JSObject : JSValue {
     protected constructor(context: JSContext?, reference: Long) : super(context, reference)
 
     constructor(context: JSContext) : this(context, 0) {
-        nativeInit()
+        nativeNew()
     }
 
     constructor(context: JSContext, data: JsonObject) : this(context, 0) {
-        nativeInit()
+        nativeNew()
     }
 
     fun has(key: String): Boolean {
@@ -60,5 +60,5 @@ open class JSObject : JSValue {
     private external fun nativeHas(key: String): Boolean
     private external fun nativeGet(key: String): JSValue
     private external fun nativeSet(key: String, value: JSValue?)
-    private external fun nativeInit()
+    private external fun nativeNew()
 }

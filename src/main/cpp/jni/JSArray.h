@@ -13,7 +13,7 @@ class JSArray {
 public:
     JNICALL static jint Size(JNIEnv *env, jobject thiz);
 
-    static jobject New(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Array> &value);
+    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Array> &value);
 
     static jint OnLoad(JNIEnv *env);
 };

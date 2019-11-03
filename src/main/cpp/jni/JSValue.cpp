@@ -23,6 +23,7 @@ jint JSValue::OnLoad(JNIEnv *env) {
 
     JNINativeMethod methods[] = {
             {"nativeToString", "()Ljava/lang/String;", (void *) JSValue::ToString},
+            {"nativeTypeOf",   "()Ljava/lang/String;", (void *) JSValue::TypeOf},
             {"nativeToJson",   "()Ljava/lang/String;", (void *) JSValue::ToJson},
             {"nativeDispose",  "()V",                  (void *) JSValue::Dispose},
     };
@@ -60,6 +61,12 @@ jstring JSValue::ToString(JNIEnv *env, jobject jthis) {
     }
     v8::String::Value unicodeString(str.ToLocalChecked());
     return env->NewString(*unicodeString, unicodeString.length());
+}
+
+jstring JSValue::TypeOf(JNIEnv *env, jobject jthis) {
+    V8_ENV(env, jthis, v8::Value)
+    auto type = that->TypeOf(runtime->isolate);
+    return JSString::ToJava(env, type);
 }
 
 jstring JSValue::ToJson(JNIEnv *env, jobject jthis) {

@@ -15,7 +15,7 @@ open class JSFunction : JSObject {
         this.callable = null
     }
 
-    constructor(context: JSContext, name: String, owner: JSObject, callable: Callable? = null) : super(context, 0) {
+    constructor(context: JSContext, name: String, callable: Callable? = null) : super(context, 0) {
         this.callable = callable
         nativeNew(name)
         context.hold(this)

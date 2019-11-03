@@ -99,9 +99,9 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
         val versions: JSObject = process.get("versions")
         active = true
         env.set("PWD", pwd.absolutePath)
-        envs.forEach { env.set(it.key, it.value) }
+        environments.forEach { env.set(it.key, it.value) }
         process.set("argv0", "node")
-        engineVersions.forEach {
+        nodeVersions.forEach {
             versions.set(it.key, it.value)
         }
         val chdir: JSFunction = process.get("chdir")
@@ -183,30 +183,27 @@ fs.readFileSync('${file.absolutePath}'),
 
     interface EventListener {
         fun onNodePrepared(context: JSContext)
-
         fun onNodeFinished(exitCode: Int)
-
         fun onNodeExited(exitCode: Int)
-
         fun onNodeError(error: JSException)
     }
 
     companion object {
         private const val TAG = "KNode"
 
-        private val engineVersions = HashMap<String, String>()
-        private val envs = HashMap<String, String>()
+        private val nodeVersions = HashMap<String, String>()
+        private val environments = HashMap<String, String>()
 
         init {
             System.loadLibrary("knode")
         }
 
         fun setEnv(key: String, value: String) {
-            envs[key] = value
+            environments[key] = value
         }
 
         fun setEngine(name: String, version: String) {
-            engineVersions[name] = version
+            nodeVersions[name] = version
         }
     }
 }

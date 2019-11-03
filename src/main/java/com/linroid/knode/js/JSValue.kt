@@ -36,6 +36,10 @@ open class JSValue(
         return true
     }
 
+    fun typeOf(): String {
+        return nativeTypeOf()
+    }
+
     fun empty(): Boolean {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
@@ -76,6 +80,7 @@ open class JSValue(
     private external fun nativeEquals(other: JSValue): Boolean
     private external fun nativeToJson(): String
     private external fun nativeToString(): String
+    private external fun nativeTypeOf(): String
     private external fun nativeDispose()
 
     companion object {

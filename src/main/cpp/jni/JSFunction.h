@@ -10,7 +10,7 @@
 
 class JSFunction {
 public:
-    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value);
+    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Function> &value);
 
     static jint OnLoad(JNIEnv *env);
 

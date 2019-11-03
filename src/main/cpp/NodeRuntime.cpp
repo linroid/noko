@@ -93,7 +93,7 @@ void NodeRuntime::OnEnvReady(node::Environment *nodeEnv) {
 int NodeRuntime::Start() {
     // Make argv memory adjacent
     char cmd[40];
-    strcpy(cmd, "node -e global.__beforeStart();");
+    strcpy(cmd, "node -e __onPrepared();");
     int argc = 0;
     char *argv[32];
     char *p2 = strtok(cmd, " ");
@@ -159,7 +159,8 @@ jobject NodeRuntime::Wrap(JNIEnv *env, v8::Local<v8::Value> &value) {
         return JSNumber::Wrap(env, this, casted);
     } else if (value->IsObject()) {
         if (value->IsFunction()) {
-            return JSFunction::Wrap(env, this, value);
+            auto casted = value.As<v8::Function>();
+            return JSFunction::Wrap(env, this, casted);
         }
         return JSObject::Wrap(env, this, value);
     } else if (value->IsString()) {

@@ -14,13 +14,13 @@ public:
 
     JNICALL static jstring ToString(JNIEnv *env, jobject jthis);
 
+    JNICALL static jstring TypeOf(JNIEnv *env, jobject jthis);
+
     JNICALL static jstring ToJson(JNIEnv *env, jobject jthis);
 
     JNICALL static void Dispose(JNIEnv *env, jobject jthis);
 
     static jint OnLoad(JNIEnv *env);
-
-    static JNIClass &Class();
 
     static jobject GetContext(JNIEnv *env, jobject javaObj);
 

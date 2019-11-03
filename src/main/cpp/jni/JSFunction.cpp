@@ -20,11 +20,11 @@ void staticCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
     callback->Call(info);
 }
 
-jobject JSFunction::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {
+jobject JSFunction::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Function> &value) {
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
     auto func = value.As<v8::Function>();
-    auto name = func->GetName()->ToString();
-    return env->NewObject(functionClass.clazz, functionClass.constructor, runtime->javaContext, reference, JSString::Value(env, name));
+    auto name = func->GetName();
+    return env->NewObject(functionClass.clazz, functionClass.constructor, runtime->javaContext, reference, JSString::ToJava(env, name));
 }
 
 void JSFunction::New(JNIEnv *env, jobject jthis, jstring jname) {
@@ -66,11 +66,11 @@ jint JSFunction::OnLoad(JNIEnv *env) {
     }
 
     JNINativeMethod methods[] = {
-            {"nativeCall", "(Lcom/linroid/knode/js/JSValue;[Lcom/linroid/knode/js/JSValue;)Lcom/linroid/knode/js/JSValue;", (void *) (Call)},
-            {"nativeNew",  "()V",                                                                                           (void *) JSFunction::New},
+            {"nativeCall", "(Lcom/linroid/knode/js/JSValue;[Lcom/linroid/knode/js/JSValue;)Lcom/linroid/knode/js/JSValue;", (void *) JSFunction::Call},
+            {"nativeNew",  "(Ljava/lang/String;)V",                                                                         (void *) JSFunction::New},
     };
     functionClass.clazz = (jclass) env->NewGlobalRef(clazz);
-    functionClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;JLjava/lang/String;)V");
+    functionClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
     functionOnCallMethod = env->GetMethodID(clazz, "onCall",
                                             "(Lcom/linroid/knode/js/JSValue;[Lcom/linroid/knode/js/JSValue;)Lcom/linroid/knode/js/JSValue;");
     env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));

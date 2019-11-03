@@ -11,22 +11,8 @@ open class JSValue(context: JSContext?, protected val reference: Long) : Closeab
     @Suppress("LeakingThis")
     val context: JSContext = context ?: this as JSContext
 
-    open fun isUndefined(): Boolean {
-        return false
-    }
-
-    open fun isNull(): Boolean {
-        return false
-    }
-
-    open fun isPrimitive(): Boolean {
-        return false
-    }
 
     override fun toString(): String {
-        if (isUndefined()) {
-            return null.toString()
-        }
         return nativeToString()
     }
 
@@ -43,7 +29,7 @@ open class JSValue(context: JSContext?, protected val reference: Long) : Closeab
     }
 
     open fun toBoolean(): Boolean {
-        return true;
+        return true
     }
 
     fun empty(): Boolean {

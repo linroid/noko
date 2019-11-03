@@ -23,13 +23,13 @@ void staticCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
 jobject JSFunction::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
     auto func = value.As<v8::Function>();
-    auto name = func->GetName();
+    auto name = func->GetName()->ToString();
     return env->NewObject(functionClass.clazz, functionClass.constructor, runtime->javaContext, reference, JSString::Value(env, name));
 }
 
 void JSFunction::New(JNIEnv *env, jobject thiz, jstring jname) {
     auto runtime = JSContext::GetRuntime(env, thiz);
-    auto name = JSString::From(env, runtime->isolate, name);
+    auto name = JSString::From(env, runtime->isolate, jname);
     auto data = v8::External::New(runtime->isolate, new JavaCallback(runtime, env, thiz, functionClass.clazz, functionOnCallMethod));
     auto func = v8::FunctionTemplate::New(runtime->isolate, staticCallback, data)->GetFunction();
     func->SetName(name);

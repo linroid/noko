@@ -9,8 +9,4 @@ class JSUndefined(context: JSContext) : JSPrimitive(context) {
     override fun toJson(): String {
         return ""
     }
-
-    override fun isUndefined(): Boolean {
-        return true
-    }
 }

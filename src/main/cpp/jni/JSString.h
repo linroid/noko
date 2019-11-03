@@ -20,7 +20,7 @@ public:
      */
     static v8::Local<v8::String> From(JNIEnv *env, v8::Isolate *isolate, jstring &string);
 
-    static jstring ToJava(JNIEnv *env, v8::Local<v8::String> &value);
+    static jstring ToJVM(JNIEnv *env, v8::Local<v8::String> &value);
 
     static jint OnLoad(JNIEnv *env);
 };

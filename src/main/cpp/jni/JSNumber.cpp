@@ -8,7 +8,7 @@ JNIClass numberClass;
 
 jobject JSNumber::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Number> &value) {
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
-    return env->NewObject(numberClass.clazz, numberClass.constructor, runtime->javaContext, reference);
+    return env->NewObject(numberClass.clazz, numberClass.constructor, runtime->jcontext, reference);
 }
 
 jint JSNumber::OnLoad(JNIEnv *env) {

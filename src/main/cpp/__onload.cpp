@@ -26,7 +26,7 @@ int pipe_stderr[2];
 pthread_t thread_stdout;
 pthread_t thread_stderr;
 
-struct JavaNode {
+struct JvmNodeClass {
     JNIEnv *env;
     jfieldID ptr;
     jmethodID onBeforeStart;

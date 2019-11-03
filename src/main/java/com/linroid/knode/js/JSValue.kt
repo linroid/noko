@@ -74,7 +74,7 @@ open class JSValue(
     }
 
     override fun hashCode(): Int {
-        return super.hashCode()
+        return reference.hashCode()
     }
 
     private external fun nativeEquals(other: JSValue): Boolean

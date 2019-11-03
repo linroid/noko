@@ -41,7 +41,7 @@ v8::Local<v8::String> JSString::From(JNIEnv *env, v8::Isolate *isolate, jstring 
 
 jobject JSString::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::String> &value) {
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
-    return env->NewObject(stringClass.clazz, stringClass.constructor, runtime->javaContext, reference, JSString::ToJava(env, value));
+    return env->NewObject(stringClass.clazz, stringClass.constructor, runtime->jcontext, reference, JSString::ToJVM(env, value));
 }
 
 void JSString::New(JNIEnv *env, jobject jthis, jstring content) {
@@ -51,7 +51,7 @@ void JSString::New(JNIEnv *env, jobject jthis, jstring content) {
     JSValue::SetReference(env, jthis, (jlong) reference);
 }
 
-jstring JSString::ToJava(JNIEnv *env, v8::Local<v8::String> &value) {
+jstring JSString::ToJVM(JNIEnv *env, v8::Local<v8::String> &value) {
     v8::String::Value unicodeString(value);
     return env->NewString(*unicodeString, unicodeString.length());
 }

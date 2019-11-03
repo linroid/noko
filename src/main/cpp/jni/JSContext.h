@@ -10,7 +10,7 @@
 
 class JSContext {
 public:
-    static NodeRuntime *GetRuntime(JNIEnv *env, jobject javaObject);
+    static NodeRuntime *GetRuntime(JNIEnv *env, jobject jobj);
 
     static jobject Wrap(JNIEnv *env, NodeRuntime *runtime);
 

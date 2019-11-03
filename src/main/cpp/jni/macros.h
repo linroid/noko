@@ -21,7 +21,7 @@
 //     v8::Locker locker_(runtime->isolate); \
 //     v8::HandleScope handleScope_(runtime->isolate); \
 //     auto context = runtime->context.Get(runtime->isolate); \
-//     jlong reference = JSValue::ReadReference(env, javaObj); \
+//     jlong reference = JSValue::ReadReference(env, jobj); \
 //     auto value = v8::Local<v8::Value>::New(runtime->isolate, reinterpret_cast<v8::Persistent<v8::Value> *>());
 
 

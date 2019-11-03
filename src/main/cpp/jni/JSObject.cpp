@@ -16,7 +16,7 @@ JNIClass objectClass;
 
 jobject JSObject::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
-    return env->NewObject(objectClass.clazz, objectClass.constructor, runtime->javaContext, (jlong) reference);
+    return env->NewObject(objectClass.clazz, objectClass.constructor, runtime->jcontext, (jlong) reference);
 }
 
 JNICALL void JSObject::Set(JNIEnv *env, jobject jthis, jstring j_key, jobject j_value) {

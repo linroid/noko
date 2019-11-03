@@ -35,21 +35,21 @@ jint JSValue::OnLoad(JNIEnv *env) {
     return JNI_OK;
 }
 
-jobject JSValue::GetContext(JNIEnv *env, jobject javaObj) {
-    return env->GetObjectField(javaObj, valueClass.context);
+jobject JSValue::GetContext(JNIEnv *env, jobject jobj) {
+    return env->GetObjectField(jobj, valueClass.context);
 }
 
-jlong JSValue::GetReference(JNIEnv *env, jobject javaObj) {
-    return env->GetLongField(javaObj, valueClass.reference);
+jlong JSValue::GetReference(JNIEnv *env, jobject jobj) {
+    return env->GetLongField(jobj, valueClass.reference);
 }
 
-void JSValue::SetReference(JNIEnv *env, jobject javaObj, jlong value) {
-    env->SetLongField(javaObj, valueClass.reference, value);
+void JSValue::SetReference(JNIEnv *env, jobject jobj, jlong value) {
+    env->SetLongField(jobj, valueClass.reference, value);
 }
 
 jobject JSValue::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
-    return env->NewObject(valueClass.clazz, valueClass.constructor, runtime->javaContext, reference);
+    return env->NewObject(valueClass.clazz, valueClass.constructor, runtime->jcontext, reference);
 }
 
 jstring JSValue::ToString(JNIEnv *env, jobject jthis) {
@@ -66,7 +66,7 @@ jstring JSValue::ToString(JNIEnv *env, jobject jthis) {
 jstring JSValue::TypeOf(JNIEnv *env, jobject jthis) {
     V8_ENV(env, jthis, v8::Value)
     auto type = that->TypeOf(runtime->isolate);
-    return JSString::ToJava(env, type);
+    return JSString::ToJVM(env, type);
 }
 
 jstring JSValue::ToJson(JNIEnv *env, jobject jthis) {
@@ -80,9 +80,9 @@ jstring JSValue::ToJson(JNIEnv *env, jobject jthis) {
     return env->NewString(*unicodeString, unicodeString.length());
 }
 
-v8::Local<v8::Value> JSValue::GetReference(JNIEnv *env, v8::Isolate *isolate, jobject javaObj) {
+v8::Local<v8::Value> JSValue::GetReference(JNIEnv *env, v8::Isolate *isolate, jobject jobj) {
     v8::EscapableHandleScope handleScope(isolate);
-    jlong reference = JSValue::GetReference(env, javaObj);
+    jlong reference = JSValue::GetReference(env, jobj);
     auto persistent = reinterpret_cast<v8::Persistent<v8::Value> *>(reference);
     auto that = v8::Local<v8::Value>::New(isolate, *persistent);
     return handleScope.Escape(that);

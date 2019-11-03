@@ -41,12 +41,12 @@ jobject JSContext::Wrap(JNIEnv *env, NodeRuntime *runtime) {
                           reinterpret_cast<jlong>(runtime->global));
 }
 
-NodeRuntime *JSContext::GetRuntime(JNIEnv *env, jobject javaObject) {
-    jobject javaContext = JSValue::GetContext(env, javaObject);
-    if (javaContext == nullptr) {
-        javaContext = javaObject;
+NodeRuntime *JSContext::GetRuntime(JNIEnv *env, jobject jobj) {
+    jobject jcontext = JSValue::GetContext(env, jobj);
+    if (jcontext == nullptr) {
+        jcontext = jobj;
     }
-    jlong runtimePtr = env->GetLongField(javaContext, contextClass.runtimePtr);
+    jlong runtimePtr = env->GetLongField(jcontext, contextClass.runtimePtr);
     return reinterpret_cast<NodeRuntime *>(runtimePtr);
 }
 

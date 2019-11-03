@@ -22,13 +22,13 @@ public:
 
     static jint OnLoad(JNIEnv *env);
 
-    static jobject GetContext(JNIEnv *env, jobject javaObj);
+    static jobject GetContext(JNIEnv *env, jobject jobj);
 
-    static jlong GetReference(JNIEnv *env, jobject javaObj);
+    static jlong GetReference(JNIEnv *env, jobject jobj);
 
-    static v8::Local<v8::Value> GetReference(JNIEnv *env, v8::Isolate *isolate, jobject javaObj);
+    static v8::Local<v8::Value> GetReference(JNIEnv *env, v8::Isolate *isolate, jobject jobj);
 
-    static void SetReference(JNIEnv *env, jobject javaObj, jlong value);
+    static void SetReference(JNIEnv *env, jobject jobj, jlong value);
 
 };
 

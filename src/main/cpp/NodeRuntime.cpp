@@ -41,7 +41,7 @@ void NodeRuntime::OnPrepared() {
     if (stat == JNI_EDETACHED) {
         vm->AttachCurrentThread(&env, nullptr);
     }
-    env->CallVoidMethod(jthis, onBeforeStart, javaContext);
+    env->CallVoidMethod(jthis, onBeforeStart, jcontext);
     if (stat == JNI_EDETACHED) {
         vm->DetachCurrentThread();
     }
@@ -79,11 +79,11 @@ void NodeRuntime::OnEnvReady(node::Environment *nodeEnv) {
     if (stat == JNI_EDETACHED) {
         vm->AttachCurrentThread(&env, nullptr);
     }
-    auto javaContext = JSContext::Wrap(env, this);
-    if (javaContext == nullptr) {
+    auto jcontext = JSContext::Wrap(env, this);
+    if (jcontext == nullptr) {
         throwError(env, "Failed to new JSContext instance");
     }
-    this->javaContext = env->NewGlobalRef(javaContext);
+    this->jcontext = env->NewGlobalRef(jcontext);
 
     if (stat == JNI_EDETACHED) {
         vm->DetachCurrentThread();

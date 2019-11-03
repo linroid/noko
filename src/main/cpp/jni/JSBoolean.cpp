@@ -8,7 +8,7 @@ JNIClass booleanClass;
 
 jobject JSBoolean::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value>& value) {
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
-    return env->NewObject(booleanClass.clazz, booleanClass.constructor, runtime->javaContext, reference, value->BooleanValue());
+    return env->NewObject(booleanClass.clazz, booleanClass.constructor, runtime->jcontext, reference, value->BooleanValue());
 }
 
 jint JSBoolean::OnLoad(JNIEnv *env) {

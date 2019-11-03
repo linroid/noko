@@ -30,7 +30,7 @@ private:
     bool running;
 
 public:
-    jobject javaContext;
+    jobject jcontext;
 
     v8::Isolate *isolate;
     v8::Persistent<v8::Context> context;

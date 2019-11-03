@@ -9,12 +9,10 @@
 #include "JSString.h"
 #include "JSContext.h"
 
-const constexpr char *kJSValueClass = "com/linroid/knode/js/JSValue";
-
 JNIClass valueClass;
 
 jint JSValue::OnLoad(JNIEnv *env) {
-    jclass clazz = env->FindClass(kJSValueClass);
+    jclass clazz = env->FindClass("com/linroid/knode/js/JSValue");
     if (!clazz) {
         return JNI_ERR;
     }
@@ -81,10 +79,6 @@ v8::Local<v8::Value> JSValue::GetReference(JNIEnv *env, v8::Isolate *isolate, jo
     auto persistent = reinterpret_cast<v8::Persistent<v8::Value> *>(reference);
     auto that = v8::Local<v8::Value>::New(isolate, *persistent);
     return handleScope.Escape(that);
-}
-
-JNIClass &JSValue::Class() {
-    return valueClass;
 }
 
 void JSValue::Dispose(JNIEnv *env, jobject thiz) {

@@ -14,7 +14,7 @@ public:
 
     static jint OnLoad(JNIEnv *env);
 
-    JNICALL static void New(JNIEnv *env, jobject thiz);
+    JNICALL static void New(JNIEnv *env, jobject thiz, jstring jname);
 
     JNICALL static jobject Call(JNIEnv *env, jobject thiz, jobject j_recv, jobjectArray j_parameters);
 };

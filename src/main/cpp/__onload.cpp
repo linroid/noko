@@ -95,7 +95,7 @@ JNICALL jint start(JNIEnv *env, jobject thiz) {
     //     args[i] = element;
     // }
     auto node = reinterpret_cast<NodeRuntime *>(ptr);
-    return jint(node->start());
+    return jint(node->Start());
 }
 
 JNICALL void setFs(JNIEnv *env, jobject thiz, jlong fsPtr) {
@@ -112,7 +112,7 @@ JNICALL void dispose(JNIEnv *env, jobject thiz) {
         return;
     }
     auto node = reinterpret_cast<NodeRuntime *>(ptr);
-    node->dispose();
+    node->Dispose();
     delete node;
     env->SetLongField(thiz, nodeClass.ptr, 0);
 }

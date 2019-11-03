@@ -16,9 +16,9 @@
 #include "jni/macros.h"
 #include "jni/JSFunction.h"
 
-void beforeStartCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
+void onPreparedCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
     NodeRuntime *instance = NodeRuntime::GetCurrent(info);
-    instance->beforeStart();
+    instance->OnPrepared();
 }
 
 void beforeExitCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
@@ -31,10 +31,10 @@ void beforeExitCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
     uv_stop(env->event_loop());
 }
 
-void NodeRuntime::beforeStart() {
-    LOGI("beforeStart");
+void NodeRuntime::OnPrepared() {
+    LOGI("OnPrepared");
     auto localGlobal = global->Get(isolate);
-    localGlobal->Delete(v8::String::NewFromUtf8(isolate, "__beforeStart"));
+    localGlobal->Delete(v8::String::NewFromUtf8(isolate, "__onPrepared"));
 
     JNIEnv *env;
     auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);
@@ -47,7 +47,7 @@ void NodeRuntime::beforeStart() {
     }
 }
 
-void NodeRuntime::onEnvReady(node::Environment *nodeEnv) {
+void NodeRuntime::OnEnvReady(node::Environment *nodeEnv) {
     LOGI("onEnvReady");
     v8::HandleScope handleScope(nodeEnv->isolate());
     v8::Context::Scope contextScope(nodeEnv->context());
@@ -62,7 +62,7 @@ void NodeRuntime::onEnvReady(node::Environment *nodeEnv) {
     nodeEnv->SetMethod(process, "_kill", beforeExitCallback);
 
     auto data = v8::External::New(isolate, this);
-    global->Set(V8_UTF_STRING("__beforeStart"), v8::FunctionTemplate::New(isolate, beforeStartCallback, data)->GetFunction());
+    global->Set(V8_UTF_STRING("__onPrepared"), v8::FunctionTemplate::New(isolate, onPreparedCallback, data)->GetFunction());
 
     this->isolate = isolate;
     this->nodeEnv = nodeEnv;
@@ -90,7 +90,7 @@ void NodeRuntime::onEnvReady(node::Environment *nodeEnv) {
     }
 }
 
-int NodeRuntime::start() {
+int NodeRuntime::Start() {
     // Make argv memory adjacent
     char cmd[40];
     strcpy(cmd, "node -e global.__beforeStart();");
@@ -104,14 +104,14 @@ int NodeRuntime::start() {
     argv[argc] = 0;
 
     int ret = node::Start(argc, argv, [this](void *env) {
-        onEnvReady(static_cast<node::Environment *>(env));
+        OnEnvReady(static_cast<node::Environment *>(env));
     });
     // delete[] data;
     // delete[] argv;
     return ret;
 }
 
-void NodeRuntime::dispose() {
+void NodeRuntime::Dispose() {
     // v8_platform.StopTracingAgent();
     // v8_initialized = false;
     // V8::Dispose();
@@ -169,7 +169,7 @@ jobject NodeRuntime::Wrap(JNIEnv *env, v8::Local<v8::Value> &value) {
     return JSValue::Wrap(env, this, value);
 }
 
-void NodeRuntime::throwJSError(JNIEnv *env, v8::TryCatch &tryCatch) {
+void NodeRuntime::ThrowJSError(JNIEnv *env, v8::TryCatch &tryCatch) {
     LOGE("JSError");
     auto exception = tryCatch.Exception();
     v8::String::Utf8Value exceptionStr(exception);

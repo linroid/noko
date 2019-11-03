@@ -45,17 +45,17 @@ public:
 
     ~NodeRuntime();
 
-    int start();
+    int Start();
 
-    void dispose();
+    void Dispose();
 
-    void beforeStart();
+    void OnPrepared();
 
-    void onEnvReady(node::Environment *nodeEnv);
+    void OnEnvReady(node::Environment *nodeEnv);
 
     jobject Wrap(JNIEnv *env, v8::Local<v8::Value> &value);
 
-    void throwJSError(JNIEnv *env, v8::TryCatch &tryCatch);
+    void ThrowJSError(JNIEnv *env, v8::TryCatch &tryCatch);
 
     static inline NodeRuntime *GetCurrent(const v8::FunctionCallbackInfo<v8::Value> &info);
 };

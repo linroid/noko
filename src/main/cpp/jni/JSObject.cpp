@@ -22,13 +22,13 @@ jobject JSObject::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &
 JNICALL void JSObject::Set(JNIEnv *env, jobject jthis, jstring j_key, jobject j_value) {
     V8_ENV(env, jthis, v8::Object)
     auto target = reinterpret_cast<v8::Persistent<v8::Value> *>(JSValue::GetReference(env, j_value));
-    v8::Local<v8::String> key = JSString::From(env, runtime->isolate, j_key);
+    v8::Local<v8::String> key = JSString::ToV8(env, runtime->isolate, j_key);
     that->Set(key, target->Get(runtime->isolate));
 }
 
 JNICALL jobject JSObject::Get(JNIEnv *env, jobject jthis, jstring j_key) {
     V8_ENV(env, jthis, v8::Object)
-    v8::Local<v8::String> key = JSString::From(env, runtime->isolate, j_key);
+    v8::Local<v8::String> key = JSString::ToV8(env, runtime->isolate, j_key);
     auto result = that->Get(key);
     if (result->IsUndefined()) {
         return JSUndefined::Wrap(env, runtime);
@@ -42,6 +42,13 @@ JNICALL jobject JSObject::Get(JNIEnv *env, jobject jthis, jstring j_key) {
     return runtime->Wrap(env, result);
 }
 
+void JSObject::New(JNIEnv *env, jobject jthis) {
+    auto runtime = JSContext::GetRuntime(env, jthis);
+    auto value = v8::Object::New(runtime->isolate);
+    auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
+    JSValue::SetReference(env, jthis, (jlong) reference);
+}
+
 jint JSObject::OnLoad(JNIEnv *env) {
     jclass clazz = env->FindClass("com/linroid/knode/js/JSObject");
     if (!clazz) {
@@ -49,11 +56,13 @@ jint JSObject::OnLoad(JNIEnv *env) {
     }
 
     JNINativeMethod methods[] = {
-            {"nativeGet", "(Ljava/lang/String;)Lcom/linroid/knode/js/JSValue;", (void *) (JSObject::Get)},
+            {"nativeGet", "(Ljava/lang/String;)Lcom/linroid/knode/js/JSValue;",  (void *) (JSObject::Get)},
             {"nativeSet", "(Ljava/lang/String;Lcom/linroid/knode/js/JSValue;)V", (void *) (JSObject::Set)},
+            {"nativeNew", "()V",                                                 (void *) (JSObject::New)},
     };
     objectClass.clazz = (jclass) env->NewGlobalRef(clazz);
     objectClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
     env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
     return JNI_OK;
 }
+

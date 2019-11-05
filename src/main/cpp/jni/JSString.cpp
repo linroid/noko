@@ -30,7 +30,7 @@ jint JSString::OnLoad(JNIEnv *env) {
     return JNI_OK;
 }
 
-v8::Local<v8::String> JSString::From(JNIEnv *env, v8::Isolate *isolate, jstring &string) {
+v8::Local<v8::String> JSString::ToV8(JNIEnv *env, v8::Isolate *isolate, jstring &string) {
     const uint16_t *unicodeString = env->GetStringChars(string, nullptr);
     int length = env->GetStringLength(string);
     v8::EscapableHandleScope handleScope(isolate);
@@ -46,7 +46,7 @@ jobject JSString::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::String> 
 
 void JSString::New(JNIEnv *env, jobject jthis, jstring content) {
     auto runtime = JSContext::GetRuntime(env, jthis);
-    auto value = JSString::From(env, runtime->isolate, content);
+    auto value = JSString::ToV8(env, runtime->isolate, content);
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
     JSValue::SetReference(env, jthis, (jlong) reference);
 }

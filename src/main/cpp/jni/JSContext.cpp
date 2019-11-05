@@ -65,24 +65,20 @@ jlong JSContext::Bind(JNIEnv *env, jobject jthis, jlong contextPtr) {
 jobject JSContext::Eval(JNIEnv *env, jstring jthis, jstring jcode, jstring jsource, jint jline) {
     V8_ENV(env, jthis, v8::Object)
     v8::TryCatch tryCatch(runtime->isolate);
-    v8::ScriptOrigin scriptOrigin(JSString::From(env, runtime->isolate, jsource),
+    v8::ScriptOrigin scriptOrigin(JSString::ToV8(env, runtime->isolate, jsource),
                                   v8::Integer::New(runtime->isolate, jline));
-    auto code = JSString::From(env, runtime->isolate, jcode);
+    auto code = JSString::ToV8(env, runtime->isolate, jcode);
     auto script = v8::Script::Compile(context, code, &scriptOrigin);
     if (script.IsEmpty()) {
-        auto message = tryCatch.Message()->Get();
-        v8::String::Value unicodeString(message);
-        LOGE("Eval with exception: %s", message);
-        // TODO: throw exception
-        return env->NewString(*unicodeString, unicodeString.length());;
+        LOGE("Compile script with an exception");
+        runtime->ThrowJSError(env, tryCatch);
+        return 0;
     }
     auto result = script.ToLocalChecked()->Run(context);
     if (result.IsEmpty()) {
-        auto message = tryCatch.Message()->Get();
-        v8::String::Value unicodeString(message);
-        LOGE("Eval with exception: %s", message);
-        // TODO: throw exception
-        return env->NewString(*unicodeString, unicodeString.length());;
+        LOGE("Run script with an exception");
+        runtime->ThrowJSError(env, tryCatch);
+        return 0;
     }
     auto checkedResult = result.ToLocalChecked();
     return runtime->Wrap(env, checkedResult);

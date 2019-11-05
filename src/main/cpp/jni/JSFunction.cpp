@@ -27,7 +27,7 @@ jobject JSFunction::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Functi
 
 void JSFunction::New(JNIEnv *env, jobject jthis, jstring jname) {
     auto runtime = JSContext::GetRuntime(env, jthis);
-    auto name = JSString::From(env, runtime->isolate, jname);
+    auto name = JSString::ToV8(env, runtime->isolate, jname);
     auto data = v8::External::New(runtime->isolate, new JVMCallback(runtime, env, jthis, JSValue::JVMClass(), functionOnCallMethod));
     auto func = v8::FunctionTemplate::New(runtime->isolate, staticCallback, data)->GetFunction();
     func->SetName(name);

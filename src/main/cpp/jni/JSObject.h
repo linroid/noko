@@ -19,6 +19,8 @@ public:
     static JNICALL jobject Get(JNIEnv *env, jobject jthis, jstring key);
 
     static JNICALL void Set(JNIEnv *env, jobject jthis, jstring key, jobject);
+
+    static JNICALL void New(JNIEnv *env, jobject jthis);
 };
 
 #endif //NODE_JSOBJECT_H

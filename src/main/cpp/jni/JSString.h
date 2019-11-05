@@ -18,7 +18,7 @@ public:
     /**
      * Convert Java String to v8 String
      */
-    static v8::Local<v8::String> From(JNIEnv *env, v8::Isolate *isolate, jstring &string);
+    static v8::Local<v8::String> ToV8(JNIEnv *env, v8::Isolate *isolate, jstring &string);
 
     static jstring ToJVM(JNIEnv *env, v8::Local<v8::String> &value);
 

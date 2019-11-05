@@ -13,6 +13,8 @@ class JSBoolean {
 public:
     static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value);
 
+    JNICALL static void New(JNIEnv *env, jobject jthis, jboolean jdata);
+
     static jint OnLoad(JNIEnv *env);
 };
 

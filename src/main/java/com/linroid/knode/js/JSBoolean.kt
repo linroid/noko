@@ -4,19 +4,32 @@ package com.linroid.knode.js
  * @author linroid
  * @since 2019-10-21
  */
-class JSBoolean(context: JSContext, reference: Long, private val value: Boolean) : JSValue(context, reference) {
+class JSBoolean : JSValue {
+    private val data: Boolean
 
-    override fun toBoolean(): Boolean {
-        return value
+    @NativeConstructor
+    private constructor(context: JSContext, reference: Long, data: Boolean) : super(context, reference) {
+        this.data = data
     }
 
-    override fun toString(): String = value.toString()
+    constructor(context: JSContext, data: Boolean) : super(context, 0) {
+        nativeNew(data)
+        this.data = data
+    }
+
+    override fun toBoolean(): Boolean {
+        return data
+    }
+
+    override fun toString(): String = data.toString()
 
     override fun toInt(): Int {
-        return if (value) 1 else 0
+        return if (data) 1 else 0
     }
 
     override fun toDouble(): Double {
-        return if (value) 1.0 else 0.0
+        return if (data) 1.0 else 0.0
     }
+
+    private external fun nativeNew(data: Boolean)
 }

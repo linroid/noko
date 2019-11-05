@@ -55,7 +55,7 @@ jobject JSError::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &v
 void JSError::Throw(JNIEnv *env, NodeRuntime *runtime, v8::TryCatch &tryCatch) {
     auto exception = tryCatch.Exception();
     v8::String::Utf8Value exceptionStr(exception);
-    auto error = Wrap(env, runtime, exception);
-    auto jexception = (jthrowable) env->NewObject(exceptionClass.clazz, exceptionClass.constructor, error);
+    auto jerror = Wrap(env, runtime, exception);
+    auto jexception = (jthrowable) env->NewObject(exceptionClass.clazz, exceptionClass.constructor, jerror);
     env->Throw(jexception);
 }

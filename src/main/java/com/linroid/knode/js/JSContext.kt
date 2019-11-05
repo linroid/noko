@@ -14,6 +14,11 @@ class JSContext(@Suppress("unused") private val runtimePtr: Long, reference: Lon
         return nativeEval(code, source, line)
     }
 
+    @Throws(JSException::class)
+    fun parseJson(json: String): JSValue {
+        return nativeParseJson(json)
+    }
+
     fun setExceptionHandler(handler: Any) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
@@ -23,4 +28,5 @@ class JSContext(@Suppress("unused") private val runtimePtr: Long, reference: Lon
     }
 
     private external fun nativeEval(code: String, source: String, line: Int): JSValue
+    private external fun nativeParseJson(json: String): JSValue
 }

@@ -25,7 +25,8 @@ jint JSContext::OnLoad(JNIEnv *env) {
     contextClass.runtimePtr = env->GetFieldID(clazz, "runtimePtr", "J");
 
     JNINativeMethod methods[] = {
-            {"nativeEval", "(Ljava/lang/String;Ljava/lang/String;I)Lcom/linroid/knode/js/JSValue;", (void *) Eval},
+            {"nativeEval",      "(Ljava/lang/String;Ljava/lang/String;I)Lcom/linroid/knode/js/JSValue;", (void *) Eval},
+            {"nativeParseJson", "(Ljava/lang/String;)Lcom/linroid/knode/js/JSValue;",                    (void *) ParseJson},
     };
 
     int rc = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
@@ -78,6 +79,19 @@ jobject JSContext::Eval(JNIEnv *env, jstring jthis, jstring jcode, jstring jsour
     auto result = script.ToLocalChecked()->Run(context);
     if (result.IsEmpty()) {
         LOGE("Run script with an exception");
+        JSError::Throw(env, runtime, tryCatch);
+        return 0;
+    }
+    auto checkedResult = result.ToLocalChecked();
+    return runtime->Wrap(env, checkedResult);
+}
+
+jobject JSContext::ParseJson(JNIEnv *env, jstring jthis, jstring jjson) {
+    V8_ENV(env, jthis, v8::Object)
+    auto json = JSString::ToV8(env, runtime->isolate, jjson);
+    v8::TryCatch tryCatch(runtime->isolate);
+    auto result = v8::JSON::Parse(runtime->isolate, json);
+    if (result.IsEmpty()) {
         JSError::Throw(env, runtime, tryCatch);
         return 0;
     }

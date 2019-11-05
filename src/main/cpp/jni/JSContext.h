@@ -20,7 +20,7 @@ public:
 
     static JNICALL jlong Bind(JNIEnv *env, jobject jthis, jlong contextPtr);
 
-    static JNICALL jobject ParseJSON(JNIEnv *env, jstring jthis, jstring str);
+    static JNICALL jobject ParseJson(JNIEnv *env, jstring jthis, jstring jjson);
 
     static JNICALL jobject Eval(JNIEnv *env, jstring jthis, jstring jcode, jstring jsource, jint jline);
 

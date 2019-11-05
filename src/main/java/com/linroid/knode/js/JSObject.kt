@@ -13,10 +13,29 @@ open class JSObject : JSValue {
 
     constructor(context: JSContext) : this(context, 0) {
         nativeNew()
+        addBinds()
     }
 
-    constructor(context: JSContext, data: JsonObject) : this(context, 0) {
-        nativeNew()
+    private fun addBinds() {
+        if (javaClass == JSObject::class.java) {
+            return
+        }
+        javaClass.declaredMethods
+            .filter { it.isAnnotationPresent(Bind::class.java) }
+            .forEach { method ->
+                method.isAccessible = true
+                val bind = method.getAnnotation(Bind::class.java)!!
+                val name = if (bind.name.isEmpty()) method.name else bind.name
+                set(name, object : JSFunction(context, name) {
+                    override fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
+                        val result = method.invoke(this@JSObject, parameters)
+                        return from(context, result)
+                    }
+                })
+            }
+    }
+
+    constructor(context: JSContext, data: JsonObject) : this(context) {
         data.entrySet().forEach {
             set(it.key, from(context, it.value))
         }
@@ -51,17 +70,7 @@ open class JSObject : JSValue {
             return null
         }
         @Suppress("IMPLICIT_CAST_TO_ANY")
-        return when (T::class) {
-            String::class -> value.toString()
-            Int::class -> value.toInt()
-            Float::class -> value.toDouble().toFloat()
-            Double::class -> value.toDouble()
-            JSFunction::class -> value as? JSFunction
-            JSObject::class -> value as? JSObject
-            JSValue::class -> value
-//            else -> AppComponent.get().gson().fromJson(value.toJSON(), T::class.java)
-            else -> TODO("not implemented")
-        } as T
+        return value.toType(T::class.java)
     }
 
     private external fun nativeKeys(): Array<String>

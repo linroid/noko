@@ -18,6 +18,8 @@ public:
 
     JNICALL static jstring ToJson(JNIEnv *env, jobject jthis);
 
+    JNICALL static jdouble ToNumber(JNIEnv *env, jobject jthis);
+
     JNICALL static void Dispose(JNIEnv *env, jobject jthis);
 
     static jint OnLoad(JNIEnv *env);

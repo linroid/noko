@@ -12,17 +12,5 @@ class JSString : JSValue {
         nativeNew(content)
     }
 
-    override fun toInt(): Int {
-        return toString().toInt()
-    }
-
-    override fun toBoolean(): Boolean {
-        return toString().toBoolean()
-    }
-
-    override fun toDouble(): Double {
-        return toString().toDouble()
-    }
-
     external fun nativeNew(content: String)
 }

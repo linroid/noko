@@ -4,6 +4,7 @@ import android.os.Process
 import android.os.Process.THREAD_PRIORITY_FOREGROUND
 import android.util.Log
 import androidx.annotation.Keep
+import com.google.gson.Gson
 import com.linroid.knode.js.*
 import java.io.Closeable
 import java.io.File
@@ -99,9 +100,9 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
         val versions: JSObject = process.get("versions")
         active = true
         env.set("PWD", pwd.absolutePath)
-        environments.forEach { env.set(it.key, it.value) }
+        customEnvs.forEach { env.set(it.key, it.value) }
         process.set("argv0", "node")
-        nodeVersions.forEach {
+        customVersions.forEach {
             versions.set(it.key, it.value)
         }
         val chdir: JSFunction = process.get("chdir")
@@ -191,19 +192,20 @@ fs.readFileSync('${file.absolutePath}'),
     companion object {
         private const val TAG = "KNode"
 
-        private val nodeVersions = HashMap<String, String>()
-        private val environments = HashMap<String, String>()
+        private val customVersions = HashMap<String, String>()
+        private val customEnvs = HashMap<String, String>()
+        var gson: Gson = Gson()
 
         init {
             System.loadLibrary("knode")
         }
 
-        fun setEnv(key: String, value: String) {
-            environments[key] = value
+        fun addEnv(key: String, value: String) {
+            customEnvs[key] = value
         }
 
-        fun setEngine(name: String, version: String) {
-            nodeVersions[name] = version
+        fun addVersion(name: String, version: String) {
+            customVersions[name] = version
         }
     }
 }

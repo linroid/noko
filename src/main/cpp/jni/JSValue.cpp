@@ -8,6 +8,7 @@
 #include "macros.h"
 #include "JSString.h"
 #include "JSContext.h"
+#include "JSError.h"
 
 JNIClass valueClass;
 
@@ -78,6 +79,18 @@ jstring JSValue::ToJson(JNIEnv *env, jobject jthis) {
     }
     v8::String::Value unicodeString(str.ToLocalChecked());
     return env->NewString(*unicodeString, unicodeString.length());
+}
+
+jdouble JSValue::ToNumber(JNIEnv *env, jobject jthis) {
+    V8_ENV(env, jthis, v8::Value)
+    v8::TryCatch tryCatch(runtime->isolate);
+
+    auto number = that->ToNumber(context);
+    if (number.IsEmpty()) {
+        JSError::Throw(env, runtime, tryCatch);
+        return 0.0;
+    }
+    return number.ToLocalChecked()->Value();
 }
 
 v8::Local<v8::Value> JSValue::GetReference(JNIEnv *env, v8::Isolate *isolate, jobject jobj) {

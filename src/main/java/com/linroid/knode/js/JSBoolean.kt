@@ -17,19 +17,7 @@ class JSBoolean : JSValue {
         this.data = data
     }
 
-    override fun toBoolean(): Boolean {
-        return data
-    }
-
     override fun toString(): String = data.toString()
-
-    override fun toInt(): Int {
-        return if (data) 1 else 0
-    }
-
-    override fun toDouble(): Double {
-        return if (data) 1.0 else 0.0
-    }
 
     private external fun nativeNew(data: Boolean)
 }

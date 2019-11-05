@@ -66,7 +66,7 @@ jstring JSValue::ToString(JNIEnv *env, jobject jthis) {
 jstring JSValue::TypeOf(JNIEnv *env, jobject jthis) {
     V8_ENV(env, jthis, v8::Value)
     auto type = that->TypeOf(runtime->isolate);
-    return JSString::ToJVM(env, type);
+    return JSString::From(env, type);
 }
 
 jstring JSValue::ToJson(JNIEnv *env, jobject jthis) {

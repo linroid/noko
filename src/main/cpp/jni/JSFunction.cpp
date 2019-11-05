@@ -7,6 +7,7 @@
 #include "JSValue.h"
 #include "JSContext.h"
 #include "JSString.h"
+#include "JSError.h"
 #include "JVMCallback.h"
 
 JNIClass functionClass;
@@ -47,7 +48,7 @@ jobject JSFunction::Call(JNIEnv *env, jobject jthis, jobject jreceiver, jobjectA
     v8::TryCatch tryCatch(runtime->isolate);
     auto ret = that->Call(context, recv, argc, argv);
     if (tryCatch.HasCaught()) {
-        runtime->ThrowJSError(env, tryCatch);
+        JSError::Throw(env, runtime, tryCatch);
         return 0;
     }
     if (ret.IsEmpty()) {

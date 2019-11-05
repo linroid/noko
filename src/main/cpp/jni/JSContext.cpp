@@ -11,6 +11,7 @@
 #include "macros.h"
 #include "JSString.h"
 #include "../NodeRuntime.h"
+#include "JSError.h"
 
 JNIClass contextClass;
 
@@ -71,13 +72,13 @@ jobject JSContext::Eval(JNIEnv *env, jstring jthis, jstring jcode, jstring jsour
     auto script = v8::Script::Compile(context, code, &scriptOrigin);
     if (script.IsEmpty()) {
         LOGE("Compile script with an exception");
-        runtime->ThrowJSError(env, tryCatch);
+        JSError::Throw(env, runtime, tryCatch);
         return 0;
     }
     auto result = script.ToLocalChecked()->Run(context);
     if (result.IsEmpty()) {
         LOGE("Run script with an exception");
-        runtime->ThrowJSError(env, tryCatch);
+        JSError::Throw(env, runtime, tryCatch);
         return 0;
     }
     auto checkedResult = result.ToLocalChecked();

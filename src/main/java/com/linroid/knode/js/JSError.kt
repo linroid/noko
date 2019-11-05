@@ -4,10 +4,18 @@ package com.linroid.knode.js
  * @author linroid
  * @since 2019-10-19
  */
-class JSError(context: JSContext, reference: Long) : JSObject(context, reference) {
-    fun stack(): String {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+class JSError : JSObject {
+
+    @NativeConstructor
+    private constructor (context: JSContext, reference: Long) : super(context, reference)
+
+    constructor(context: JSContext, message: String) : this(context, 0) {
+        nativeNew(message)
     }
 
-    constructor(context: JSContext, message: String) : this(context, 0)
+    fun stack(): String {
+        return get<JSString>("stack").toString()
+    }
+
+    private external fun nativeNew(message: String);
 }

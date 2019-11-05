@@ -169,10 +169,3 @@ jobject NodeRuntime::Wrap(JNIEnv *env, v8::Local<v8::Value> &value) {
     }
     return JSValue::Wrap(env, this, value);
 }
-
-void NodeRuntime::ThrowJSError(JNIEnv *env, v8::TryCatch &tryCatch) {
-    LOGE("JSError");
-    auto exception = tryCatch.Exception();
-    v8::String::Utf8Value exceptionStr(exception);
-    throwError(env, *exceptionStr);
-}

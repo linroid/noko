@@ -31,6 +31,10 @@ open class JSObject : JSValue {
         return nativeGet(key) as T
     }
 
+    fun delete(key: String) {
+
+    }
+
     fun keys(): Array<String> {
         return nativeKeys()
     }

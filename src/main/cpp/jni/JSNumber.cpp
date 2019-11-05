@@ -3,6 +3,7 @@
 //
 
 #include "JSNumber.h"
+#include "JSValue.h"
 
 JNIClass numberClass;
 
@@ -18,5 +19,20 @@ jint JSNumber::OnLoad(JNIEnv *env) {
     }
     numberClass.clazz = (jclass) env->NewGlobalRef(clazz);
     numberClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
+    JNINativeMethod methods[] = {
+            {"nativeNew", "(D)V", (void *) JSNumber::New},
+    };
+
+    int rc = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
+    if (rc != JNI_OK) {
+        return rc;
+    }
     return JNI_OK;
+}
+
+void JSNumber::New(JNIEnv *env, jobject jthis, jdouble jdata) {
+    auto runtime = JSContext::GetRuntime(env, jthis);
+    auto value = v8::Number::New(runtime->isolate, jdata);
+    auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
+    JSValue::SetReference(env, jthis, (jlong) reference);
 }

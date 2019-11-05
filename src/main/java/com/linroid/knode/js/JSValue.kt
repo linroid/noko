@@ -1,6 +1,7 @@
 package com.linroid.knode.js
 
-import com.google.gson.JsonObject
+import com.google.gson.JsonElement
+import com.google.gson.JsonPrimitive
 import java.io.Closeable
 import java.lang.annotation.Native
 
@@ -91,8 +92,28 @@ open class JSValue(
                 is String -> JSString(context, value)
                 is Number -> JSNumber(context, value)
                 is Iterator<*> -> JSArray(context, value)
-                is JsonObject -> JSObject(context, value)
+                is JsonElement -> {
+                    from(context, value)
+                }
                 else -> throw IllegalStateException("Not support ${value.javaClass}")
+            }
+        }
+
+        fun from(context: JSContext, value: JsonElement): JSValue {
+            return when {
+                value.isJsonNull -> JSNull(context)
+                value.isJsonObject -> JSObject(context, value.asJsonObject)
+                value.isJsonArray -> JSArray(context, value as Iterator<*>)
+                value.isJsonPrimitive -> {
+                    value as JsonPrimitive
+                    when {
+                        value.isBoolean -> JSBoolean(context, value.asBoolean)
+                        value.isNumber -> JSNumber(context, value.asNumber)
+                        value.isString -> JSString(context, value.asString)
+                        else -> throw IllegalStateException("Not support JsonPrimitive: ${value.javaClass}")
+                    }
+                }
+                else -> throw IllegalStateException("Not support Json type: ${value.javaClass}")
             }
         }
     }

@@ -17,6 +17,9 @@ open class JSObject : JSValue {
 
     constructor(context: JSContext, data: JsonObject) : this(context, 0) {
         nativeNew()
+        data.entrySet().forEach {
+            set(it.key, from(context, it.value))
+        }
     }
 
     fun has(key: String): Boolean {

@@ -28,7 +28,6 @@ jint JSError::OnLoad(JNIEnv *env) {
         return rc;
     }
 
-
     clazz = env->FindClass("com/linroid/knode/JSException");
     if (!clazz) {
         return JNI_ERR;

@@ -9,6 +9,8 @@ open class JSNumber : JSValue {
     private constructor(context: JSContext, reference: Long) : super(context, reference)
 
     constructor(context: JSContext, number: Number) : super(context, 0) {
-        TODO("Not implemented")
+        nativeNew(number.toDouble())
     }
+
+    private external fun nativeNew(data: Double)
 }

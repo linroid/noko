@@ -17,8 +17,12 @@ class JSError : JSObject {
         return get<JSString>("stack").toString()
     }
 
-    fun message():String {
+    fun message(): String {
         return get<JSString>("message").toString()
+    }
+
+    fun name(): String {
+        return get<JSString>("name").toString()
     }
 
     private external fun nativeNew(message: String);

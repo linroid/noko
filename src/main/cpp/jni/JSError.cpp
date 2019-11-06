@@ -47,14 +47,18 @@ void JSError::New(JNIEnv *env, jobject jthis, jstring jmessage) {
 }
 
 jobject JSError::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {
+    LOGE("Wrap new JSError");
     auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
     return env->NewObject(errorClass.clazz, errorClass.constructor, runtime->jcontext, reference);
 }
 
 void JSError::Throw(JNIEnv *env, NodeRuntime *runtime, v8::TryCatch &tryCatch) {
     auto exception = tryCatch.Exception();
-    v8::String::Utf8Value exceptionStr(exception);
     auto jerror = Wrap(env, runtime, exception);
+    Throw(env, jerror);
+}
+
+void JSError::Throw(JNIEnv *env, jobject jerror) {
     auto jexception = (jthrowable) env->NewObject(exceptionClass.clazz, exceptionClass.constructor, jerror);
     env->Throw(jexception);
 }

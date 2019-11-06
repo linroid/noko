@@ -16,6 +16,8 @@ public:
 
     static void Throw(JNIEnv *env, NodeRuntime *runtime, v8::TryCatch &tryCatch);
 
+    static void Throw(JNIEnv *env, jobject jerror);
+
     static jint OnLoad(JNIEnv *env);
 };
 

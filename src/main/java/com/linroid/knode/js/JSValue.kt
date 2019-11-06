@@ -112,6 +112,7 @@ open class JSValue(
                 is String -> JSString(context, value)
                 is Number -> JSNumber(context, value)
                 is Iterator<*> -> JSArray(context, value)
+                is Array<*> -> JSArray(context, value.iterator())
                 is JsonElement -> {
                     // from(context, value)
                     context.parseJson(value.toString())

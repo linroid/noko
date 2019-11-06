@@ -5,6 +5,7 @@
 #include "JSArray.h"
 #include "JSValue.h"
 #include "JSContext.h"
+#include "JSError.h"
 
 static JNIClass arrayClass;
 
@@ -15,6 +16,44 @@ jint JSArray::Size(JNIEnv *env, jobject jthis) {
     V8_END();
     return result;
 }
+
+
+void JSArray::New(JNIEnv *env, jobject jthis) {
+    auto runtime = JSContext::GetRuntime(env, jthis);
+    auto value = v8::Array::New(runtime->isolate);
+    auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
+    JSValue::SetReference(env, jthis, (jlong) reference);
+}
+
+jboolean JSArray::AddAll(JNIEnv *env, jobject jthis, jobjectArray jelements) {
+    auto size = env->GetArrayLength(jelements);
+    bool result = true;
+    jobject error = nullptr;
+    V8_START(env, jthis, v8::Array)
+        v8::TryCatch tryCatch(runtime->isolate);
+        auto index = that->Length();
+        for (int i = 0; i < size; ++i) {
+            auto jelement = env->GetObjectArrayElement(jelements, i);
+            auto element = JSValue::GetReference(env, runtime->isolate, jelement);
+            if (!that->Set(index + i, element)) {
+                result = false;
+                break;
+            }
+            if (tryCatch.HasCaught()) {
+                auto e = tryCatch.Exception();
+                error = JSError::Wrap(env, runtime, e);
+                result = false;
+                break;
+            }
+        }
+    V8_END();
+    if (error) {
+        JSError::Throw(env, error);
+        result = false;
+    }
+    return static_cast<jboolean>(result);
+}
+
 
 jobject JSArray::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Array> &value) {
     auto reference = new v8::Persistent<v8::Array>(runtime->isolate, value);
@@ -28,7 +67,9 @@ jint JSArray::OnLoad(JNIEnv *env) {
     }
 
     JNINativeMethod methods[] = {
-            {"nativeSize", "()I", (void *) (Size)},
+            {"nativeSize",   "()I",                                (void *) (Size)},
+            {"nativeNew",    "()V",                                (void *) (New)},
+            {"nativeAddAll", "([Lcom/linroid/knode/js/JSValue;)Z", (void *) (AddAll)},
     };
     arrayClass.clazz = (jclass) env->NewGlobalRef(clazz);
     arrayClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");

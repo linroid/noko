@@ -13,6 +13,10 @@ class JSArray {
 public:
     JNICALL static jint Size(JNIEnv *env, jobject jthis);
 
+    JNICALL static void New(JNIEnv *env, jobject jthis);
+
+    JNICALL static jboolean AddAll(JNIEnv *env, jobject jthis, jobjectArray jelements);
+
     static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Array> &value);
 
     static jint OnLoad(JNIEnv *env);

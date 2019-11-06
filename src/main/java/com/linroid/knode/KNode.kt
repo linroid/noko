@@ -104,29 +104,25 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
         env.set("PWD", pwd.absolutePath)
         customEnvs.forEach { env.set(it.key, it.value) }
         process.set("argv0", "node")
+        process.set("argv", arrayOf("node", file.absolutePath, *argv))
         customVersions.forEach {
             versions.set(it.key, it.value)
         }
+
         val chdir: JSFunction = process.get("chdir")
         chdir.call(process, JSString(context, pwd.absolutePath))
-
-        val func = JSFunction(context, "test") { receiver, parameters ->
-            Log.i(TAG, "call test($receiver, $parameters)")
-            return@JSFunction JSString(context, "Hello World")
-        }
-        context.set("test", func)
         eventOnPrepared(context)
         val cwdFunc: JSFunction = process.get("cwd")
         val cwdRet = cwdFunc.call(process)
         Log.w(TAG, "cwdRet=${cwdRet}")
         val script = """(() => {
-const fs = require('fs');
-const vm = require('vm');  
-(new vm.Script(
-fs.readFileSync('${file.absolutePath}'),
-{ filename: '${file.name}'} )).runInThisContext();
-})()
- """
+            const fs = require('fs');
+            const vm = require('vm');  
+            (new vm.Script(
+            fs.readFileSync('${file.absolutePath}'),
+            { filename: '${file.name}'} )).runInThisContext();
+            })()
+             """
         context.eval(script, file.absolutePath, 0)
     }
 
@@ -177,11 +173,8 @@ fs.readFileSync('${file.absolutePath}'),
     }
 
     private external fun nativeNew(): Long
-
     private external fun nativeStart(): Int
-
     private external fun nativeDispose()
-
     private external fun nativeSetFs(fsPtr: Long)
 
     interface EventListener {

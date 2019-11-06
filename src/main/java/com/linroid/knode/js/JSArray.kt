@@ -11,9 +11,11 @@ class JSArray : JSObject, MutableList<JSValue> {
 
     constructor(context: JSContext, data: Iterator<*>) : super(context, 0) {
         nativeNew()
+        val array = ArrayList<JSValue>()
         data.forEach {
-            add(from(context, it))
+            array.add(from(context, it))
         }
+        addAll(array)
     }
 
     override val size: Int
@@ -68,7 +70,7 @@ class JSArray : JSObject, MutableList<JSValue> {
     }
 
     override fun addAll(elements: Collection<JSValue>): Boolean {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return nativeAddAll(elements.toTypedArray())
     }
 
     override fun clear() {
@@ -105,5 +107,6 @@ class JSArray : JSObject, MutableList<JSValue> {
     private external fun nativeIndexOf(element: JSValue): Int
     private external fun nativeLastIndexOf(element: JSValue): Int
     private external fun nativeSize(): Int
+    private external fun nativeAddAll(elements: Array<JSValue>): Boolean
     private external fun nativeNew()
 }

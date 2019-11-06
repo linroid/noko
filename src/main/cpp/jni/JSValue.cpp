@@ -27,6 +27,7 @@ jint JSValue::OnLoad(JNIEnv *env) {
             {"nativeTypeOf",   "()Ljava/lang/String;", (void *) JSValue::TypeOf},
             {"nativeToJson",   "()Ljava/lang/String;", (void *) JSValue::ToJson},
             {"nativeDispose",  "()V",                  (void *) JSValue::Dispose},
+            {"nativeToNumber", "()D",                  (void *) JSValue::ToNumber},
     };
 
     int rc = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
@@ -54,43 +55,58 @@ jobject JSValue::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &v
 }
 
 jstring JSValue::ToString(JNIEnv *env, jobject jthis) {
-    V8_ENV(env, jthis, v8::Value)
-    v8::MaybeLocal<v8::String> str = that->ToString(context);
-    if (str.IsEmpty()) {
-        const char *bytes = new char[0];
-        return env->NewStringUTF(bytes);
-    }
-    v8::String::Value unicodeString(str.ToLocalChecked());
-    return env->NewString(*unicodeString, unicodeString.length());
+    jstring result = nullptr;
+    V8_START(env, jthis, v8::Value)
+        v8::MaybeLocal<v8::String> str = that->ToString(context);
+        if (str.IsEmpty()) {
+            const char *bytes = new char[0];
+            result = env->NewStringUTF(bytes);
+        } else {
+            v8::String::Value unicodeString(str.ToLocalChecked());
+            result = env->NewString(*unicodeString, unicodeString.length());
+        }
+    V8_END()
+    return result;
 }
 
 jstring JSValue::TypeOf(JNIEnv *env, jobject jthis) {
-    V8_ENV(env, jthis, v8::Value)
-    auto type = that->TypeOf(runtime->isolate);
-    return JSString::From(env, type);
+    jstring result = nullptr;
+    V8_START(env, jthis, v8::Value)
+        auto type = that->TypeOf(runtime->isolate);
+        result = JSString::From(env, type);
+    V8_END()
+    return result;
 }
 
 jstring JSValue::ToJson(JNIEnv *env, jobject jthis) {
-    V8_ENV(env, jthis, v8::Value)
-    auto str = v8::JSON::Stringify(context, that);
-    if (str.IsEmpty()) {
-        const char *bytes = new char[0];
-        return env->NewStringUTF(bytes);
-    }
-    v8::String::Value unicodeString(str.ToLocalChecked());
-    return env->NewString(*unicodeString, unicodeString.length());
+    jstring result = nullptr;
+    V8_START(env, jthis, v8::Value)
+        auto str = v8::JSON::Stringify(context, that);
+        if (str.IsEmpty()) {
+            const char *bytes = new char[0];
+            result = env->NewStringUTF(bytes);
+        } else {
+            v8::String::Value unicodeString(str.ToLocalChecked());
+            result = env->NewString(*unicodeString, unicodeString.length());
+        }
+    V8_END()
+    return result;
 }
 
 jdouble JSValue::ToNumber(JNIEnv *env, jobject jthis) {
-    V8_ENV(env, jthis, v8::Value)
-    v8::TryCatch tryCatch(runtime->isolate);
+    jdouble result = 0;
+    V8_START(env, jthis, v8::Value)
+        v8::TryCatch tryCatch(runtime->isolate);
 
-    auto number = that->ToNumber(context);
-    if (number.IsEmpty()) {
-        JSError::Throw(env, runtime, tryCatch);
-        return 0.0;
-    }
-    return number.ToLocalChecked()->Value();
+        auto number = that->ToNumber(context);
+        if (number.IsEmpty()) {
+            JSError::Throw(env, runtime, tryCatch);
+            result = 0.0;
+        } else {
+            result = number.ToLocalChecked()->Value();
+        }
+    V8_END()
+    return result;
 }
 
 v8::Local<v8::Value> JSValue::GetReference(JNIEnv *env, v8::Isolate *isolate, jobject jobj) {

@@ -20,26 +20,28 @@ jobject JSObject::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &
 }
 
 JNICALL void JSObject::Set(JNIEnv *env, jobject jthis, jstring j_key, jobject j_value) {
-    V8_ENV(env, jthis, v8::Object)
-    auto target = reinterpret_cast<v8::Persistent<v8::Value> *>(JSValue::GetReference(env, j_value));
-    v8::Local<v8::String> key = JSString::ToV8(env, runtime->isolate, j_key);
-    that->Set(key, target->Get(runtime->isolate));
+    V8_START(env, jthis, v8::Object)
+        auto target = reinterpret_cast<v8::Persistent<v8::Value> *>(JSValue::GetReference(env, j_value));
+        v8::Local<v8::String> key = JSString::ToV8(env, runtime->isolate, j_key);
+        that->Set(key, target->Get(runtime->isolate));
+    V8_END()
 }
 
 JNICALL jobject JSObject::Get(JNIEnv *env, jobject jthis, jstring j_key) {
-    V8_ENV(env, jthis, v8::Object)
-    v8::Local<v8::String> key = JSString::ToV8(env, runtime->isolate, j_key);
-    auto result = that->Get(key);
-    if (result->IsUndefined()) {
-        return JSUndefined::Wrap(env, runtime);
-    } else if (result->IsNull()) {
-        return JSNull::Wrap(env, runtime);
-    }
-    // LOGI("JSObject::Get value.isUndefined()=%d", that->IsUndefined());
-    // v8::Local<v8::String> type = value->TypeOf(runtime->isolate);
-    // v8::String::Value unicodeString(type);
-    // LOGI("type=%s", *unicodeString);
-    return runtime->Wrap(env, result);
+    jobject result = nullptr;
+
+    V8_START(env, jthis, v8::Object)
+        v8::Local<v8::String> key = JSString::ToV8(env, runtime->isolate, j_key);
+        auto ret = that->Get(key);
+        if (ret->IsUndefined()) {
+            result = JSUndefined::Wrap(env, runtime);
+        } else if (ret->IsNull()) {
+            result = JSNull::Wrap(env, runtime);
+        } else {
+            result = runtime->Wrap(env, ret);
+        }
+    V8_END()
+    return result;
 }
 
 void JSObject::New(JNIEnv *env, jobject jthis) {

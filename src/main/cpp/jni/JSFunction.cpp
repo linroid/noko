@@ -37,25 +37,29 @@ void JSFunction::New(JNIEnv *env, jobject jthis, jstring jname) {
 }
 
 jobject JSFunction::Call(JNIEnv *env, jobject jthis, jobject jreceiver, jobjectArray jparameters) {
-    V8_ENV(env, jthis, v8::Function)
-    int argc = env->GetArrayLength(jparameters);
-    v8::Local<v8::Value> *argv = new v8::Local<v8::Value>[argc];
-    for (int i = 0; i < argc; ++i) {
-        auto j_element = env->GetObjectArrayElement(jparameters, i);
-        argv[i] = JSValue::GetReference(env, runtime->isolate, j_element);
-    }
-    auto recv = JSValue::GetReference(env, runtime->isolate, jreceiver);
-    v8::TryCatch tryCatch(runtime->isolate);
-    auto ret = that->Call(context, recv, argc, argv);
-    if (tryCatch.HasCaught()) {
-        JSError::Throw(env, runtime, tryCatch);
-        return 0;
-    }
-    if (ret.IsEmpty()) {
-        return 0;
-    };
-    auto retValue = ret.ToLocalChecked();
-    return runtime->Wrap(env, retValue);
+    jobject result = nullptr;
+    V8_START(env, jthis, v8::Function)
+        int argc = env->GetArrayLength(jparameters);
+        v8::Local<v8::Value> *argv = new v8::Local<v8::Value>[argc];
+        for (int i = 0; i < argc; ++i) {
+            auto j_element = env->GetObjectArrayElement(jparameters, i);
+            argv[i] = JSValue::GetReference(env, runtime->isolate, j_element);
+        }
+        auto recv = JSValue::GetReference(env, runtime->isolate, jreceiver);
+        v8::TryCatch tryCatch(runtime->isolate);
+        auto ret = that->Call(context, recv, argc, argv);
+        if (tryCatch.HasCaught()) {
+            JSError::Throw(env, runtime, tryCatch);
+            result = 0;
+        }
+        if (ret.IsEmpty()) {
+            result = 0;
+        } else {
+            auto retValue = ret.ToLocalChecked();
+            result = runtime->Wrap(env, retValue);
+        }
+    V8_END()
+    return result;
 }
 
 jint JSFunction::OnLoad(JNIEnv *env) {

@@ -9,9 +9,11 @@
 static JNIClass arrayClass;
 
 jint JSArray::Size(JNIEnv *env, jobject jthis) {
-    V8_ENV(env, jthis, v8::Array)
-    // auto array = v8::Local<v8::Array>::Cast(value);
-    return that->Length();
+    int result = 0;
+    V8_START(env, jthis, v8::Array)
+        result = that->Length();
+    V8_END();
+    return result;
 }
 
 jobject JSArray::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Array> &value) {

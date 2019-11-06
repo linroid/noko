@@ -65,36 +65,45 @@ jlong JSContext::Bind(JNIEnv *env, jobject jthis, jlong contextPtr) {
 }
 
 jobject JSContext::Eval(JNIEnv *env, jstring jthis, jstring jcode, jstring jsource, jint jline) {
-    V8_ENV(env, jthis, v8::Object)
-    v8::TryCatch tryCatch(runtime->isolate);
-    v8::ScriptOrigin scriptOrigin(JSString::ToV8(env, runtime->isolate, jsource),
-                                  v8::Integer::New(runtime->isolate, jline));
-    auto code = JSString::ToV8(env, runtime->isolate, jcode);
-    auto script = v8::Script::Compile(context, code, &scriptOrigin);
-    if (script.IsEmpty()) {
-        LOGE("Compile script with an exception");
-        JSError::Throw(env, runtime, tryCatch);
-        return 0;
-    }
-    auto result = script.ToLocalChecked()->Run(context);
-    if (result.IsEmpty()) {
-        LOGE("Run script with an exception");
-        JSError::Throw(env, runtime, tryCatch);
-        return 0;
-    }
-    auto checkedResult = result.ToLocalChecked();
-    return runtime->Wrap(env, checkedResult);
+    jobject result = nullptr;
+    V8_START(env, jthis, v8::Object)
+        v8::TryCatch tryCatch(runtime->isolate);
+        v8::ScriptOrigin scriptOrigin(JSString::ToV8(env, runtime->isolate, jsource),
+                                      v8::Integer::New(runtime->isolate, jline));
+        auto code = JSString::ToV8(env, runtime->isolate, jcode);
+        auto script = v8::Script::Compile(context, code, &scriptOrigin);
+        if (script.IsEmpty()) {
+            LOGE("Compile script with an exception");
+            JSError::Throw(env, runtime, tryCatch);
+            result = 0;
+        } else {
+            auto returned = script.ToLocalChecked()->Run(context);
+            if (returned.IsEmpty()) {
+                LOGE("Run script with an exception");
+                JSError::Throw(env, runtime, tryCatch);
+                result = 0;
+            } else {
+                auto checkedResult = returned.ToLocalChecked();
+                result = runtime->Wrap(env, checkedResult);
+            }
+        }
+    V8_END()
+    return result;
 }
 
 jobject JSContext::ParseJson(JNIEnv *env, jstring jthis, jstring jjson) {
-    V8_ENV(env, jthis, v8::Object)
-    auto json = JSString::ToV8(env, runtime->isolate, jjson);
-    v8::TryCatch tryCatch(runtime->isolate);
-    auto result = v8::JSON::Parse(runtime->isolate, json);
-    if (result.IsEmpty()) {
-        JSError::Throw(env, runtime, tryCatch);
-        return 0;
-    }
-    auto checkedResult = result.ToLocalChecked();
-    return runtime->Wrap(env, checkedResult);
+    jobject result = nullptr;
+    V8_START(env, jthis, v8::Object)
+        auto json = JSString::ToV8(env, runtime->isolate, jjson);
+        v8::TryCatch tryCatch(runtime->isolate);
+        auto returned = v8::JSON::Parse(runtime->isolate, json);
+        if (returned.IsEmpty()) {
+            JSError::Throw(env, runtime, tryCatch);
+            result = 0;
+        } else {
+            auto checkedResult = returned.ToLocalChecked();
+            result = runtime->Wrap(env, checkedResult);
+        }
+    V8_END()
+    return result;
 }

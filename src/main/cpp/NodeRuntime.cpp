@@ -16,6 +16,9 @@
 #include "jni/macros.h"
 #include "jni/JSFunction.h"
 
+int NodeRuntime::instanceCount = 0;
+std::mutex NodeRuntime::mutex;
+
 void onPreparedCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
     NodeRuntime *instance = NodeRuntime::GetCurrent(info);
     instance->OnPrepared();
@@ -29,6 +32,32 @@ void beforeExitCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
         uv_unref(h);
     }, nullptr);
     uv_stop(env->event_loop());
+}
+
+NodeRuntime::NodeRuntime(JNIEnv *env, jobject jthis, jmethodID onBeforeStart, jmethodID onBeforeExit)
+        : onBeforeStart(onBeforeStart), onBeforeExit(onBeforeExit) {
+    env->GetJavaVM(&vm);
+    this->jthis = env->NewGlobalRef(jthis);
+
+    mutex.lock();
+    ++instanceCount;
+    mutex.unlock();
+}
+
+NodeRuntime::~NodeRuntime() {
+    JNIEnv *env;
+    auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);
+    if (stat == JNI_EDETACHED) {
+        vm->AttachCurrentThread(&env, nullptr);
+    }
+    env->DeleteGlobalRef(jthis);
+    if (stat == JNI_EDETACHED) {
+        vm->DetachCurrentThread();
+    }
+    running = false;
+    mutex.lock();
+    --instanceCount;
+    mutex.unlock();
 }
 
 void NodeRuntime::OnPrepared() {
@@ -67,6 +96,7 @@ void NodeRuntime::OnEnvReady(node::Environment *nodeEnv) {
     this->isolate = isolate;
     this->nodeEnv = nodeEnv;
     this->running = true;
+    this->eventLoop = nodeEnv->event_loop();
     this->isolateData = nodeEnv->isolate_data();
     this->isolate = nodeEnv->isolate();
     this->context.Reset(isolate, context);
@@ -91,6 +121,8 @@ void NodeRuntime::OnEnvReady(node::Environment *nodeEnv) {
 }
 
 int NodeRuntime::Start() {
+    threadId = std::this_thread::get_id();
+
     // Make argv memory adjacent
     char cmd[40];
     strcpy(cmd, "node -e __onPrepared();");
@@ -125,24 +157,6 @@ void NodeRuntime::Dispose() {
     // v8_platform.Dispose();
 }
 
-NodeRuntime::NodeRuntime(JNIEnv *env, jobject jthis, jmethodID onBeforeStart, jmethodID onBeforeExit)
-        : onBeforeStart(onBeforeStart), onBeforeExit(onBeforeExit) {
-    env->GetJavaVM(&vm);
-    this->jthis = env->NewGlobalRef(jthis);
-}
-
-NodeRuntime::~NodeRuntime() {
-    JNIEnv *env;
-    auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);
-    if (stat == JNI_EDETACHED) {
-        vm->AttachCurrentThread(&env, nullptr);
-    }
-    env->DeleteGlobalRef(jthis);
-    if (stat == JNI_EDETACHED) {
-        vm->DetachCurrentThread();
-    }
-}
-
 NodeRuntime *NodeRuntime::GetCurrent(const v8::FunctionCallbackInfo<v8::Value> &info) {
     CHECK(info.Data()->IsExternal());
     auto external = info.Data().As<v8::External>();
@@ -168,4 +182,52 @@ jobject NodeRuntime::Wrap(JNIEnv *env, v8::Local<v8::Value> &value) {
         return JSString::Wrap(env, this, casted);
     }
     return JSValue::Wrap(env, this, value);
+}
+
+void NodeRuntime::Run(std::function<void()> runnable) {
+    if (std::this_thread::get_id() == threadId) {
+        runnable();
+    } else {
+        PostAndWait(runnable);
+    }
+}
+
+void NodeRuntime::PostAndWait(std::function<void()> runnable) {
+    std::condition_variable cv;
+    bool signaled = false;
+    auto callback = [&]() {
+        runnable();
+        {
+            std::lock_guard<std::mutex> lk(asyncMutex);
+            signaled = true;
+        }
+        cv.notify_one();
+    };
+
+    std::unique_lock<std::mutex> lk(asyncMutex);
+    callbacks.push_back(callback);
+
+    if (!asyncHandle) {
+        asyncHandle = new uv_async_t();
+        asyncHandle->data = this;
+        uv_async_init(eventLoop, asyncHandle, NodeRuntime::StaticHandle);
+        uv_async_send(asyncHandle);
+    }
+
+    cv.wait(lk, [&] { return signaled; });
+    lk.unlock();
+}
+
+void NodeRuntime::StaticHandle(uv_async_t *handle) {
+    NodeRuntime *runtime = reinterpret_cast<NodeRuntime *>(handle->data);
+    runtime->Handle(handle);
+}
+
+void NodeRuntime::Handle(uv_async_t *handle) {
+    asyncMutex.lock();
+    while (!callbacks.empty()) {
+        auto callback = callbacks.front();
+        callback();
+        callbacks.erase(callbacks.begin());
+    }
 }

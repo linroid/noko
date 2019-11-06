@@ -8,6 +8,7 @@
 #include <jni.h>
 #include <string>
 #include <vector>
+#include <thread>
 #include "v8.h"
 #include "env.h"
 #include "util.h"
@@ -28,6 +29,17 @@ private:
     JavaVM *vm = nullptr;
 
     bool running;
+    std::thread::id threadId;
+    std::mutex asyncMutex;
+    std::vector<std::function<void()>> callbacks;
+    uv_async_t *asyncHandle = nullptr;
+
+    static std::mutex mutex;
+    static jint instanceCount;
+
+    static void StaticHandle(uv_async_t *handle);
+    void Handle(uv_async_t *handle);
+    void PostAndWait(std::function<void()> runnable);
 
 public:
     jobject jcontext;
@@ -39,7 +51,7 @@ public:
     v8::Locker *locker;
     node::Environment *nodeEnv;
     node::IsolateData *isolateData;
-    uv_loop_t *uvLoop;
+    uv_loop_t *eventLoop;
 
     NodeRuntime(JNIEnv *env, jobject jthis, jmethodID onBeforeStart, jmethodID onBeforeExit);
 
@@ -51,11 +63,18 @@ public:
 
     void OnPrepared();
 
+    void Run(std::function<void()> runnable);
+
+    inline void TestRun(std::function<void()> runnable) {
+        runnable();
+    }
+
     void OnEnvReady(node::Environment *nodeEnv);
 
     jobject Wrap(JNIEnv *env, v8::Local<v8::Value> &value);
 
     static inline NodeRuntime *GetCurrent(const v8::FunctionCallbackInfo<v8::Value> &info);
+
 };
 
 #endif //NODE_NODE_RUNTIME_H

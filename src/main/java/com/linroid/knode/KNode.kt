@@ -8,6 +8,7 @@ import com.google.gson.Gson
 import com.linroid.knode.js.*
 import java.io.Closeable
 import java.io.File
+import java.lang.annotation.Native
 
 /**
  * @author linroid
@@ -15,7 +16,8 @@ import java.io.File
  */
 @Keep
 class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
-    @Suppress
+
+    @Native
     private var ptr: Long = nativeNew()
 
     private val listeners = HashSet<EventListener>()

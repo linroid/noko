@@ -102,9 +102,9 @@ jdouble JSValue::ToNumber(JNIEnv *env, jobject jthis) {
         if (number.IsEmpty()) {
             JSError::Throw(env, runtime, tryCatch);
             result = 0.0;
-        } else {
-            result = number.ToLocalChecked()->Value();
+            return;
         }
+        result = number.ToLocalChecked()->Value();
     V8_END()
     return result;
 }

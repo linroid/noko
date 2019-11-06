@@ -76,17 +76,17 @@ jobject JSContext::Eval(JNIEnv *env, jstring jthis, jstring jcode, jstring jsour
             LOGE("Compile script with an exception");
             JSError::Throw(env, runtime, tryCatch);
             result = 0;
-        } else {
-            auto returned = script.ToLocalChecked()->Run(context);
-            if (returned.IsEmpty()) {
-                LOGE("Run script with an exception");
-                JSError::Throw(env, runtime, tryCatch);
-                result = 0;
-            } else {
-                auto checkedResult = returned.ToLocalChecked();
-                result = runtime->Wrap(env, checkedResult);
-            }
+            return;
         }
+        auto returned = script.ToLocalChecked()->Run(context);
+        if (returned.IsEmpty()) {
+            LOGE("Run script with an exception");
+            JSError::Throw(env, runtime, tryCatch);
+            result = 0;
+            return;
+        }
+        auto checkedResult = returned.ToLocalChecked();
+        result = runtime->Wrap(env, checkedResult);
     V8_END()
     return result;
 }
@@ -100,10 +100,10 @@ jobject JSContext::ParseJson(JNIEnv *env, jstring jthis, jstring jjson) {
         if (returned.IsEmpty()) {
             JSError::Throw(env, runtime, tryCatch);
             result = 0;
-        } else {
-            auto checkedResult = returned.ToLocalChecked();
-            result = runtime->Wrap(env, checkedResult);
+            return;
         }
+        auto checkedResult = returned.ToLocalChecked();
+        result = runtime->Wrap(env, checkedResult);
     V8_END()
     return result;
 }

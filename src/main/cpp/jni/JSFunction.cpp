@@ -51,13 +51,14 @@ jobject JSFunction::Call(JNIEnv *env, jobject jthis, jobject jreceiver, jobjectA
         if (tryCatch.HasCaught()) {
             JSError::Throw(env, runtime, tryCatch);
             result = 0;
+            return;
         }
         if (ret.IsEmpty()) {
             result = 0;
-        } else {
-            auto retValue = ret.ToLocalChecked();
-            result = runtime->Wrap(env, retValue);
+            return;
         }
+        auto retValue = ret.ToLocalChecked();
+        result = runtime->Wrap(env, retValue);
     V8_END()
     return result;
 }

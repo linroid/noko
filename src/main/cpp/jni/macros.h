@@ -7,11 +7,15 @@
 
 #include "v8.h"
 
-#define V8_START(env, jthis, type) \
+#define V8_SCOPE(env, jthis) \
     auto runtime = JSContext::GetRuntime(env, jthis); \
     auto _runnable = [&]() { \
         v8::Locker _locker(runtime->isolate); \
         v8::HandleScope _handleScope(runtime->isolate); \
+
+
+#define V8_CONTEXT(env, jthis, type) \
+        V8_SCOPE(env, jthis) \
         auto context = runtime->context.Get(runtime->isolate); \
         jlong _reference = JSValue::GetReference(env, jthis); \
         auto _persistent = reinterpret_cast<v8::Persistent<type> *>(_reference); \

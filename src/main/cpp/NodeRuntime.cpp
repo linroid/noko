@@ -227,7 +227,14 @@ void NodeRuntime::Handle(uv_async_t *handle) {
     asyncMutex.lock();
     while (!callbacks.empty()) {
         auto callback = callbacks.front();
+        asyncMutex.unlock();
         callback();
+        asyncMutex.lock();
         callbacks.erase(callbacks.begin());
     }
+    uv_close((uv_handle_t *) handle, [](uv_handle_t *h) {
+        delete (uv_async_t *) h;
+    });
+    asyncHandle = nullptr;
+    asyncMutex.unlock();
 }

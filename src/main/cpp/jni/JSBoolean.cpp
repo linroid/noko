@@ -4,6 +4,7 @@
 
 #include "JSBoolean.h"
 #include "JSContext.h"
+#include "macros.h"
 
 JNIClass booleanClass;
 
@@ -32,8 +33,9 @@ jint JSBoolean::OnLoad(JNIEnv *env) {
 }
 
 void JSBoolean::New(JNIEnv *env, jobject jthis, jboolean jdata) {
-    auto runtime = JSContext::GetRuntime(env, jthis);
-    auto value = v8::Boolean::New(runtime->isolate, jdata);
-    auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
-    JSValue::SetReference(env, jthis, (jlong) reference);
+    V8_SCOPE(env, jthis)
+        auto value = v8::Boolean::New(runtime->isolate, jdata);
+        auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
+        JSValue::SetReference(env, jthis, (jlong) reference);
+    V8_END()
 }

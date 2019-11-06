@@ -66,7 +66,7 @@ jlong JSContext::Bind(JNIEnv *env, jobject jthis, jlong contextPtr) {
 
 jobject JSContext::Eval(JNIEnv *env, jstring jthis, jstring jcode, jstring jsource, jint jline) {
     jobject result = nullptr;
-    V8_START(env, jthis, v8::Object)
+    V8_CONTEXT(env, jthis, v8::Object)
         v8::TryCatch tryCatch(runtime->isolate);
         v8::ScriptOrigin scriptOrigin(JSString::ToV8(env, runtime->isolate, jsource),
                                       v8::Integer::New(runtime->isolate, jline));
@@ -93,7 +93,7 @@ jobject JSContext::Eval(JNIEnv *env, jstring jthis, jstring jcode, jstring jsour
 
 jobject JSContext::ParseJson(JNIEnv *env, jstring jthis, jstring jjson) {
     jobject result = nullptr;
-    V8_START(env, jthis, v8::Object)
+    V8_CONTEXT(env, jthis, v8::Object)
         auto json = JSString::ToV8(env, runtime->isolate, jjson);
         v8::TryCatch tryCatch(runtime->isolate);
         auto returned = v8::JSON::Parse(runtime->isolate, json);

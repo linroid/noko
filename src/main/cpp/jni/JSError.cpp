@@ -39,11 +39,12 @@ jint JSError::OnLoad(JNIEnv *env) {
 }
 
 void JSError::New(JNIEnv *env, jobject jthis, jstring jmessage) {
-    auto runtime = JSContext::GetRuntime(env, jthis);
-    auto message = JSString::ToV8(env, runtime->isolate, jmessage);
-    auto value = v8::Exception::Error(message);
-    auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
-    JSValue::SetReference(env, jthis, (jlong) reference);
+    V8_SCOPE(env, jthis)
+        auto message = JSString::ToV8(env, runtime->isolate, jmessage);
+        auto value = v8::Exception::Error(message);
+        auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
+        JSValue::SetReference(env, jthis, (jlong) reference);
+    V8_END()
 }
 
 jobject JSError::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {

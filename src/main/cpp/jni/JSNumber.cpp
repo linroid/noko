@@ -4,6 +4,7 @@
 
 #include "JSNumber.h"
 #include "JSValue.h"
+#include "macros.h"
 
 JNIClass numberClass;
 
@@ -31,8 +32,9 @@ jint JSNumber::OnLoad(JNIEnv *env) {
 }
 
 void JSNumber::New(JNIEnv *env, jobject jthis, jdouble jdata) {
-    auto runtime = JSContext::GetRuntime(env, jthis);
-    auto value = v8::Number::New(runtime->isolate, jdata);
-    auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
-    JSValue::SetReference(env, jthis, (jlong) reference);
+    V8_SCOPE(env, jthis)
+        auto value = v8::Number::New(runtime->isolate, jdata);
+        auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
+        JSValue::SetReference(env, jthis, (jlong) reference);
+    V8_END()
 }

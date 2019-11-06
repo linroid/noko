@@ -56,7 +56,7 @@ jobject JSValue::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &v
 
 jstring JSValue::ToString(JNIEnv *env, jobject jthis) {
     jstring result = nullptr;
-    V8_START(env, jthis, v8::Value)
+    V8_CONTEXT(env, jthis, v8::Value)
         v8::MaybeLocal<v8::String> str = that->ToString(context);
         if (str.IsEmpty()) {
             const char *bytes = new char[0];
@@ -71,7 +71,7 @@ jstring JSValue::ToString(JNIEnv *env, jobject jthis) {
 
 jstring JSValue::TypeOf(JNIEnv *env, jobject jthis) {
     jstring result = nullptr;
-    V8_START(env, jthis, v8::Value)
+    V8_CONTEXT(env, jthis, v8::Value)
         auto type = that->TypeOf(runtime->isolate);
         result = JSString::From(env, type);
     V8_END()
@@ -80,7 +80,7 @@ jstring JSValue::TypeOf(JNIEnv *env, jobject jthis) {
 
 jstring JSValue::ToJson(JNIEnv *env, jobject jthis) {
     jstring result = nullptr;
-    V8_START(env, jthis, v8::Value)
+    V8_CONTEXT(env, jthis, v8::Value)
         auto str = v8::JSON::Stringify(context, that);
         if (str.IsEmpty()) {
             const char *bytes = new char[0];
@@ -95,7 +95,7 @@ jstring JSValue::ToJson(JNIEnv *env, jobject jthis) {
 
 jdouble JSValue::ToNumber(JNIEnv *env, jobject jthis) {
     jdouble result = 0;
-    V8_START(env, jthis, v8::Value)
+    V8_CONTEXT(env, jthis, v8::Value)
         v8::TryCatch tryCatch(runtime->isolate);
 
         auto number = that->ToNumber(context);

@@ -114,7 +114,6 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
         eventOnPrepared(context)
         val cwdFunc: JSFunction = process.get("cwd")
         val cwdRet = cwdFunc.call(process)
-        Log.w(TAG, "cwdRet=${cwdRet}")
         val script = """(() => {
             const fs = require('fs');
             const vm = require('vm');  
@@ -123,7 +122,13 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
             { filename: '${file.name}'} )).runInThisContext();
             })()
              """
-        context.eval(script, file.absolutePath, 0)
+        try {
+            context.eval(script, file.absolutePath, 0)
+        } catch (error: JSException) {
+            Log.e(TAG, "Execute failed: file=${file.absolutePath}", error)
+            close()
+        }
+
     }
 
     private fun attachStdOutput(context: JSContext) {

@@ -12,6 +12,7 @@ class JSPromise {
 private:
     static jclass jclazz;
     static jmethodID jconstructor;
+    static jfieldID jresolver;
 
 public:
     inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {

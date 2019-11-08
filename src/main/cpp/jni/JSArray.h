@@ -15,7 +15,15 @@ public:
 
     JNICALL static void New(JNIEnv *env, jobject jthis);
 
+    JNICALL static jobject Get(JNIEnv *env, jobject jthis, jint jindex);
+
+    JNICALL static jboolean Add(JNIEnv *env, jobject jthis, jobject jelement);
+
+    JNICALL static jboolean AddAt(JNIEnv *env, jobject jthis, jint jindex, jobject jelement);
+
     JNICALL static jboolean AddAll(JNIEnv *env, jobject jthis, jobjectArray jelements);
+
+    JNICALL static jboolean AddAllAt(JNIEnv *env, jobject jthis, jint jindex, jobjectArray jelements);
 
     static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value);
 

@@ -71,7 +71,7 @@ open class JSValue(context: JSContext? = null, @Native private val reference: Lo
                 check(this is JSArray) { "$this is not an JSArray" }
                 this.map { it.toType(type.componentType as Class<out Any>) }.toTypedArray()
             }
-            else -> throw TODO("Not support convert JSValue to $type class")
+            else -> KNode.gson.fromJson(toJson(), type)
         }
         return result as T?
     }

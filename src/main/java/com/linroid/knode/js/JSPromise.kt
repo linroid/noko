@@ -22,6 +22,7 @@ class JSPromise : JSObject {
 
     fun then(callback: (JSValue) -> Unit): JSPromise {
         val then = JSFunction(context, "then") { _, argv ->
+            check(argv.isNotEmpty()) { "then() should receive a JSValue argument" }
             val result: JSValue = argv[0]
             callback.invoke(result)
             return@JSFunction null
@@ -45,6 +46,6 @@ class JSPromise : JSObject {
     private external fun nativeReject(error: JSError)
     private external fun nativeResolve(value: JSValue)
 
-    private external fun nativeThen(value: JSFunction)
-    private external fun nativeCatch(value: JSFunction)
+    private external fun nativeThen(callback: JSFunction)
+    private external fun nativeCatch(callback: JSFunction)
 }

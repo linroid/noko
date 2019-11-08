@@ -69,12 +69,63 @@ jint JSArray::OnLoad(JNIEnv *env) {
     }
 
     JNINativeMethod methods[] = {
-            {"nativeSize",   "()I",                                (void *) (Size)},
-            {"nativeNew",    "()V",                                (void *) (New)},
-            {"nativeAddAll", "([Lcom/linroid/knode/js/JSValue;)Z", (void *) (AddAll)},
+            {"nativeSize",     "()I",                                                             (void *) (Size)},
+            {"nativeNew",      "()V",                                                             (void *) (New)},
+            {"nativeAddAll",   "([Lcom/linroid/knode/js/JSValue;)Z",                              (void *) (AddAll)},
+            {"nativeAddAllAt", "(I[Lcom/linroid/knode/js/JSValue;)Z",                             (void *) (AddAllAt)},
+            {"nativeGet",      "(I)Lcom/linroid/knode/js/JSValue;",                               (void *) (Get)},
+            {"nativeAdd",      "(Lcom/linroid/knode/js/JSValue;)Z",                               (void *) (Add)},
+            {"nativeAddAt",    "(ILcom/linroid/knode/js/JSValue;)Lcom/linroid/knode/js/JSValue;", (void *) (AddAllAt)},
     };
     arrayClass.clazz = (jclass) env->NewGlobalRef(clazz);
     arrayClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
     env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
     return JNI_OK;
+}
+
+jobject JSArray::Get(JNIEnv *env, jobject jthis, jint jindex) {
+    v8::Persistent<v8::Value> *error = nullptr;
+    v8::Persistent<v8::Value> *result = nullptr;
+    JSType type = None;
+    V8_CONTEXT(env, jthis, v8::Array)
+        v8::TryCatch tryCatch(runtime->isolate);
+        auto value = that->Get(jindex);
+        if (tryCatch.HasCaught()) {
+            error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
+            return;
+        }
+        type = runtime->GetType(value);
+        result = new v8::Persistent<v8::Value>(isolate, value);
+    V8_END();
+    if (error) {
+        JSError::Throw(env, runtime, error);
+        return nullptr;
+    }
+    return runtime->Wrap(env, result, type);
+}
+
+jboolean JSArray::Add(JNIEnv *env, jobject jthis, jobject jelement) {
+    v8::Persistent<v8::Value> *error = nullptr;
+    auto element = JSValue::Unwrap(env, jelement);
+    bool success = false;
+    V8_CONTEXT(env, jthis, v8::TypedArray)
+        v8::TryCatch tryCatch(runtime->isolate);
+        success = that->Set(that->Length(), element->Get(isolate));
+        if (tryCatch.HasCaught()) {
+            error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
+            return;
+        }
+    V8_END();
+    if (error) {
+        JSError::Throw(env, runtime, error);
+    }
+    return static_cast<jboolean>(success);
+}
+
+jboolean JSArray::AddAt(JNIEnv *env, jobject jthis, jint jindex, jobject jelement) {
+
+}
+
+jboolean JSArray::AddAllAt(JNIEnv *env, jobject jthis, jint jindex, jobjectArray jelements) {
+    return 0;
 }

@@ -34,7 +34,7 @@ jboolean JSArray::AddAll(JNIEnv *env, jobject jthis, jobjectArray jelements) {
     v8::Persistent<v8::Value> *error = nullptr;
     for (int i = 0; i < size; ++i) {
         auto jelement = env->GetObjectArrayElement(jelements, i);
-        elements[i] = reinterpret_cast<v8::Persistent<v8::Value> *>(JSValue::GetReference(env, jelement));
+        elements[i] = JSValue::Unwrap(env, jelement);
     }
     V8_CONTEXT(env, jthis, v8::Array)
         v8::TryCatch tryCatch(runtime->isolate);

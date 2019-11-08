@@ -46,13 +46,13 @@ jobject JSFunction::Call(JNIEnv *env, jobject jthis, jobject jreceiver, jobjectA
     v8::Persistent<v8::Value> *error = nullptr;
     JSType type = None;
 
-    auto receiver = reinterpret_cast<v8::Persistent<v8::Value> *>(JSValue::GetReference(env, jreceiver));
+    auto receiver = JSValue::Unwrap(env, jreceiver);
 
     int argc = env->GetArrayLength(jparameters);
     v8::Persistent<v8::Value> *parameters[argc];
     for (int i = 0; i < argc; ++i) {
         auto jelement = env->GetObjectArrayElement(jparameters, i);
-        parameters[i] = reinterpret_cast<v8::Persistent<v8::Value> *>(JSValue::GetReference(env, jelement));
+        parameters[i] = JSValue::Unwrap(env, jelement);
     }
 
     V8_CONTEXT(env, jthis, v8::Function)

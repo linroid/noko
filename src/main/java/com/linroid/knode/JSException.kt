@@ -9,5 +9,4 @@ import com.linroid.knode.js.JSError
 class JSException(val error: JSError) : RuntimeException(error.stack()) {
 
     fun stack(): String = message!!
-
 }

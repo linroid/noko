@@ -10,7 +10,7 @@
 #define V8_SCOPE(env, jthis) \
     auto runtime = JSValue::GetRuntime(env, jthis); \
     auto isolate = runtime->isolate; \
-    jlong _reference = JSValue::GetReference(env, jthis); \
+    auto _reference = JSValue::Unwrap(env, jthis); \
     auto _runnable = [&]() { \
         v8::Locker _locker(runtime->isolate); \
         v8::HandleScope _handleScope(runtime->isolate); \

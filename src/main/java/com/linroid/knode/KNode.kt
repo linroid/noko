@@ -113,8 +113,7 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
         chdir.call(process, JSString(context, pwd.absolutePath))
         eventOnPrepared(context)
         val cwdFunc: JSFunction = process.get("cwd")
-        val cwdRet = cwdFunc.call(process)
-        Log.w(TAG, "cwdRet=${cwdRet}")
+        cwdFunc.call(process)
         val script = """(() => {
             const fs = require('fs');
             const vm = require('vm');  
@@ -123,6 +122,7 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
             { filename: '${file.name}'} )).runInThisContext();
             })()
              """
+        Log.v(TAG, script)
         context.eval(script, file.absolutePath, 0)
     }
 

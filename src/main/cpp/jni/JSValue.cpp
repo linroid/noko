@@ -39,12 +39,7 @@ jint JSValue::OnLoad(JNIEnv *env) {
     return JNI_OK;
 }
 
-jobject JSValue::GetContext(JNIEnv *env, jobject jobj) {
-    return env->GetObjectField(jobj, valueClass.context);
-}
-
 jlong JSValue::GetReference(JNIEnv *env, jobject jobj) {
-    LOGV("JSValue::GetReference");
     return env->GetLongField(jobj, valueClass.reference);
 }
 
@@ -61,14 +56,12 @@ jstring JSValue::ToString(JNIEnv *env, jobject jthis) {
     jsize length = 0;
     auto runtime = JSValue::GetRuntime(env, jthis);
     auto isolate = runtime->isolate;
-    jlong _reference = JSValue::GetReference(env, jthis);
+    auto value = JSValue::Unwrap(env, jthis);
     auto _runnable = [&]() {
         v8::Locker _locker(runtime->isolate);
         v8::HandleScope _handleScope(runtime->isolate);
         auto context = runtime->context.Get(isolate);
-        auto _persistent = reinterpret_cast<v8::Persistent<v8::Value> *>(_reference);
-        auto that = v8::Local<v8::Value>::New(runtime->isolate, *_persistent);
-        v8::MaybeLocal<v8::String> str = that->ToString(context);
+        v8::MaybeLocal<v8::String> str = value->Get(isolate)->ToString(context);
         if (str.IsEmpty()) {
             unicodeChars = new uint16_t[0];
         } else {
@@ -132,20 +125,12 @@ jdouble JSValue::ToNumber(JNIEnv *env, jobject jthis) {
     return result;
 }
 
-v8::Local<v8::Value> JSValue::GetReference(JNIEnv *env, v8::Isolate *isolate, jobject jobj) {
-    v8::EscapableHandleScope handleScope(isolate);
-    jlong reference = JSValue::GetReference(env, jobj);
-    auto persistent = reinterpret_cast<v8::Persistent<v8::Value> *>(reference);
-    auto that = v8::Local<v8::Value>::New(isolate, *persistent);
-    return handleScope.Escape(that);
-}
-
 void JSValue::Dispose(JNIEnv *env, jobject jthis) {
-    auto runtime = JSContext::GetRuntime(env, jthis);
+    auto runtime = JSValue::GetRuntime(env, jthis);
     v8::Locker locker_(runtime->isolate);
-    jlong reference_ = JSValue::GetReference(env, jthis);
-    auto persistent = reinterpret_cast<v8::Persistent<v8::Value> *>(reference_);
-    persistent->Reset();
+    auto value = JSValue::Unwrap(env, jthis);
+    value->Reset();
+    delete value;
     JSValue::SetReference(env, jthis, 0);
 }
 

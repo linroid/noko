@@ -1,12 +1,17 @@
 package com.linroid.knode.js
 
 import com.linroid.knode.JSException
+import java.lang.annotation.Native
 
 /**
  * @author linroid
  * @since 2019-10-19
  */
-class JSContext(@Suppress("unused") private val runtimePtr: Long, reference: Long) : JSObject(null, reference) {
+class JSContext(@Suppress("unused") @Native internal val runtimePtr: Long, reference: Long) : JSObject(null, reference) {
+    init {
+        context = this
+    }
+
     private val references = HashSet<JSValue>()
 
     @Throws(JSException::class)

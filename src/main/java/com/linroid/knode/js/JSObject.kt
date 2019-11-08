@@ -11,8 +11,11 @@ open class JSObject : JSValue {
     @NativeConstructor
     protected constructor(context: JSContext?, reference: Long) : super(context, reference)
 
-    constructor(context: JSContext) : this(context, 0) {
+    constructor(context: JSContext, data: JsonObject? = null) : super(context, 0) {
         nativeNew()
+        data?.entrySet()?.forEach {
+            set(it.key, from(context, it.value))
+        }
         addBinds()
     }
 
@@ -33,12 +36,6 @@ open class JSObject : JSValue {
                     }
                 })
             }
-    }
-
-    constructor(context: JSContext, data: JsonObject) : this(context) {
-        data.entrySet().forEach {
-            set(it.key, from(context, it.value))
-        }
     }
 
     fun has(key: String): Boolean {

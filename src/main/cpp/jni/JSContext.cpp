@@ -43,16 +43,6 @@ jobject JSContext::Wrap(JNIEnv *env, NodeRuntime *runtime) {
                           reinterpret_cast<jlong>(runtime->global));
 }
 
-NodeRuntime *JSContext::GetRuntime(JNIEnv *env, jobject jobj) {
-    jobject jcontext = JSValue::GetContext(env, jobj);
-    if (jcontext == nullptr) {
-        jcontext = jobj;
-    }
-    LOGV("JSContext::GetRuntime");
-    jlong runtimePtr = env->GetLongField(jcontext, contextClass.runtimePtr);
-    return reinterpret_cast<NodeRuntime *>(runtimePtr);
-}
-
 jobject JSContext::Eval(JNIEnv *env, jstring jthis, jstring jcode, jstring jsource, jint jline) {
     v8::Persistent<v8::Value> *result = nullptr;
     JSType type = None;

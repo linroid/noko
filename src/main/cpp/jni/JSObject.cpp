@@ -20,7 +20,7 @@ jobject JSObject::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Val
 
 JNICALL void JSObject::Set(JNIEnv *env, jobject jthis, jstring jkey, jobject jvalue) {
     const uint16_t *key = env->GetStringChars(jkey, nullptr);
-    auto value = reinterpret_cast<v8::Persistent<v8::Value> *>(JSValue::GetReference(env, jvalue));
+    auto value = JSValue::Unwrap(env, jvalue);
     const jint keyLen = env->GetStringLength(jkey);
     V8_CONTEXT(env, jthis, v8::Object)
         assert(!that->IsNull());

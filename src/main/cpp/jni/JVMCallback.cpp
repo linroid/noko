@@ -28,8 +28,8 @@ void JVMCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
     auto type = runtime->GetType(caller);
     auto jret = env->CallObjectMethod(that, methodId, runtime->Wrap(env, value, type), parameters);
     if (jret != 0) {
-        auto ret = JSValue::GetReference(env, runtime->isolate, jret);
-        info.GetReturnValue().Set(ret);
+        auto result = JSValue::Unwrap(env, jret);
+        info.GetReturnValue().Set(result->Get(runtime->isolate));
     }
     if (stat == JNI_EDETACHED) {
         vm->DetachCurrentThread();
@@ -38,6 +38,7 @@ void JVMCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
 
 JVMCallback::~JVMCallback() {
     JNIEnv *env;
+    LOGD("JVMCallback destruct");
     auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);
     if (stat == JNI_EDETACHED) {
         vm->AttachCurrentThread(&env, nullptr);

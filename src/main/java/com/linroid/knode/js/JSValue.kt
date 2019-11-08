@@ -11,13 +11,21 @@ import java.lang.annotation.Native
  * @author linroid
  * @since 2019-10-19
  */
-open class JSValue(
-    context: JSContext?,
-    @Native protected val reference: Long
-) : Closeable {
+open class JSValue(context: JSContext? = null, @Native private val reference: Long) : Closeable {
 
     @Suppress("LeakingThis")
-    val context: JSContext = context ?: this as JSContext
+    protected lateinit var context: JSContext
+
+    init {
+        if (context != null) {
+            this.context = context
+        }
+    }
+
+    /** For native access runtime ptr */
+    private fun runtime(): Long {
+        return context.runtimePtr
+    }
 
     override fun toString(): String {
         return nativeToString()
@@ -114,10 +122,11 @@ open class JSValue(
                 is Iterator<*> -> JSArray(context, value)
                 is Array<*> -> JSArray(context, value.iterator())
                 is JsonElement -> {
-                    // from(context, value)
                     context.parseJson(value.toString())
                 }
-                else -> throw IllegalStateException("Not support ${value.javaClass}")
+                else -> {
+                    context.parseJson(KNode.gson.toJson(value))
+                }
             }
         }
 

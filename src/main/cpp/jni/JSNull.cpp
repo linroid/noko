@@ -3,6 +3,8 @@
 //
 
 #include "JSNull.h"
+#include "macros.h"
+#include "JSValue.h"
 
 JNIClass nullClass;
 
@@ -18,9 +20,18 @@ jint JSNull::OnLoad(JNIEnv *env) {
     nullClass.clazz = (jclass) env->NewGlobalRef(clazz);
     nullClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;)V");
 
-    // JNINativeMethod methods[] = {
-    //         {"nativeSize", "()I", (void *) (Size)},
-    // };
-    // env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
+    JNINativeMethod methods[] = {
+            {"nativeNew", "()V", (void *) (JSNull::New)},
+    };
+    env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
     return JNI_OK;
+}
+
+void JSNull::New(JNIEnv *env, jobject jthis) {
+    v8::Persistent<v8::Value> *result = nullptr;
+    V8_SCOPE(env, jthis)
+        auto value = v8::Null(isolate);
+        result = new v8::Persistent<v8::Value>(runtime->isolate, value);
+    V8_END()
+    JSValue::SetReference(env, jthis, (jlong) result);
 }

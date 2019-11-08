@@ -14,11 +14,11 @@
     auto _runnable = [&]() { \
         v8::Locker _locker(runtime->isolate); \
         v8::HandleScope _handleScope(runtime->isolate); \
-        auto context = runtime->context.Get(isolate);
 
 #define V8_CONTEXT(env, jthis, type) \
         V8_SCOPE(env, jthis) \
         assert(_reference != 0); \
+        auto context = runtime->context.Get(isolate); \
         auto _persistent = reinterpret_cast<v8::Persistent<type> *>(_reference); \
         auto that = v8::Local<type>::New(runtime->isolate, *_persistent);
 

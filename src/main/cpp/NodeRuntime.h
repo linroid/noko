@@ -33,6 +33,7 @@ enum JSType {
     Boolean,
     Function,
     Promise,
+    Error,
 };
 
 class NodeRuntime {

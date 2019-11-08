@@ -32,11 +32,20 @@ open class JSObject : JSValue {
                 val name = if (bind.name.isEmpty()) method.name else bind.name
                 set(name, object : JSFunction(context, name) {
                     override fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
-                        val result = method.invoke(this@JSObject, parameters)
+                        val result = method.invoke(this@JSObject, *convertParameters(parameters, method.parameterTypes))
                         return from(context, result)
                     }
                 })
             }
+    }
+
+    private fun convertParameters(parameters: Array<out JSValue>, parameterTypes: Array<Class<*>>): Array<Any?> {
+        val argc = parameterTypes.size
+        return Array(argc) { i ->
+            val value = parameters[i]
+            val type = parameterTypes[i]
+            value.toType(type)
+        }
     }
 
     fun has(key: String): Boolean {

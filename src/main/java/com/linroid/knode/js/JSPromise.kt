@@ -5,6 +5,8 @@ package com.linroid.knode.js
  * @since 2019/11/1
  */
 class JSPromise : JSObject {
+    private var resolverPtr: Long = 0
+
     @NativeConstructor
     private constructor(context: JSContext, reference: Long) : super(context, reference)
 
@@ -34,7 +36,7 @@ class JSPromise : JSObject {
     fun catch(callback: (JSError) -> Unit): JSPromise {
         val then = JSFunction(context, "catch") { _, argv ->
             val result: JSValue = argv[0]
-            check(result is JSError) { "catch() should receive an JSError parameter" }
+            check(result is JSError) { "catch() should receive an JSError parameter not ${result.javaClass.simpleName}(${result.typeOf()})}" }
             callback.invoke(result)
             return@JSFunction null
         }

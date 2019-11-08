@@ -44,7 +44,7 @@ open class JSValue(context: JSContext? = null, @Native private val reference: Lo
     }
 
     fun empty(): Boolean {
-        return this !is JSNull && this !is JSUndefined && this.reference != 0L
+        return this is JSNull || this is JSUndefined || this.reference == 0L
     }
 
     fun isPromise(): Boolean {

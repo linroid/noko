@@ -24,7 +24,7 @@ open class JSObject : JSValue {
         if (javaClass == JSObject::class.java) {
             return
         }
-        javaClass.declaredMethods
+        javaClass.methods
             .filter { it.isAnnotationPresent(Bind::class.java) }
             .forEach { method ->
                 method.isAccessible = true

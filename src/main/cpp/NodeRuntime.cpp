@@ -17,6 +17,7 @@
 #include "jni/JSFunction.h"
 #include "jni/JSNull.h"
 #include "jni/JSPromise.h"
+#include "jni/JSArray.h"
 
 int NodeRuntime::instanceCount = 0;
 std::mutex NodeRuntime::mutex;
@@ -188,6 +189,8 @@ jobject NodeRuntime::Wrap(JNIEnv *env, v8::Persistent<v8::Value> *value, JSType 
             return JSFunction::Wrap(env, this, value);
         case Promise:
             return JSPromise::Wrap(env, this, value);
+        case Array:
+            return JSArray::Wrap(env, this, value);
         default:
             return JSValue::Wrap(env, this, value);
     }
@@ -262,6 +265,8 @@ JSType NodeRuntime::GetType(v8::Local<v8::Value> &value) {
             return JSType::Function;
         } else if (value->IsPromise()) {
             return JSType::Promise;
+        } else if (value->IsArray()) {
+            return JSType::Array;
         }
         return JSType::Object;
     } else if (value->IsString()) {

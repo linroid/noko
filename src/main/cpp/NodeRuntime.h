@@ -26,6 +26,7 @@ enum JSType {
     Undefined,
     Null,
     Value,
+    Array,
     Object,
     String,
     Number,

@@ -58,10 +58,8 @@ jboolean JSArray::AddAll(JNIEnv *env, jobject jthis, jobjectArray jelements) {
     return static_cast<jboolean>(result);
 }
 
-
-jobject JSArray::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Array> &value) {
-    auto reference = new v8::Persistent<v8::Array>(runtime->isolate, value);
-    return env->NewObject(arrayClass.clazz, arrayClass.constructor, runtime->jcontext, (jlong) reference);
+jobject JSArray::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
+    return env->NewObject(arrayClass.clazz, arrayClass.constructor, runtime->jcontext, (jlong) value);
 }
 
 jint JSArray::OnLoad(JNIEnv *env) {

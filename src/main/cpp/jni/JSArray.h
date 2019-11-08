@@ -17,7 +17,7 @@ public:
 
     JNICALL static jboolean AddAll(JNIEnv *env, jobject jthis, jobjectArray jelements);
 
-    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Array> &value);
+    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value);
 
     static jint OnLoad(JNIEnv *env);
 };

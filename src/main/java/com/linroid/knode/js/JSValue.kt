@@ -44,7 +44,7 @@ open class JSValue(context: JSContext? = null, @Native private val reference: Lo
     }
 
     fun empty(): Boolean {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return this !is JSNull && this !is JSUndefined && this.reference != 0L
     }
 
     fun isPromise(): Boolean {

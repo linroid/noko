@@ -20,6 +20,8 @@ public:
 
     static JNICALL void Set(JNIEnv *env, jobject jthis, jstring jkey, jobject);
 
+    static JNICALL jboolean Has(JNIEnv *env, jobject jthis, jstring jkey);
+
     static JNICALL void New(JNIEnv *env, jobject jthis);
 };
 

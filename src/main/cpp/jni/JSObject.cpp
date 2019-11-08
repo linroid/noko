@@ -43,6 +43,17 @@ JNICALL jobject JSObject::Get(JNIEnv *env, jobject jthis, jstring jkey) {
     return runtime->Wrap(env, result, type);
 }
 
+jboolean JSObject::Has(JNIEnv *env, jobject jthis, jstring jkey) {
+    bool result = false;
+    const uint16_t *key = env->GetStringChars(jkey, nullptr);
+    const jint keyLen = env->GetStringLength(jkey);
+    V8_CONTEXT(env, jthis, v8::Object)
+        result = that->Has(V8_STRING(key, keyLen));
+    V8_END()
+    env->ReleaseStringChars(jkey, key);
+    return static_cast<jboolean>(result);
+}
+
 void JSObject::New(JNIEnv *env, jobject jthis) {
     v8::Persistent<v8::Value> *result = nullptr;
     V8_SCOPE(env, jthis)
@@ -62,10 +73,10 @@ jint JSObject::OnLoad(JNIEnv *env) {
             {"nativeGet", "(Ljava/lang/String;)Lcom/linroid/knode/js/JSValue;",  (void *) (JSObject::Get)},
             {"nativeSet", "(Ljava/lang/String;Lcom/linroid/knode/js/JSValue;)V", (void *) (JSObject::Set)},
             {"nativeNew", "()V",                                                 (void *) (JSObject::New)},
+            {"nativeHas", "(Ljava/lang/String;)Z",                               (void *) (JSObject::Has)},
     };
     objectClass.clazz = (jclass) env->NewGlobalRef(clazz);
     objectClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
     env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
     return JNI_OK;
 }
-

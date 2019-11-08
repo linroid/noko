@@ -31,6 +31,7 @@ enum JSType {
     Number,
     Boolean,
     Function,
+    Promise,
 };
 
 class NodeRuntime {

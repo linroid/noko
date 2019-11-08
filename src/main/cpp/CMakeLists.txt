@@ -25,6 +25,7 @@ set(SOURCES
         jni/JSFunction.cpp
         jni/JVMCallback.cpp
         jni/JSError.cpp
+        jni/JSPromise.cpp
 
         # uv
         ${UV_SOURCE}/src/fs-poll.c

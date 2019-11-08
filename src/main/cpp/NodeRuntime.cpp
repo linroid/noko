@@ -16,6 +16,7 @@
 #include "jni/macros.h"
 #include "jni/JSFunction.h"
 #include "jni/JSNull.h"
+#include "jni/JSPromise.h"
 
 int NodeRuntime::instanceCount = 0;
 std::mutex NodeRuntime::mutex;
@@ -185,6 +186,8 @@ jobject NodeRuntime::Wrap(JNIEnv *env, v8::Persistent<v8::Value> *value, JSType 
             return JSBoolean::Wrap(env, this, value);
         case Function:
             return JSFunction::Wrap(env, this, value);
+        case Promise:
+            return JSPromise::Wrap(env, this, value);
         default:
             return JSValue::Wrap(env, this, value);
     }
@@ -253,11 +256,12 @@ JSType NodeRuntime::GetType(v8::Local<v8::Value> &value) {
     } else if (value->IsBoolean()) {
         return JSType::Boolean;
     } else if (value->IsNumber()) {
-        auto casted = value.As<v8::Number>();
         return JSType::Number;
     } else if (value->IsObject()) {
         if (value->IsFunction()) {
             return JSType::Function;
+        } else if (value->IsPromise()) {
+            return JSType::Promise;
         }
         return JSType::Object;
     } else if (value->IsString()) {

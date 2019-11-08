@@ -48,62 +48,73 @@ NodeRuntime *JSContext::GetRuntime(JNIEnv *env, jobject jobj) {
     if (jcontext == nullptr) {
         jcontext = jobj;
     }
+    LOGV("JSContext::GetRuntime");
     jlong runtimePtr = env->GetLongField(jcontext, contextClass.runtimePtr);
     return reinterpret_cast<NodeRuntime *>(runtimePtr);
 }
 
-jobject JSContext::Get(JNIEnv *env, jobject jthis, jstring key) {
-    return nullptr;
-}
-
-jobject JSContext::Get(JNIEnv *env, jobject jthis, jstring key, jobject value) {
-    return nullptr;
-}
-
-jlong JSContext::Bind(JNIEnv *env, jobject jthis, jlong contextPtr) {
-    return 0;
-}
-
 jobject JSContext::Eval(JNIEnv *env, jstring jthis, jstring jcode, jstring jsource, jint jline) {
-    jobject result = nullptr;
+    v8::Persistent<v8::Value> *result = nullptr;
+    JSType type = None;
+    v8::Persistent<v8::Value> *error = nullptr;
+
+    jint codeLen = env->GetStringLength(jcode);
+    auto code = env->GetStringChars(jcode, nullptr);
+
+    jint sourceLen = env->GetStringLength(jsource);
+    auto source = env->GetStringChars(jsource, nullptr);
+
     V8_CONTEXT(env, jthis, v8::Object)
         v8::TryCatch tryCatch(runtime->isolate);
-        v8::ScriptOrigin scriptOrigin(JSString::ToV8(env, runtime->isolate, jsource),
-                                      v8::Integer::New(runtime->isolate, jline));
-        auto code = JSString::ToV8(env, runtime->isolate, jcode);
-        auto script = v8::Script::Compile(context, code, &scriptOrigin);
+        v8::ScriptOrigin scriptOrigin(V8_STRING(source, sourceLen), v8::Integer::New(runtime->isolate, jline));
+        auto script = v8::Script::Compile(context, V8_STRING(code, codeLen), &scriptOrigin);
         if (script.IsEmpty()) {
             LOGE("Compile script with an exception");
-            JSError::Throw(env, runtime, tryCatch);
-            result = 0;
+            error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
             return;
         }
         auto returned = script.ToLocalChecked()->Run(context);
         if (returned.IsEmpty()) {
             LOGE("Run script with an exception");
-            JSError::Throw(env, runtime, tryCatch);
-            result = 0;
+            error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
             return;
         }
+        LOGI("Eval success");
         auto checkedResult = returned.ToLocalChecked();
-        result = runtime->Wrap(env, checkedResult);
+        type = runtime->GetType(checkedResult);
+        result = new v8::Persistent<v8::Value>(isolate, checkedResult);
     V8_END()
-    return result;
+    LOGE("EVAL result: %p", result);
+    if (error) {
+        JSError::Throw(env, runtime, error);
+        return nullptr;
+    }
+    env->ReleaseStringChars(jcode, code);
+    env->ReleaseStringChars(jsource, source);
+    return runtime->Wrap(env, result, type);
 }
 
 jobject JSContext::ParseJson(JNIEnv *env, jstring jthis, jstring jjson) {
-    jobject result = nullptr;
+    v8::Persistent<v8::Value> *result = nullptr;
+    JSType type = None;
+    v8::Persistent<v8::Value> *error = nullptr;
+    const uint16_t *json = env->GetStringChars(jjson, nullptr);
+    const jint jsonLen = env->GetStringLength(jjson);
     V8_CONTEXT(env, jthis, v8::Object)
-        auto json = JSString::ToV8(env, runtime->isolate, jjson);
-        v8::TryCatch tryCatch(runtime->isolate);
-        auto returned = v8::JSON::Parse(runtime->isolate, json);
+        v8::TryCatch tryCatch(isolate);
+        auto returned = v8::JSON::Parse(isolate, V8_STRING(json, jsonLen));
         if (returned.IsEmpty()) {
-            JSError::Throw(env, runtime, tryCatch);
-            result = 0;
+            error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
             return;
         }
         auto checkedResult = returned.ToLocalChecked();
-        result = runtime->Wrap(env, checkedResult);
+        type = runtime->GetType(checkedResult);
+        result = new v8::Persistent<v8::Value>(isolate, checkedResult);
     V8_END()
-    return result;
+    if (error) {
+        JSError::Throw(env, runtime, error);
+        return nullptr;
+    }
+    env->ReleaseStringChars(jjson, json);
+    return runtime->Wrap(env, result, type);
 }

@@ -12,11 +12,9 @@ class JSError {
 public:
     JNICALL static void New(JNIEnv *env, jobject jthis, jstring jmessage);
 
-    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value);
+    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value);
 
-    static void Throw(JNIEnv *env, NodeRuntime *runtime, v8::TryCatch &tryCatch);
-
-    static void Throw(JNIEnv *env, jobject jerror);
+    static void Throw(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *error);
 
     static jint OnLoad(JNIEnv *env);
 };

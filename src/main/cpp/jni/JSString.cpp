@@ -30,26 +30,22 @@ jint JSString::OnLoad(JNIEnv *env) {
     return JNI_OK;
 }
 
-v8::Local<v8::String> JSString::ToV8(JNIEnv *env, v8::Isolate *isolate, jstring &string) {
-    const uint16_t *unicodeString = env->GetStringChars(string, nullptr);
-    int length = env->GetStringLength(string);
-    v8::EscapableHandleScope handleScope(isolate);
-    v8::Local<v8::String> result = v8::String::NewFromTwoByte(isolate, unicodeString, v8::String::NewStringType::kNormalString, length);
-    env->ReleaseStringChars(string, unicodeString);
-    return handleScope.Escape(result);
+jobject JSString::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
+    return env->NewObject(stringClass.clazz,
+                          stringClass.constructor,
+                          runtime->jcontext,
+                          (jlong) value);
 }
 
-jobject JSString::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::String> &value) {
-    auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
-    return env->NewObject(stringClass.clazz, stringClass.constructor, runtime->jcontext, reference, JSString::From(env, value));
-}
-
-void JSString::New(JNIEnv *env, jobject jthis, jstring content) {
+void JSString::New(JNIEnv *env, jobject jthis, jstring jcontent) {
+    v8::Persistent<v8::Value> *result = nullptr;
+    const uint16_t *content = env->GetStringChars(jcontent, nullptr);
+    const jint contentLen = env->GetStringLength(jcontent);
     V8_SCOPE(env, jthis)
-        auto value = JSString::ToV8(env, runtime->isolate, content);
-        auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
-        JSValue::SetReference(env, jthis, (jlong) reference);
+        result = new v8::Persistent<v8::Value>(isolate, V8_STRING(content, contentLen));
     V8_END()
+    env->ReleaseStringChars(jcontent, content);
+    JSValue::SetReference(env, jthis, (jlong) result);
 }
 
 jstring JSString::From(JNIEnv *env, v8::Local<v8::String> &value) {

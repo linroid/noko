@@ -14,42 +14,42 @@
 
 JNIClass objectClass;
 
-jobject JSObject::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {
-    auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
-    return env->NewObject(objectClass.clazz, objectClass.constructor, runtime->jcontext, (jlong) reference);
+jobject JSObject::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
+    return env->NewObject(objectClass.clazz, objectClass.constructor, runtime->jcontext, (jlong) value);
 }
 
-JNICALL void JSObject::Set(JNIEnv *env, jobject jthis, jstring j_key, jobject j_value) {
+JNICALL void JSObject::Set(JNIEnv *env, jobject jthis, jstring jkey, jobject jvalue) {
+    const uint16_t *key = env->GetStringChars(jkey, nullptr);
+    auto value = reinterpret_cast<v8::Persistent<v8::Value> *>(JSValue::GetReference(env, jvalue));
+    const jint keyLen = env->GetStringLength(jkey);
     V8_CONTEXT(env, jthis, v8::Object)
-        auto target = reinterpret_cast<v8::Persistent<v8::Value> *>(JSValue::GetReference(env, j_value));
-        v8::Local<v8::String> key = JSString::ToV8(env, runtime->isolate, j_key);
-        that->Set(key, target->Get(runtime->isolate));
+        assert(!that->IsNull());
+        that->Set(V8_STRING(key, keyLen), value->Get(isolate));
     V8_END()
+    env->ReleaseStringChars(jkey, key);
 }
 
-JNICALL jobject JSObject::Get(JNIEnv *env, jobject jthis, jstring j_key) {
-    jobject result = nullptr;
-
+JNICALL jobject JSObject::Get(JNIEnv *env, jobject jthis, jstring jkey) {
+    v8::Persistent<v8::Value> *result = nullptr;
+    JSType type = None;
+    const uint16_t *key = env->GetStringChars(jkey, nullptr);
+    const jint keyLen = env->GetStringLength(jkey);
     V8_CONTEXT(env, jthis, v8::Object)
-        v8::Local<v8::String> key = JSString::ToV8(env, runtime->isolate, j_key);
-        auto ret = that->Get(key);
-        if (ret->IsUndefined()) {
-            result = JSUndefined::Wrap(env, runtime);
-        } else if (ret->IsNull()) {
-            result = JSNull::Wrap(env, runtime);
-        } else {
-            result = runtime->Wrap(env, ret);
-        }
+        auto value = that->Get(V8_STRING(key, keyLen));
+        type = runtime->GetType(value);
+        result = new v8::Persistent<v8::Value>(isolate, value);
     V8_END()
-    return result;
+    env->ReleaseStringChars(jkey, key);
+    return runtime->Wrap(env, result, type);
 }
 
 void JSObject::New(JNIEnv *env, jobject jthis) {
+    v8::Persistent<v8::Value> *result = nullptr;
     V8_SCOPE(env, jthis)
         auto value = v8::Object::New(runtime->isolate);
-        auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
-        JSValue::SetReference(env, jthis, (jlong) reference);
+        result = new v8::Persistent<v8::Value>(runtime->isolate, value);
     V8_END()
+    JSValue::SetReference(env, jthis, (jlong) result);
 }
 
 jint JSObject::OnLoad(JNIEnv *env) {

@@ -10,7 +10,7 @@
 
 class JSFunction {
 public:
-    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Function> &value);
+    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value);
 
     static jint OnLoad(JNIEnv *env);
 
@@ -18,4 +18,5 @@ public:
 
     JNICALL static jobject Call(JNIEnv *env, jobject jthis, jobject jreceiver, jobjectArray jparameters);
 };
+
 #endif //DORA_JSFUNCTION_H

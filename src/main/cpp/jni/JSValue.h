@@ -10,7 +10,8 @@
 
 class JSValue {
 public:
-    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value);
+
+    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value);
 
     JNICALL static jstring ToString(JNIEnv *env, jobject jthis);
 
@@ -24,11 +25,13 @@ public:
 
     static jint OnLoad(JNIEnv *env);
 
-    static jclass & JVMClass();
+    static jclass &JVMClass();
 
     static jobject GetContext(JNIEnv *env, jobject jobj);
 
     static jlong GetReference(JNIEnv *env, jobject jobj);
+
+    static NodeRuntime *GetRuntime(JNIEnv *env, jobject jobj);
 
     static v8::Local<v8::Value> GetReference(JNIEnv *env, v8::Isolate *isolate, jobject jobj);
 

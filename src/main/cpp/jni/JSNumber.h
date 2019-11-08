@@ -10,7 +10,7 @@
 
 class JSNumber {
 public:
-    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Number> &value);
+    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value);
 
     JNICALL static void New(JNIEnv *env, jobject jthis, jdouble jdata);
 

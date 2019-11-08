@@ -19,38 +19,41 @@ jint JSArray::Size(JNIEnv *env, jobject jthis) {
 
 
 void JSArray::New(JNIEnv *env, jobject jthis) {
+    v8::Persistent<v8::Value> *result;
     V8_SCOPE(env, jthis)
         auto value = v8::Array::New(runtime->isolate);
-        auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
-        JSValue::SetReference(env, jthis, (jlong) reference);
+        result = new v8::Persistent<v8::Value>(runtime->isolate, value);
     V8_END()
+    JSValue::SetReference(env, jthis, (jlong) result);
 }
 
 jboolean JSArray::AddAll(JNIEnv *env, jobject jthis, jobjectArray jelements) {
     auto size = env->GetArrayLength(jelements);
     bool result = true;
-    jobject error = nullptr;
+    v8::Persistent<v8::Value> *elements[size];
+    v8::Persistent<v8::Value> *error = nullptr;
+    for (int i = 0; i < size; ++i) {
+        auto jelement = env->GetObjectArrayElement(jelements, i);
+        elements[i] = reinterpret_cast<v8::Persistent<v8::Value> *>(JSValue::GetReference(env, jelement));
+    }
     V8_CONTEXT(env, jthis, v8::Array)
         v8::TryCatch tryCatch(runtime->isolate);
         auto index = that->Length();
         for (int i = 0; i < size; ++i) {
-            auto jelement = env->GetObjectArrayElement(jelements, i);
-            auto element = JSValue::GetReference(env, runtime->isolate, jelement);
+            auto element = elements[i]->Get(isolate);
             if (!that->Set(index + i, element)) {
                 result = false;
                 break;
             }
             if (tryCatch.HasCaught()) {
-                auto e = tryCatch.Exception();
-                error = JSError::Wrap(env, runtime, e);
-                result = false;
+                error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
                 break;
             }
         }
     V8_END();
     if (error) {
-        JSError::Throw(env, error);
-        result = false;
+        JSError::Throw(env, runtime, error);
+        return 0;
     }
     return static_cast<jboolean>(result);
 }

@@ -12,13 +12,13 @@
 class JSObject {
 
 public:
-    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value);
+    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value);
 
     static jint OnLoad(JNIEnv *env);
 
-    static JNICALL jobject Get(JNIEnv *env, jobject jthis, jstring key);
+    static JNICALL jobject Get(JNIEnv *env, jobject jthis, jstring jkey);
 
-    static JNICALL void Set(JNIEnv *env, jobject jthis, jstring key, jobject);
+    static JNICALL void Set(JNIEnv *env, jobject jthis, jstring jkey, jobject);
 
     static JNICALL void New(JNIEnv *env, jobject jthis);
 };

@@ -10,6 +10,7 @@
 #include "JSContext.h"
 #include "JSError.h"
 
+jmethodID runtimeMethodId;
 JNIClass valueClass;
 
 jint JSValue::OnLoad(JNIEnv *env) {
@@ -21,6 +22,7 @@ jint JSValue::OnLoad(JNIEnv *env) {
     valueClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
     valueClass.reference = env->GetFieldID(clazz, "reference", "J");
     valueClass.context = env->GetFieldID(clazz, "context", "Lcom/linroid/knode/js/JSContext;");
+    runtimeMethodId = env->GetMethodID(clazz, "runtime", "()J");
 
     JNINativeMethod methods[] = {
             {"nativeToString", "()Ljava/lang/String;", (void *) JSValue::ToString},
@@ -42,6 +44,7 @@ jobject JSValue::GetContext(JNIEnv *env, jobject jobj) {
 }
 
 jlong JSValue::GetReference(JNIEnv *env, jobject jobj) {
+    LOGV("JSValue::GetReference");
     return env->GetLongField(jobj, valueClass.reference);
 }
 
@@ -49,63 +52,83 @@ void JSValue::SetReference(JNIEnv *env, jobject jobj, jlong value) {
     env->SetLongField(jobj, valueClass.reference, value);
 }
 
-jobject JSValue::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {
-    auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
-    return env->NewObject(valueClass.clazz, valueClass.constructor, runtime->jcontext, reference);
+jobject JSValue::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
+    return env->NewObject(valueClass.clazz, valueClass.constructor, runtime->jcontext, (jlong) value);
 }
 
 jstring JSValue::ToString(JNIEnv *env, jobject jthis) {
-    jstring result = nullptr;
-    V8_CONTEXT(env, jthis, v8::Value)
+    uint16_t *unicodeChars = nullptr;
+    jsize length = 0;
+    auto runtime = JSValue::GetRuntime(env, jthis);
+    auto isolate = runtime->isolate;
+    jlong _reference = JSValue::GetReference(env, jthis);
+    auto _runnable = [&]() {
+        v8::Locker _locker(runtime->isolate);
+        v8::HandleScope _handleScope(runtime->isolate);
+        auto context = runtime->context.Get(isolate);
+        auto _persistent = reinterpret_cast<v8::Persistent<v8::Value> *>(_reference);
+        auto that = v8::Local<v8::Value>::New(runtime->isolate, *_persistent);
         v8::MaybeLocal<v8::String> str = that->ToString(context);
         if (str.IsEmpty()) {
-            const char *bytes = new char[0];
-            result = env->NewStringUTF(bytes);
+            unicodeChars = new uint16_t[0];
         } else {
             v8::String::Value unicodeString(str.ToLocalChecked());
-            result = env->NewString(*unicodeString, unicodeString.length());
+            unicodeChars = *unicodeString;
+            length = unicodeString.length();
         }
-    V8_END()
-    return result;
+
+    };
+    runtime->Run(_runnable);
+    return env->NewString(unicodeChars, length);
 }
 
 jstring JSValue::TypeOf(JNIEnv *env, jobject jthis) {
-    jstring result = nullptr;
+    uint16_t *unicodeChars = nullptr;
+    jsize length = 0;
     V8_CONTEXT(env, jthis, v8::Value)
         auto type = that->TypeOf(runtime->isolate);
-        result = JSString::From(env, type);
+        v8::String::Value unicodeString(type);
+        unicodeChars = *unicodeString;
+        length = unicodeString.length();
     V8_END()
-    return result;
+    return env->NewString(unicodeChars, length);
 }
 
 jstring JSValue::ToJson(JNIEnv *env, jobject jthis) {
-    jstring result = nullptr;
+    uint16_t *unicodeChars = nullptr;
+    jsize length = 0;
     V8_CONTEXT(env, jthis, v8::Value)
         auto str = v8::JSON::Stringify(context, that);
         if (str.IsEmpty()) {
-            const char *bytes = new char[0];
-            result = env->NewStringUTF(bytes);
+            unicodeChars = new uint16_t[0];
         } else {
-            v8::String::Value unicodeString(str.ToLocalChecked());
-            result = env->NewString(*unicodeString, unicodeString.length());
+            auto value = str.ToLocalChecked();
+            v8::String::Value unicodeString(value);
+            unicodeChars = *unicodeString;
+            length = unicodeString.length();
         }
     V8_END()
-    return result;
+    return env->NewString(unicodeChars, length);
 }
 
 jdouble JSValue::ToNumber(JNIEnv *env, jobject jthis) {
     jdouble result = 0;
+    v8::Persistent<v8::Value> *error;
     V8_CONTEXT(env, jthis, v8::Value)
         v8::TryCatch tryCatch(runtime->isolate);
-
         auto number = that->ToNumber(context);
         if (number.IsEmpty()) {
-            JSError::Throw(env, runtime, tryCatch);
+            error = new v8::Persistent<v8::Value>(runtime->isolate, tryCatch.Exception());
             result = 0.0;
             return;
         }
-        result = number.ToLocalChecked()->Value();
+        v8::Local<v8::Number> checked = number.ToLocalChecked();
+        result = checked->Value();
     V8_END()
+    if (error) {
+        JSError::Throw(env, runtime, error);
+        return 0.0;
+    }
     return result;
 }
 
@@ -128,4 +151,9 @@ void JSValue::Dispose(JNIEnv *env, jobject jthis) {
 
 jclass &JSValue::JVMClass() {
     return valueClass.clazz;
+}
+
+NodeRuntime *JSValue::GetRuntime(JNIEnv *env, jobject jobj) {
+    auto ptr = env->CallLongMethod(jobj, runtimeMethodId);
+    return reinterpret_cast<NodeRuntime *>(ptr);
 }

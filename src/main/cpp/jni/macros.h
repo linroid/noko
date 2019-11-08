@@ -8,16 +8,17 @@
 #include "v8.h"
 
 #define V8_SCOPE(env, jthis) \
-    auto runtime = JSContext::GetRuntime(env, jthis); \
+    auto runtime = JSValue::GetRuntime(env, jthis); \
+    auto isolate = runtime->isolate; \
+    jlong _reference = JSValue::GetReference(env, jthis); \
     auto _runnable = [&]() { \
         v8::Locker _locker(runtime->isolate); \
         v8::HandleScope _handleScope(runtime->isolate); \
-
+        auto context = runtime->context.Get(isolate);
 
 #define V8_CONTEXT(env, jthis, type) \
         V8_SCOPE(env, jthis) \
-        auto context = runtime->context.Get(runtime->isolate); \
-        jlong _reference = JSValue::GetReference(env, jthis); \
+        assert(_reference != 0); \
         auto _persistent = reinterpret_cast<v8::Persistent<type> *>(_reference); \
         auto that = v8::Local<type>::New(runtime->isolate, *_persistent);
 
@@ -25,7 +26,7 @@
     }; \
     runtime->Run(_runnable);
 
-#define V8_UTF_STRING(str) v8::String::NewFromUtf8(isolate, str, v8::NewStringType::kNormal).ToLocalChecked()
-#define V8_STRING(str) v8::String::NewFromTwoByte(isolate, str, v8::NewStringType::kNormal).ToLocalChecked()
+#define V8_UTF_STRING(isolate, str) v8::String::NewFromUtf8(isolate, str, v8::NewStringType::kNormal).ToLocalChecked()
+#define V8_STRING(str, length) v8::String::NewFromTwoByte(isolate, str, v8::NewStringType::kNormal, length).ToLocalChecked()
 
 #endif //NODE_MACROS_H

@@ -11,13 +11,14 @@
 
 class JVMCallback {
 private:
-    NodeRuntime *runtime;
     JavaVM *vm;
     jobject that;
     jclass clazz;
     jmethodID methodId;
 public:
-    JVMCallback(NodeRuntime *runtime, JNIEnv *env, jobject that, jclass clazz, jmethodID methodId);
+    NodeRuntime *runtime;
+
+    JVMCallback(JNIEnv *env, jobject that, jclass clazz, jmethodID methodId);
 
     ~JVMCallback();
 

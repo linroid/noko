@@ -258,7 +258,7 @@ JSType NodeRuntime::GetType(v8::Local<v8::Value> &value) {
     if (value->IsNull()) {
         return JSType::Null;
     } else if (value->IsUndefined()) {
-        return JSType::Function;
+        return JSType::Undefined;
     } else if (value->IsBoolean()) {
         return JSType::Boolean;
     } else if (value->IsNumber()) {

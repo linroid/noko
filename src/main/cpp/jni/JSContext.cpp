@@ -15,7 +15,8 @@
 
 jclass JSContext::jclazz;
 jmethodID JSContext::jconstructor;
-jfieldID JSContext::jruntimePtr;
+jfieldID JSContext::jnullId;
+jfieldID JSContext::jUndefinedId;
 
 jint JSContext::OnLoad(JNIEnv *env) {
     jclass clazz = env->FindClass("com/linroid/knode/js/JSContext");
@@ -24,7 +25,8 @@ jint JSContext::OnLoad(JNIEnv *env) {
     }
     jclazz = (jclass) (env->NewGlobalRef(clazz));
     jconstructor = env->GetMethodID(clazz, "<init>", "(JJ)V");
-    jruntimePtr = env->GetFieldID(clazz, "runtimePtr", "J");
+    jnullId = env->GetFieldID(clazz, "sharedNull", "Lcom/linroid/knode/js/JSNull;");
+    jUndefinedId = env->GetFieldID(clazz, "sharedUndefined", "Lcom/linroid/knode/js/JSUndefined;");
 
     JNINativeMethod methods[] = {
             {"nativeEval",      "(Ljava/lang/String;Ljava/lang/String;I)Lcom/linroid/knode/js/JSValue;", (void *) Eval},
@@ -102,4 +104,9 @@ jobject JSContext::ParseJson(JNIEnv *env, jstring jthis, jstring jjson) {
     }
     env->ReleaseStringChars(jjson, json);
     return runtime->Wrap(env, result, type);
+}
+
+void JSContext::SetShared(JNIEnv *env, NodeRuntime *runtime) {
+    env->SetObjectField(runtime->jcontext, jnullId, runtime->jnull);
+    env->SetObjectField(runtime->jcontext, jUndefinedId, runtime->jundefined);
 }

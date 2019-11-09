@@ -115,7 +115,7 @@ open class JSValue(context: JSContext? = null, @Native private val reference: Lo
     companion object {
         fun from(context: JSContext, value: Any?): JSValue {
             return when (value) {
-                null -> JSNull(context)
+                null -> context.sharedNull
                 is JSValue -> value
                 is String -> JSString(context, value)
                 is Number -> JSNumber(context, value)

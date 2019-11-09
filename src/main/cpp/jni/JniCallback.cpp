@@ -38,7 +38,7 @@ void JniCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
 
 JniCallback::~JniCallback() {
     JNIEnv *env;
-    LOGD("JVMCallback destruct");
+    LOGD("JniCallback destruct");
     auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);
     if (stat == JNI_EDETACHED) {
         vm->AttachCurrentThread(&env, nullptr);

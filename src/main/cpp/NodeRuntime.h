@@ -52,6 +52,8 @@ private:
 
 public:
     jobject jcontext;
+    jobject jnull;
+    jobject jundefined;
     JavaVM *vm = nullptr;
 
     v8::Isolate *isolate;

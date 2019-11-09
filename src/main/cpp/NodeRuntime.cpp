@@ -119,11 +119,12 @@ void NodeRuntime::OnEnvReady(node::Environment *nodeEnv) {
     if (stat == JNI_EDETACHED) {
         vm->AttachCurrentThread(&env, nullptr);
     }
-    auto jcontext = JSContext::Wrap(env, this);
-    if (jcontext == nullptr) {
-        throwError(env, "Failed to new JSContext instance");
-    }
-    this->jcontext = env->NewGlobalRef(jcontext);
+    auto nullValue = new v8::Persistent<v8::Value>(isolate, v8::Null(isolate));
+    auto undefinedValue = new v8::Persistent<v8::Value>(isolate, v8::Undefined(isolate));
+    this->jcontext = env->NewGlobalRef(JSContext::Wrap(env, this));
+    this->jnull = env->NewGlobalRef(JSNull::Wrap(env, this, nullValue));
+    this->jundefined = env->NewGlobalRef(JSUndefined::Wrap(env, this, undefinedValue));
+    JSContext::SetShared(env, this);
     if (stat == JNI_EDETACHED) {
         vm->DetachCurrentThread();
     }
@@ -175,9 +176,9 @@ NodeRuntime *NodeRuntime::GetCurrent(const v8::FunctionCallbackInfo<v8::Value> &
 jobject NodeRuntime::Wrap(JNIEnv *env, v8::Persistent<v8::Value> *value, JSType type) {
     switch (type) {
         case Null:
-            return JSNull::Wrap(env, this);
+            return this->jnull;
         case Undefined:
-            return JSUndefined::Wrap(env, this);
+            return this->jundefined;
         case Object:
             return JSObject::Wrap(env, this, value);
         case String:

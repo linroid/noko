@@ -15,12 +15,8 @@ jint JSNull::OnLoad(JNIEnv *env) {
         return JNI_ERR;
     }
     jclazz = (jclass) env->NewGlobalRef(clazz);
-    jconstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;)V");
+    jconstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
 
-    JNINativeMethod methods[] = {
-            {"nativeNew", "()V", (void *) (JSNull::New)},
-    };
-    env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
     return JNI_OK;
 }
 

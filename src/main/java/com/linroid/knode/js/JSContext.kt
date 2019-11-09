@@ -7,7 +7,14 @@ import java.lang.annotation.Native
  * @author linroid
  * @since 2019-10-19
  */
-class JSContext(@Suppress("unused") @Native internal val runtimePtr: Long, reference: Long) : JSObject(null, reference) {
+class JSContext @NativeConstructor private constructor(
+    @Native internal val runtimePtr: Long,
+    reference: Long
+) : JSObject(null, reference) {
+
+    internal lateinit var sharedNull: JSNull
+    internal lateinit var sharedUndefined: JSUndefined
+
     init {
         context = this
     }

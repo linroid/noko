@@ -12,14 +12,12 @@ class JSContext {
 private:
     static jclass jclazz;
     static jmethodID jconstructor;
-    static jfieldID jruntimePtr;
+    static jfieldID jnullId;
+    static jfieldID jUndefinedId;
 
 public:
     inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime) {
-        return env->NewObject(jclazz,
-                              jconstructor,
-                              reinterpret_cast<jlong>(runtime),
-                              reinterpret_cast<jlong>(runtime->global));
+        return env->NewObject(jclazz, jconstructor, (jlong) runtime, (jlong) runtime->global);
     }
 
     static JNICALL jobject ParseJson(JNIEnv *env, jstring jthis, jstring jjson);
@@ -27,6 +25,8 @@ public:
     static JNICALL jobject Eval(JNIEnv *env, jstring jthis, jstring jcode, jstring jsource, jint jline);
 
     static jint OnLoad(JNIEnv *env);
+
+    static void SetShared(JNIEnv *env, NodeRuntime *runtime);
 };
 
 

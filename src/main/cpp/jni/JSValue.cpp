@@ -117,8 +117,6 @@ jdouble JSValue::ToNumber(JNIEnv *env, jobject jthis) {
 }
 
 void JSValue::Dispose(JNIEnv *env, jobject jthis) {
-    auto runtime = JSValue::GetRuntime(env, jthis);
-    v8::Locker locker_(runtime->isolate);
     auto value = JSValue::Unwrap(env, jthis);
     value->Reset();
     delete value;

@@ -9,9 +9,18 @@
 #include "../NodeRuntime.h"
 
 class JSContext {
-public:
+private:
+    static jclass jclazz;
+    static jmethodID jconstructor;
+    static jfieldID jruntimePtr;
 
-    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime);
+public:
+    inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime) {
+        return env->NewObject(jclazz,
+                              jconstructor,
+                              reinterpret_cast<jlong>(runtime),
+                              reinterpret_cast<jlong>(runtime->global));
+    }
 
     static JNICALL jobject ParseJson(JNIEnv *env, jstring jthis, jstring jjson);
 

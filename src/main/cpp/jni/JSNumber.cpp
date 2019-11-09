@@ -6,19 +6,16 @@
 #include "JSValue.h"
 #include "macros.h"
 
-JNIClass numberClass;
-
-jobject JSNumber::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
-    return env->NewObject(numberClass.clazz, numberClass.constructor, runtime->jcontext, value);
-}
+jclass JSNumber::jclazz;
+jmethodID JSNumber::jconstructor;
 
 jint JSNumber::OnLoad(JNIEnv *env) {
     jclass clazz = env->FindClass("com/linroid/knode/js/JSNumber");
     if (!clazz) {
         return JNI_ERR;
     }
-    numberClass.clazz = (jclass) env->NewGlobalRef(clazz);
-    numberClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
+    jclazz = (jclass) env->NewGlobalRef(clazz);
+    jconstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
     JNINativeMethod methods[] = {
             {"nativeNew", "(D)V", (void *) JSNumber::New},
     };

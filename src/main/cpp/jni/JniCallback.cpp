@@ -2,14 +2,14 @@
 // Created by linroid on 2019/11/3.
 //
 
-#include "JVMCallback.h"
+#include "JniCallback.h"
 
-JVMCallback::JVMCallback(JNIEnv *env, jobject that, jclass clazz, jmethodID methodId)
+JniCallback::JniCallback(JNIEnv *env, jobject that, jclass clazz, jmethodID methodId)
         : that(env->NewGlobalRef(that)), clazz(clazz), methodId(methodId) {
     env->GetJavaVM(&vm);
 }
 
-void JVMCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
+void JniCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
     JNIEnv *env;
     auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);
     if (stat == JNI_EDETACHED) {
@@ -36,7 +36,7 @@ void JVMCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
     }
 }
 
-JVMCallback::~JVMCallback() {
+JniCallback::~JniCallback() {
     JNIEnv *env;
     LOGD("JVMCallback destruct");
     auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);

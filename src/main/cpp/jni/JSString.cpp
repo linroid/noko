@@ -8,15 +8,16 @@
 #include "macros.h"
 #include "JSContext.h"
 
-JNIClass stringClass;
+jclass JSString::jclazz;
+jmethodID JSString::jconstructor;
 
 jint JSString::OnLoad(JNIEnv *env) {
     jclass clazz = env->FindClass("com/linroid/knode/js/JSString");
     if (!clazz) {
         return JNI_ERR;
     }
-    stringClass.clazz = (jclass) env->NewGlobalRef(clazz);
-    stringClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
+    jclazz = (jclass) env->NewGlobalRef(clazz);
+    jconstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
 
     JNINativeMethod methods[] = {
             {"nativeNew", "(Ljava/lang/String;)V", (void *) JSString::New},
@@ -28,13 +29,6 @@ jint JSString::OnLoad(JNIEnv *env) {
     }
 
     return JNI_OK;
-}
-
-jobject JSString::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
-    return env->NewObject(stringClass.clazz,
-                          stringClass.constructor,
-                          runtime->jcontext,
-                          (jlong) value);
 }
 
 void JSString::New(JNIEnv *env, jobject jthis, jstring jcontent) {

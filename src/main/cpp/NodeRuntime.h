@@ -13,14 +13,6 @@
 #include "env.h"
 #include "util.h"
 
-struct JNIClass {
-    jclass clazz;
-    jmethodID constructor;
-    jfieldID reference;
-    jfieldID context;
-    jfieldID runtimePtr;
-};
-
 enum JSType {
     None,
     Undefined,

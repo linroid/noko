@@ -13,16 +13,18 @@
 #include "../NodeRuntime.h"
 #include "JSError.h"
 
-JNIClass contextClass;
+jclass JSContext::jclazz;
+jmethodID JSContext::jconstructor;
+jfieldID JSContext::jruntimePtr;
 
 jint JSContext::OnLoad(JNIEnv *env) {
     jclass clazz = env->FindClass("com/linroid/knode/js/JSContext");
     if (clazz == nullptr) {
         return JNI_ERR;
     }
-    contextClass.clazz = (jclass) (env->NewGlobalRef(clazz));
-    contextClass.constructor = env->GetMethodID(clazz, "<init>", "(JJ)V");
-    contextClass.runtimePtr = env->GetFieldID(clazz, "runtimePtr", "J");
+    jclazz = (jclass) (env->NewGlobalRef(clazz));
+    jconstructor = env->GetMethodID(clazz, "<init>", "(JJ)V");
+    jruntimePtr = env->GetFieldID(clazz, "runtimePtr", "J");
 
     JNINativeMethod methods[] = {
             {"nativeEval",      "(Ljava/lang/String;Ljava/lang/String;I)Lcom/linroid/knode/js/JSValue;", (void *) Eval},
@@ -34,13 +36,6 @@ jint JSContext::OnLoad(JNIEnv *env) {
         return rc;
     }
     return JNI_OK;
-}
-
-jobject JSContext::Wrap(JNIEnv *env, NodeRuntime *runtime) {
-    return env->NewObject(contextClass.clazz,
-                          contextClass.constructor,
-                          reinterpret_cast<jlong>(runtime),
-                          reinterpret_cast<jlong>(runtime->global));
 }
 
 jobject JSContext::Eval(JNIEnv *env, jstring jthis, jstring jcode, jstring jsource, jint jline) {

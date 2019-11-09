@@ -8,28 +8,24 @@
 #include "JSContext.h"
 #include "JSString.h"
 #include "JSError.h"
-#include "JVMCallback.h"
+#include "JniCallback.h"
 
-JNIClass functionClass;
-
-jmethodID functionOnCallMethod;
+jclass JSFunction::jclazz;
+jmethodID JSFunction::jconstructor;
+jmethodID JSFunction::jonCall;
 
 void staticCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
     CHECK(info.Data()->IsExternal());
     auto external = info.Data().As<v8::External>();
-    JVMCallback *callback = reinterpret_cast<JVMCallback * >(external->Value());
+    JniCallback *callback = reinterpret_cast<JniCallback * >(external->Value());
     callback->Call(info);
-}
-
-jobject JSFunction::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
-    return env->NewObject(functionClass.clazz, functionClass.constructor, runtime->jcontext, (jlong) value);
 }
 
 void JSFunction::New(JNIEnv *env, jobject jthis, jstring jname) {
     v8::Persistent<v8::Value> *result = nullptr;
     const uint16_t *name = env->GetStringChars(jname, nullptr);
     const jint nameLen = env->GetStringLength(jname);
-    auto callback = new JVMCallback(env, jthis, JSValue::JVMClass(), functionOnCallMethod);
+    auto callback = new JniCallback(env, jthis, JSValue::jclazz, jonCall);
     V8_SCOPE(env, jthis)
         callback->runtime = runtime;
         auto data = v8::External::New(runtime->isolate, callback);
@@ -87,10 +83,10 @@ jint JSFunction::OnLoad(JNIEnv *env) {
             {"nativeCall", "(Lcom/linroid/knode/js/JSValue;[Lcom/linroid/knode/js/JSValue;)Lcom/linroid/knode/js/JSValue;", (void *) JSFunction::Call},
             {"nativeNew",  "(Ljava/lang/String;)V",                                                                         (void *) JSFunction::New},
     };
-    functionClass.clazz = (jclass) env->NewGlobalRef(clazz);
-    functionClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
-    functionOnCallMethod = env->GetMethodID(clazz, "onCall",
-                                            "(Lcom/linroid/knode/js/JSValue;[Lcom/linroid/knode/js/JSValue;)Lcom/linroid/knode/js/JSValue;");
+    jclazz = (jclass) env->NewGlobalRef(clazz);
+    jconstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
+    jonCall = env->GetMethodID(clazz, "onCall",
+                               "(Lcom/linroid/knode/js/JSValue;[Lcom/linroid/knode/js/JSValue;)Lcom/linroid/knode/js/JSValue;");
     env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
     return JNI_OK;
 }

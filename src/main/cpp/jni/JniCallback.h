@@ -2,14 +2,14 @@
 // Created by linroid on 2019/11/3.
 //
 
-#ifndef DORA_JVMCALLBACK_H
-#define DORA_JVMCALLBACK_H
+#ifndef DORA_JNICALLBACK_H
+#define DORA_JNICALLBACK_H
 
 #include <jni.h>
 #include "../NodeRuntime.h"
 #include "JSValue.h"
 
-class JVMCallback {
+class JniCallback {
 private:
     JavaVM *vm;
     jobject that;
@@ -18,11 +18,11 @@ private:
 public:
     NodeRuntime *runtime;
 
-    JVMCallback(JNIEnv *env, jobject that, jclass clazz, jmethodID methodId);
+    JniCallback(JNIEnv *env, jobject that, jclass clazz, jmethodID methodId);
 
-    ~JVMCallback();
+    ~JniCallback();
 
     void Call(const v8::FunctionCallbackInfo<v8::Value> &info);
 };
 
-#endif //DORA_JVMCALLBACK_H
+#endif //DORA_JNICALLBACK_H

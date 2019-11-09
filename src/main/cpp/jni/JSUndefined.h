@@ -9,8 +9,14 @@
 #include "JSContext.h"
 
 class JSUndefined {
+private:
+    static jclass jclazz;
+    static jmethodID jconstructor;
+
 public:
-    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime);
+    inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime) {
+        return env->NewObject(jclazz, jconstructor, runtime->jcontext);
+    }
 
     static jint OnLoad(JNIEnv *env);
 };

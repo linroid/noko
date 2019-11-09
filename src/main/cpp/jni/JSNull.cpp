@@ -6,19 +6,16 @@
 #include "macros.h"
 #include "JSValue.h"
 
-JNIClass nullClass;
-
-jobject JSNull::Wrap(JNIEnv *env, NodeRuntime *runtime) {
-    return env->NewObject(nullClass.clazz, nullClass.constructor, runtime->jcontext);
-}
+jclass JSNull::jclazz;
+jmethodID JSNull::jconstructor;
 
 jint JSNull::OnLoad(JNIEnv *env) {
     jclass clazz = env->FindClass("com/linroid/knode/js/JSNull");
     if (!clazz) {
         return JNI_ERR;
     }
-    nullClass.clazz = (jclass) env->NewGlobalRef(clazz);
-    nullClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;)V");
+    jclazz = (jclass) env->NewGlobalRef(clazz);
+    jconstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;)V");
 
     JNINativeMethod methods[] = {
             {"nativeNew", "()V", (void *) (JSNull::New)},

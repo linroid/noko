@@ -8,16 +8,18 @@
 #include "JSError.h"
 #include "macros.h"
 
-JNIClass errorClass;
-JNIClass exceptionClass;
+jclass JSError::jclazz;
+jmethodID JSError::jconstructor;
+jclass JSError::jexceptionClazz;
+jmethodID JSError::jexceptionConstructor;
 
 jint JSError::OnLoad(JNIEnv *env) {
     jclass clazz = env->FindClass("com/linroid/knode/js/JSError");
     if (!clazz) {
         return JNI_ERR;
     }
-    errorClass.clazz = (jclass) env->NewGlobalRef(clazz);
-    errorClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
+    jclazz = (jclass) env->NewGlobalRef(clazz);
+    jconstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
 
     JNINativeMethod methods[] = {
             {"nativeNew", "(Ljava/lang/String;)V", (void *) JSError::New},
@@ -32,8 +34,8 @@ jint JSError::OnLoad(JNIEnv *env) {
     if (!clazz) {
         return JNI_ERR;
     }
-    exceptionClass.clazz = (jclass) env->NewGlobalRef(clazz);
-    exceptionClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSError;)V");
+    jexceptionClazz = (jclass) env->NewGlobalRef(clazz);
+    jexceptionConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSError;)V");
 
     return JNI_OK;
 }
@@ -52,14 +54,9 @@ void JSError::New(JNIEnv *env, jobject jthis, jstring jmessage) {
     JSValue::SetReference(env, jthis, (jlong) result);
 }
 
-jobject JSError::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
-    LOGE("Wrap new JSError");
-    return env->NewObject(errorClass.clazz, errorClass.constructor, runtime->jcontext, value);
-}
-
 void JSError::Throw(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *error) {
     LOGE("Throw exception");
-    auto jerror = env->NewObject(errorClass.clazz, errorClass.constructor, runtime->jcontext, error);
-    auto jexception = (jthrowable) env->NewObject(exceptionClass.clazz, exceptionClass.constructor, jerror);
+    auto jerror = env->NewObject(jclazz, jconstructor, runtime->jcontext, (jlong) error);
+    auto jexception = (jthrowable) env->NewObject(jexceptionClazz, jexceptionConstructor, jerror);
     env->Throw(jexception);
 }

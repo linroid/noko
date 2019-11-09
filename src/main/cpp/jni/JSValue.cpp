@@ -10,19 +10,22 @@
 #include "JSContext.h"
 #include "JSError.h"
 
-jmethodID runtimeMethodId;
-JNIClass valueClass;
+jmethodID JSValue::jconstructor;
+jclass JSValue::jclazz;
+jfieldID JSValue::jreference;
+jfieldID JSValue::jcontext;
+jmethodID JSValue::jruntime;
 
 jint JSValue::OnLoad(JNIEnv *env) {
     jclass clazz = env->FindClass("com/linroid/knode/js/JSValue");
     if (!clazz) {
         return JNI_ERR;
     }
-    valueClass.clazz = (jclass) env->NewGlobalRef(clazz);
-    valueClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
-    valueClass.reference = env->GetFieldID(clazz, "reference", "J");
-    valueClass.context = env->GetFieldID(clazz, "context", "Lcom/linroid/knode/js/JSContext;");
-    runtimeMethodId = env->GetMethodID(clazz, "runtime", "()J");
+    jclazz = (jclass) env->NewGlobalRef(clazz);
+    jconstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
+    jreference = env->GetFieldID(clazz, "reference", "J");
+    jcontext = env->GetFieldID(clazz, "context", "Lcom/linroid/knode/js/JSContext;");
+    jruntime = env->GetMethodID(clazz, "runtime", "()J");
 
     JNINativeMethod methods[] = {
             {"nativeToString", "()Ljava/lang/String;", (void *) JSValue::ToString},
@@ -37,18 +40,6 @@ jint JSValue::OnLoad(JNIEnv *env) {
         return rc;
     }
     return JNI_OK;
-}
-
-jlong JSValue::GetReference(JNIEnv *env, jobject jobj) {
-    return env->GetLongField(jobj, valueClass.reference);
-}
-
-void JSValue::SetReference(JNIEnv *env, jobject jobj, jlong value) {
-    env->SetLongField(jobj, valueClass.reference, value);
-}
-
-jobject JSValue::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
-    return env->NewObject(valueClass.clazz, valueClass.constructor, runtime->jcontext, (jlong) value);
 }
 
 jstring JSValue::ToString(JNIEnv *env, jobject jthis) {
@@ -132,13 +123,4 @@ void JSValue::Dispose(JNIEnv *env, jobject jthis) {
     value->Reset();
     delete value;
     JSValue::SetReference(env, jthis, 0);
-}
-
-jclass &JSValue::JVMClass() {
-    return valueClass.clazz;
-}
-
-NodeRuntime *JSValue::GetRuntime(JNIEnv *env, jobject jobj) {
-    auto ptr = env->CallLongMethod(jobj, runtimeMethodId);
-    return reinterpret_cast<NodeRuntime *>(ptr);
 }

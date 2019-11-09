@@ -7,7 +7,8 @@
 #include "JSContext.h"
 #include "JSError.h"
 
-static JNIClass arrayClass;
+jclass JSArray::jclazz;
+jmethodID JSArray::jconstructor;
 
 jint JSArray::Size(JNIEnv *env, jobject jthis) {
     int result = 0;
@@ -58,10 +59,6 @@ jboolean JSArray::AddAll(JNIEnv *env, jobject jthis, jobjectArray jelements) {
     return static_cast<jboolean>(result);
 }
 
-jobject JSArray::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
-    return env->NewObject(arrayClass.clazz, arrayClass.constructor, runtime->jcontext, (jlong) value);
-}
-
 jint JSArray::OnLoad(JNIEnv *env) {
     jclass clazz = env->FindClass("com/linroid/knode/js/JSArray");
     if (!clazz) {
@@ -77,8 +74,8 @@ jint JSArray::OnLoad(JNIEnv *env) {
             {"nativeAdd",      "(Lcom/linroid/knode/js/JSValue;)Z",                               (void *) (Add)},
             {"nativeAddAt",    "(ILcom/linroid/knode/js/JSValue;)Lcom/linroid/knode/js/JSValue;", (void *) (AddAllAt)},
     };
-    arrayClass.clazz = (jclass) env->NewGlobalRef(clazz);
-    arrayClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
+    jclazz = (jclass) env->NewGlobalRef(clazz);
+    jconstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
     env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
     return JNI_OK;
 }

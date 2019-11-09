@@ -10,9 +10,14 @@
 #include "../util.h"
 
 class JSObject {
+private:
+    static jclass jclazz;
+    static jmethodID jconstructor;
 
 public:
-    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value);
+    inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
+        return env->NewObject(jclazz, jconstructor, runtime->jcontext, (jlong) value);
+    }
 
     static jint OnLoad(JNIEnv *env);
 

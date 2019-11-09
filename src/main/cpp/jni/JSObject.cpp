@@ -12,11 +12,8 @@
 #include "JSUndefined.h"
 #include "JSNull.h"
 
-JNIClass objectClass;
-
-jobject JSObject::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
-    return env->NewObject(objectClass.clazz, objectClass.constructor, runtime->jcontext, (jlong) value);
-}
+jclass JSObject::jclazz;
+jmethodID JSObject::jconstructor;
 
 JNICALL void JSObject::Set(JNIEnv *env, jobject jthis, jstring jkey, jobject jvalue) {
     const uint16_t *key = env->GetStringChars(jkey, nullptr);
@@ -75,8 +72,8 @@ jint JSObject::OnLoad(JNIEnv *env) {
             {"nativeNew", "()V",                                                 (void *) (JSObject::New)},
             {"nativeHas", "(Ljava/lang/String;)Z",                               (void *) (JSObject::Has)},
     };
-    objectClass.clazz = (jclass) env->NewGlobalRef(clazz);
-    objectClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
+    jclazz = (jclass) env->NewGlobalRef(clazz);
+    jconstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
     env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
     return JNI_OK;
 }

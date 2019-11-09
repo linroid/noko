@@ -6,19 +6,16 @@
 #include "JSContext.h"
 #include "macros.h"
 
-JNIClass booleanClass;
-
-jobject JSBoolean::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
-    return env->NewObject(booleanClass.clazz, booleanClass.constructor, runtime->jcontext, value);
-}
+jclass JSBoolean::jclazz;
+jmethodID JSBoolean::jconstructor;
 
 jint JSBoolean::OnLoad(JNIEnv *env) {
     jclass clazz = env->FindClass("com/linroid/knode/js/JSBoolean");
     if (!clazz) {
         return JNI_ERR;
     }
-    booleanClass.clazz = (jclass) env->NewGlobalRef(clazz);
-    booleanClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;JZ)V");
+    jclazz = (jclass) env->NewGlobalRef(clazz);
+    jconstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;JZ)V");
 
     JNINativeMethod methods[] = {
             {"nativeNew", "(Z)V", (void *) JSBoolean::New},

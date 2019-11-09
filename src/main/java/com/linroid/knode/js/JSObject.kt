@@ -57,8 +57,8 @@ open class JSObject : JSValue {
         nativeSet(key, from(context, value))
     }
 
-    fun <T : JSValue> get(key: String): T {
-        return nativeGet(key) as T
+    inline fun <reified T> get(key: String): T {
+        return opt<T>(key)!!
     }
 
     fun delete(key: String) {
@@ -70,20 +70,17 @@ open class JSObject : JSValue {
     }
 
     inline fun <reified T> opt(key: String): T? {
-        if (!has(key)) {
-            return null
-        }
-        val value = get<JSValue>(key)
-        if (value is JSNull || value is JSUndefined) {
+        val value = nativeGet(key)
+        if (value.empty()) {
             return null
         }
         @Suppress("IMPLICIT_CAST_TO_ANY")
         return value.toType(T::class.java)
     }
 
+    external fun nativeGet(key: String): JSValue
     private external fun nativeKeys(): Array<String>
     private external fun nativeHas(key: String): Boolean
-    private external fun nativeGet(key: String): JSValue
     private external fun nativeSet(key: String, value: JSValue?)
     private external fun nativeNew()
 }

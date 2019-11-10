@@ -101,6 +101,10 @@ open class JSValue(context: JSContext? = null, @Native private val reference: Lo
         return super.equals(other)
     }
 
+    fun sameReference(other: JSValue): Boolean {
+        return other.reference == reference
+    }
+
     override fun hashCode(): Int {
         return reference.hashCode()
     }

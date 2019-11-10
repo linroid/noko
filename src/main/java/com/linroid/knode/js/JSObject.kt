@@ -71,9 +71,6 @@ open class JSObject : JSValue {
 
     inline fun <reified T> opt(key: String): T? {
         val value = nativeGet(key)
-        if (value.empty()) {
-            return null
-        }
         @Suppress("IMPLICIT_CAST_TO_ANY")
         return value.toType(T::class.java)
     }

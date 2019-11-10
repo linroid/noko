@@ -53,7 +53,7 @@ open class JSValue(context: JSContext? = null, @Native private val reference: Lo
 
     @Suppress("IMPLICIT_CAST_TO_ANY", "UNCHECKED_CAST")
     fun <T> toType(type: Class<T>): T? {
-        if (this is JSNull || this is JSUndefined) {
+        if (!JSValue::class.java.isAssignableFrom(type) && (this is JSNull || this is JSUndefined)) {
             return null
         }
         val result = when {

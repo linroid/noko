@@ -178,14 +178,21 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
     }
 
     private external fun nativeNew(): Long
+
     private external fun nativeStart(): Int
+
     private external fun nativeDispose()
+
     private external fun nativeSetFs(fsPtr: Long)
 
     interface EventListener {
+
         fun onNodePrepared(context: JSContext)
+
         fun onNodeFinished(exitCode: Int)
+
         fun onNodeExited(exitCode: Int)
+
         fun onNodeError(error: JSException)
     }
 

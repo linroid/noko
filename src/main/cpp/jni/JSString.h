@@ -25,8 +25,6 @@ public:
                               (jlong) value);
     }
 
-    static jstring From(JNIEnv *env, v8::Local<v8::String> &value);
-
     static jint OnLoad(JNIEnv *env);
 };
 

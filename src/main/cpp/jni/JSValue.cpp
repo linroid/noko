@@ -56,7 +56,7 @@ jstring JSValue::ToString(JNIEnv *env, jobject jthis) {
         if (str.IsEmpty()) {
             unicodeChars = new uint16_t[0];
         } else {
-            v8::String::Value unicodeString(str.ToLocalChecked());
+            v8::String::Value unicodeString(isolate, str.ToLocalChecked());
             unicodeChars = *unicodeString;
             length = unicodeString.length();
         }
@@ -70,8 +70,8 @@ jstring JSValue::TypeOf(JNIEnv *env, jobject jthis) {
     uint16_t *unicodeChars = nullptr;
     jsize length = 0;
     V8_CONTEXT(env, jthis, v8::Value)
-        auto type = that->TypeOf(runtime->isolate);
-        v8::String::Value unicodeString(type);
+        auto type = that->TypeOf(isolate);
+        v8::String::Value unicodeString(isolate, type);
         unicodeChars = *unicodeString;
         length = unicodeString.length();
     V8_END()
@@ -87,7 +87,7 @@ jstring JSValue::ToJson(JNIEnv *env, jobject jthis) {
             unicodeChars = new uint16_t[0];
         } else {
             auto value = str.ToLocalChecked();
-            v8::String::Value unicodeString(value);
+            v8::String::Value unicodeString(isolate, value);
             unicodeChars = *unicodeString;
             length = unicodeString.length();
         }

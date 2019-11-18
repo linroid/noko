@@ -41,8 +41,3 @@ void JSString::New(JNIEnv *env, jobject jthis, jstring jcontent) {
     env->ReleaseStringChars(jcontent, content);
     JSValue::SetReference(env, jthis, (jlong) result);
 }
-
-jstring JSString::From(JNIEnv *env, v8::Local<v8::String> &value) {
-    v8::String::Value unicodeString(value);
-    return env->NewString(*unicodeString, unicodeString.length());
-}

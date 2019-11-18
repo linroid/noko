@@ -9,38 +9,25 @@
 #include "../NodeRuntime.h"
 
 class JSContext {
+private:
+    static jclass jclazz;
+    static jmethodID jconstructor;
+    static jfieldID jnullId;
+    static jfieldID jUndefinedId;
+
 public:
-    static NodeRuntime *GetRuntime(JNIEnv *env, jobject jobj);
-
-    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime);
-
-    static JNICALL jobject Get(JNIEnv *env, jobject jthis, jstring key);
-
-    static JNICALL jobject Get(JNIEnv *env, jobject jthis, jstring key, jobject value);
-
-    static JNICALL jlong Bind(JNIEnv *env, jobject jthis, jlong contextPtr);
+    inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime) {
+        return env->NewObject(jclazz, jconstructor, (jlong) runtime, (jlong) runtime->global);
+    }
 
     static JNICALL jobject ParseJson(JNIEnv *env, jstring jthis, jstring jjson);
 
     static JNICALL jobject Eval(JNIEnv *env, jstring jthis, jstring jcode, jstring jsource, jint jline);
 
     static jint OnLoad(JNIEnv *env);
+
+    static void SetShared(JNIEnv *env, NodeRuntime *runtime);
 };
-
-
-//    auto v8Runtime = reinterpret_cast<JSContext *>(v8RuntimePtr);
-//    auto runtime = reinterpret_cast<JSContext *>(v8RuntimePtr);
-//    v8::Isolate::Scope isolateScope(runtime->isolate);
-//    v8::HandleScope handle_scope(runtime->isolate);
-//    auto context = v8::Local<v8::Context>::New(runtime->isolate, runtime->context);
-//    v8::Context::Scope context_scope(context);
-//    v8::Object::New(runtime->isolate);
-////    auto value = new JSValue(env, v8RuntimePtr);
-//    auto container = new v8::Persistent<v8::Object>;
-////    container->Reset(v8Runtime->isolate, );
-//    return reinterpret_cast<jlong>(container);
-//    return 0;
-//}
 
 
 #endif //NODE_JS_CONTEXT_H

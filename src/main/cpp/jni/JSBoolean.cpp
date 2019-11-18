@@ -6,20 +6,16 @@
 #include "JSContext.h"
 #include "macros.h"
 
-JNIClass booleanClass;
-
-jobject JSBoolean::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {
-    auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
-    return env->NewObject(booleanClass.clazz, booleanClass.constructor, runtime->jcontext, reference, value->BooleanValue());
-}
+jclass JSBoolean::jclazz;
+jmethodID JSBoolean::jconstructor;
 
 jint JSBoolean::OnLoad(JNIEnv *env) {
     jclass clazz = env->FindClass("com/linroid/knode/js/JSBoolean");
     if (!clazz) {
         return JNI_ERR;
     }
-    booleanClass.clazz = (jclass) env->NewGlobalRef(clazz);
-    booleanClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;JZ)V");
+    jclazz = (jclass) env->NewGlobalRef(clazz);
+    jconstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;JZ)V");
 
     JNINativeMethod methods[] = {
             {"nativeNew", "(Z)V", (void *) JSBoolean::New},
@@ -33,9 +29,10 @@ jint JSBoolean::OnLoad(JNIEnv *env) {
 }
 
 void JSBoolean::New(JNIEnv *env, jobject jthis, jboolean jdata) {
+    v8::Persistent<v8::Value> *result = nullptr;
     V8_SCOPE(env, jthis)
         auto value = v8::Boolean::New(runtime->isolate, jdata);
-        auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
-        JSValue::SetReference(env, jthis, (jlong) reference);
+        result = new v8::Persistent<v8::Value>(runtime->isolate, value);
     V8_END()
+    JSValue::SetReference(env, jthis, (jlong) result);
 }

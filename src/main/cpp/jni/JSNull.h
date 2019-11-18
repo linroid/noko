@@ -9,11 +9,18 @@
 #include "../NodeRuntime.h"
 
 class JSNull {
+private:
+    static jclass jclazz;
+    static jmethodID jconstructor;
+
 public:
-    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime);
+    inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
+        return env->NewObject(jclazz, jconstructor, runtime->jcontext, (jlong) value);
+    }
+
+    JNICALL static void New(JNIEnv *env, jobject jthis);
 
     static jint OnLoad(JNIEnv *env);
 };
-
 
 #endif //NODE_JSNULL_H

@@ -17,6 +17,7 @@
 #include "jni/JSNull.h"
 #include "jni/JSFunction.h"
 #include "jni/JSError.h"
+#include "jni/JSPromise.h"
 
 #define LOAD_JNI_CLASS(clazz) if (clazz::OnLoad(env) != JNI_OK) { \
     return JNI_ERR; \
@@ -169,6 +170,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
     LOAD_JNI_CLASS(JSNull)
     LOAD_JNI_CLASS(JSFunction)
     LOAD_JNI_CLASS(JSError)
+    LOAD_JNI_CLASS(JSPromise)
 
     return JNI_VERSION_1_6;
 }

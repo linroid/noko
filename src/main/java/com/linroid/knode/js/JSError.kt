@@ -14,15 +14,15 @@ class JSError : JSObject {
     }
 
     fun stack(): String {
-        return get<JSString>("stack").toString()
+        return get<JSValue>("stack").toString()
     }
 
     fun message(): String {
-        return get<JSString>("message").toString()
+        return get<JSValue>("message").toString()
     }
 
     fun name(): String {
-        return get<JSString>("name").toString()
+        return get<JSValue>("name").toString()
     }
 
     private external fun nativeNew(message: String);

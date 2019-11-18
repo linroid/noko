@@ -15,6 +15,10 @@
 #include "jni/JSString.h"
 #include "jni/macros.h"
 #include "jni/JSFunction.h"
+#include "jni/JSNull.h"
+#include "jni/JSPromise.h"
+#include "jni/JSArray.h"
+#include "jni/JSError.h"
 
 int NodeRuntime::instanceCount = 0;
 std::mutex NodeRuntime::mutex;
@@ -70,7 +74,13 @@ void NodeRuntime::OnPrepared() {
     if (stat == JNI_EDETACHED) {
         vm->AttachCurrentThread(&env, nullptr);
     }
+    if (env->ExceptionCheck()) {
+        LOGE("OnPrepared before call has a pending jni exception");
+    }
     env->CallVoidMethod(jthis, onBeforeStart, jcontext);
+    if (env->ExceptionCheck()) {
+        LOGE("OnPrepared has a pending jni exception");
+    }
     if (stat == JNI_EDETACHED) {
         vm->DetachCurrentThread();
     }
@@ -91,7 +101,7 @@ void NodeRuntime::OnEnvReady(node::Environment *nodeEnv) {
     nodeEnv->SetMethod(process, "_kill", beforeExitCallback);
 
     auto data = v8::External::New(isolate, this);
-    global->Set(V8_UTF_STRING("__onPrepared"), v8::FunctionTemplate::New(isolate, onPreparedCallback, data)->GetFunction());
+    global->Set(V8_UTF_STRING(isolate, "__onPrepared"), v8::FunctionTemplate::New(isolate, onPreparedCallback, data)->GetFunction());
 
     this->isolate = isolate;
     this->nodeEnv = nodeEnv;
@@ -109,12 +119,12 @@ void NodeRuntime::OnEnvReady(node::Environment *nodeEnv) {
     if (stat == JNI_EDETACHED) {
         vm->AttachCurrentThread(&env, nullptr);
     }
-    auto jcontext = JSContext::Wrap(env, this);
-    if (jcontext == nullptr) {
-        throwError(env, "Failed to new JSContext instance");
-    }
-    this->jcontext = env->NewGlobalRef(jcontext);
-
+    auto nullValue = new v8::Persistent<v8::Value>(isolate, v8::Null(isolate));
+    auto undefinedValue = new v8::Persistent<v8::Value>(isolate, v8::Undefined(isolate));
+    this->jcontext = env->NewGlobalRef(JSContext::Wrap(env, this));
+    this->jnull = env->NewGlobalRef(JSNull::Wrap(env, this, nullValue));
+    this->jundefined = env->NewGlobalRef(JSUndefined::Wrap(env, this, undefinedValue));
+    JSContext::SetShared(env, this);
     if (stat == JNI_EDETACHED) {
         vm->DetachCurrentThread();
     }
@@ -163,32 +173,38 @@ NodeRuntime *NodeRuntime::GetCurrent(const v8::FunctionCallbackInfo<v8::Value> &
     return reinterpret_cast<NodeRuntime *>(external->Value());
 }
 
-jobject NodeRuntime::Wrap(JNIEnv *env, v8::Local<v8::Value> &value) {
-    if (value->IsUndefined()) {
-        return JSUndefined::Wrap(env, this);
-    } else if (value->IsBoolean()) {
-        return JSBoolean::Wrap(env, this, value);
-    } else if (value->IsNumber()) {
-        auto casted = value.As<v8::Number>();
-        return JSNumber::Wrap(env, this, casted);
-    } else if (value->IsObject()) {
-        if (value->IsFunction()) {
-            auto casted = value.As<v8::Function>();
-            return JSFunction::Wrap(env, this, casted);
-        }
-        return JSObject::Wrap(env, this, value);
-    } else if (value->IsString()) {
-        auto casted = value.As<v8::String>();
-        return JSString::Wrap(env, this, casted);
+jobject NodeRuntime::Wrap(JNIEnv *env, v8::Persistent<v8::Value> *value, JSType type) {
+    switch (type) {
+        case Null:
+            return this->jnull;
+        case Undefined:
+            return this->jundefined;
+        case Object:
+            return JSObject::Wrap(env, this, value);
+        case String:
+            return JSString::Wrap(env, this, value);
+        case Number:
+            return JSNumber::Wrap(env, this, value);
+        case Boolean:
+            return JSBoolean::Wrap(env, this, value);
+        case Function:
+            return JSFunction::Wrap(env, this, value);
+        case Promise:
+            return JSPromise::Wrap(env, this, value);
+        case Array:
+            return JSArray::Wrap(env, this, value);
+        case Error:
+            return JSError::Wrap(env, this, value);
+        default:
+            return JSValue::Wrap(env, this, value);
     }
-    return JSValue::Wrap(env, this, value);
 }
 
 void NodeRuntime::Run(std::function<void()> runnable) {
     if (std::this_thread::get_id() == threadId) {
-        runnable();
+        return runnable();
     } else {
-        PostAndWait(runnable);
+        return PostAndWait(runnable);
     }
 }
 
@@ -237,4 +253,30 @@ void NodeRuntime::Handle(uv_async_t *handle) {
     });
     asyncHandle = nullptr;
     asyncMutex.unlock();
+}
+
+JSType NodeRuntime::GetType(v8::Local<v8::Value> &value) {
+    if (value->IsNull()) {
+        return JSType::Null;
+    } else if (value->IsUndefined()) {
+        return JSType::Undefined;
+    } else if (value->IsBoolean()) {
+        return JSType::Boolean;
+    } else if (value->IsNumber()) {
+        return JSType::Number;
+    } else if (value->IsObject()) {
+        if (value->IsFunction()) {
+            return JSType::Function;
+        } else if (value->IsPromise()) {
+            return JSType::Promise;
+        } else if (value->IsNativeError()) {
+            return JSType::Error;
+        } else if (value->IsArray()) {
+            return JSType::Array;
+        }
+        return JSType::Object;
+    } else if (value->IsString()) {
+        return JSType::String;
+    }
+    return JSType::Value;
 }

@@ -13,20 +13,27 @@
 #include "env.h"
 #include "util.h"
 
-struct JNIClass {
-    jclass clazz;
-    jmethodID constructor;
-    jfieldID reference;
-    jfieldID context;
-    jfieldID runtimePtr;
+enum JSType {
+    None,
+    Undefined,
+    Null,
+    Value,
+    Array,
+    Object,
+    String,
+    Number,
+    Boolean,
+    Function,
+    Promise,
+    Error,
 };
 
 class NodeRuntime {
+
 private:
     jobject jthis;
     jmethodID onBeforeStart;
     jmethodID onBeforeExit;
-    JavaVM *vm = nullptr;
 
     bool running;
     std::thread::id threadId;
@@ -38,11 +45,16 @@ private:
     static jint instanceCount;
 
     static void StaticHandle(uv_async_t *handle);
+
     void Handle(uv_async_t *handle);
+
     void PostAndWait(std::function<void()> runnable);
 
 public:
     jobject jcontext;
+    jobject jnull;
+    jobject jundefined;
+    JavaVM *vm = nullptr;
 
     v8::Isolate *isolate;
     v8::Persistent<v8::Context> context;
@@ -65,16 +77,13 @@ public:
 
     void Run(std::function<void()> runnable);
 
-    inline void TestRun(std::function<void()> runnable) {
-        runnable();
-    }
-
     void OnEnvReady(node::Environment *nodeEnv);
 
-    jobject Wrap(JNIEnv *env, v8::Local<v8::Value> &value);
+    jobject Wrap(JNIEnv *env, v8::Persistent<v8::Value> *value, JSType type);
+
+    JSType GetType(v8::Local<v8::Value> &value);
 
     static inline NodeRuntime *GetCurrent(const v8::FunctionCallbackInfo<v8::Value> &info);
-
 };
 
 #endif //NODE_NODE_RUNTIME_H

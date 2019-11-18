@@ -10,17 +10,22 @@
 #include "JSContext.h"
 #include "JSError.h"
 
-JNIClass valueClass;
+jmethodID JSValue::jconstructor;
+jclass JSValue::jclazz;
+jfieldID JSValue::jreference;
+jfieldID JSValue::jcontext;
+jmethodID JSValue::jruntime;
 
 jint JSValue::OnLoad(JNIEnv *env) {
     jclass clazz = env->FindClass("com/linroid/knode/js/JSValue");
     if (!clazz) {
         return JNI_ERR;
     }
-    valueClass.clazz = (jclass) env->NewGlobalRef(clazz);
-    valueClass.constructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
-    valueClass.reference = env->GetFieldID(clazz, "reference", "J");
-    valueClass.context = env->GetFieldID(clazz, "context", "Lcom/linroid/knode/js/JSContext;");
+    jclazz = (jclass) env->NewGlobalRef(clazz);
+    jconstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
+    jreference = env->GetFieldID(clazz, "reference", "J");
+    jcontext = env->GetFieldID(clazz, "context", "Lcom/linroid/knode/js/JSContext;");
+    jruntime = env->GetMethodID(clazz, "runtime", "()J");
 
     JNINativeMethod methods[] = {
             {"nativeToString", "()Ljava/lang/String;", (void *) JSValue::ToString},
@@ -37,95 +42,83 @@ jint JSValue::OnLoad(JNIEnv *env) {
     return JNI_OK;
 }
 
-jobject JSValue::GetContext(JNIEnv *env, jobject jobj) {
-    return env->GetObjectField(jobj, valueClass.context);
-}
-
-jlong JSValue::GetReference(JNIEnv *env, jobject jobj) {
-    return env->GetLongField(jobj, valueClass.reference);
-}
-
-void JSValue::SetReference(JNIEnv *env, jobject jobj, jlong value) {
-    env->SetLongField(jobj, valueClass.reference, value);
-}
-
-jobject JSValue::Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value) {
-    auto reference = new v8::Persistent<v8::Value>(runtime->isolate, value);
-    return env->NewObject(valueClass.clazz, valueClass.constructor, runtime->jcontext, reference);
-}
-
 jstring JSValue::ToString(JNIEnv *env, jobject jthis) {
-    jstring result = nullptr;
-    V8_CONTEXT(env, jthis, v8::Value)
-        v8::MaybeLocal<v8::String> str = that->ToString(context);
+    uint16_t *unicodeChars = nullptr;
+    jsize length = 0;
+    auto runtime = JSValue::GetRuntime(env, jthis);
+    auto isolate = runtime->isolate;
+    auto value = JSValue::Unwrap(env, jthis);
+    auto _runnable = [&]() {
+        v8::Locker _locker(runtime->isolate);
+        v8::HandleScope _handleScope(runtime->isolate);
+        auto context = runtime->context.Get(isolate);
+        v8::MaybeLocal<v8::String> str = value->Get(isolate)->ToString(context);
         if (str.IsEmpty()) {
-            const char *bytes = new char[0];
-            result = env->NewStringUTF(bytes);
+            unicodeChars = new uint16_t[0];
         } else {
             v8::String::Value unicodeString(str.ToLocalChecked());
-            result = env->NewString(*unicodeString, unicodeString.length());
+            unicodeChars = *unicodeString;
+            length = unicodeString.length();
         }
-    V8_END()
-    return result;
+
+    };
+    runtime->Run(_runnable);
+    return env->NewString(unicodeChars, length);
 }
 
 jstring JSValue::TypeOf(JNIEnv *env, jobject jthis) {
-    jstring result = nullptr;
+    uint16_t *unicodeChars = nullptr;
+    jsize length = 0;
     V8_CONTEXT(env, jthis, v8::Value)
         auto type = that->TypeOf(runtime->isolate);
-        result = JSString::From(env, type);
+        v8::String::Value unicodeString(type);
+        unicodeChars = *unicodeString;
+        length = unicodeString.length();
     V8_END()
-    return result;
+    return env->NewString(unicodeChars, length);
 }
 
 jstring JSValue::ToJson(JNIEnv *env, jobject jthis) {
-    jstring result = nullptr;
+    uint16_t *unicodeChars = nullptr;
+    jsize length = 0;
     V8_CONTEXT(env, jthis, v8::Value)
         auto str = v8::JSON::Stringify(context, that);
         if (str.IsEmpty()) {
-            const char *bytes = new char[0];
-            result = env->NewStringUTF(bytes);
+            unicodeChars = new uint16_t[0];
         } else {
-            v8::String::Value unicodeString(str.ToLocalChecked());
-            result = env->NewString(*unicodeString, unicodeString.length());
+            auto value = str.ToLocalChecked();
+            v8::String::Value unicodeString(value);
+            unicodeChars = *unicodeString;
+            length = unicodeString.length();
         }
     V8_END()
-    return result;
+    return env->NewString(unicodeChars, length);
 }
 
 jdouble JSValue::ToNumber(JNIEnv *env, jobject jthis) {
     jdouble result = 0;
+    v8::Persistent<v8::Value> *error;
     V8_CONTEXT(env, jthis, v8::Value)
         v8::TryCatch tryCatch(runtime->isolate);
-
         auto number = that->ToNumber(context);
         if (number.IsEmpty()) {
-            JSError::Throw(env, runtime, tryCatch);
+            error = new v8::Persistent<v8::Value>(runtime->isolate, tryCatch.Exception());
             result = 0.0;
             return;
         }
-        result = number.ToLocalChecked()->Value();
+        v8::Local<v8::Number> checked = number.ToLocalChecked();
+        result = checked->Value();
     V8_END()
+    if (error) {
+        JSError::Throw(env, runtime, error);
+        return 0.0;
+    }
     return result;
 }
 
-v8::Local<v8::Value> JSValue::GetReference(JNIEnv *env, v8::Isolate *isolate, jobject jobj) {
-    v8::EscapableHandleScope handleScope(isolate);
-    jlong reference = JSValue::GetReference(env, jobj);
-    auto persistent = reinterpret_cast<v8::Persistent<v8::Value> *>(reference);
-    auto that = v8::Local<v8::Value>::New(isolate, *persistent);
-    return handleScope.Escape(that);
-}
-
 void JSValue::Dispose(JNIEnv *env, jobject jthis) {
-    auto runtime = JSContext::GetRuntime(env, jthis);
-    v8::Locker locker_(runtime->isolate);
-    jlong reference_ = JSValue::GetReference(env, jthis);
-    auto persistent = reinterpret_cast<v8::Persistent<v8::Value> *>(reference_);
-    persistent->Reset();
+    auto value = JSValue::Unwrap(env, jthis);
+    value->Reset();
+    delete value;
     JSValue::SetReference(env, jthis, 0);
-}
-
-jclass &JSValue::JVMClass() {
-    return valueClass.clazz;
 }

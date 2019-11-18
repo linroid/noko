@@ -9,8 +9,15 @@
 #include "../NodeRuntime.h"
 
 class JSFunction {
+private:
+    static jclass jclazz;
+    static jmethodID jconstructor;
+    static jmethodID jonCall;
+
 public:
-    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Function> &value);
+    inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
+        return env->NewObject(jclazz, jconstructor, runtime->jcontext, (jlong) value);
+    }
 
     static jint OnLoad(JNIEnv *env);
 
@@ -18,4 +25,5 @@ public:
 
     JNICALL static jobject Call(JNIEnv *env, jobject jthis, jobject jreceiver, jobjectArray jparameters);
 };
+
 #endif //DORA_JSFUNCTION_H

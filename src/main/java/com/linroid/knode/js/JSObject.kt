@@ -1,5 +1,6 @@
 package com.linroid.knode.js
 
+import android.util.Log
 import com.google.gson.JsonObject
 
 /**
@@ -11,8 +12,11 @@ open class JSObject : JSValue {
     @NativeConstructor
     protected constructor(context: JSContext?, reference: Long) : super(context, reference)
 
-    constructor(context: JSContext) : this(context, 0) {
+    constructor(context: JSContext, data: JsonObject? = null) : super(context, 0) {
         nativeNew()
+        data?.entrySet()?.forEach {
+            set(it.key, from(context, it.value))
+        }
         addBinds()
     }
 
@@ -20,7 +24,7 @@ open class JSObject : JSValue {
         if (javaClass == JSObject::class.java) {
             return
         }
-        javaClass.declaredMethods
+        javaClass.methods
             .filter { it.isAnnotationPresent(Bind::class.java) }
             .forEach { method ->
                 method.isAccessible = true
@@ -28,16 +32,19 @@ open class JSObject : JSValue {
                 val name = if (bind.name.isEmpty()) method.name else bind.name
                 set(name, object : JSFunction(context, name) {
                     override fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
-                        val result = method.invoke(this@JSObject, parameters)
+                        val result = method.invoke(this@JSObject, *convertParameters(parameters, method.parameterTypes))
                         return from(context, result)
                     }
                 })
             }
     }
 
-    constructor(context: JSContext, data: JsonObject) : this(context) {
-        data.entrySet().forEach {
-            set(it.key, from(context, it.value))
+    private fun convertParameters(parameters: Array<out JSValue>, parameterTypes: Array<Class<*>>): Array<Any?> {
+        val argc = parameterTypes.size
+        return Array(argc) { i ->
+            val value = parameters[i]
+            val type = parameterTypes[i]
+            value.toType(type)
         }
     }
 
@@ -46,11 +53,12 @@ open class JSObject : JSValue {
     }
 
     fun set(key: String, value: Any?) {
+        Log.d("JSObject", "set $key=$value")
         nativeSet(key, from(context, value))
     }
 
-    fun <T : JSValue> get(key: String): T {
-        return nativeGet(key) as T
+    inline fun <reified T> get(key: String): T {
+        return opt<T>(key)!!
     }
 
     fun delete(key: String) {
@@ -62,20 +70,14 @@ open class JSObject : JSValue {
     }
 
     inline fun <reified T> opt(key: String): T? {
-        if (!has(key)) {
-            return null
-        }
-        val value = get<JSValue>(key)
-        if (value is JSNull || value is JSUndefined) {
-            return null
-        }
+        val value = nativeGet(key)
         @Suppress("IMPLICIT_CAST_TO_ANY")
         return value.toType(T::class.java)
     }
 
+    external fun nativeGet(key: String): JSValue
     private external fun nativeKeys(): Array<String>
     private external fun nativeHas(key: String): Boolean
-    private external fun nativeGet(key: String): JSValue
     private external fun nativeSet(key: String, value: JSValue?)
     private external fun nativeNew()
 }

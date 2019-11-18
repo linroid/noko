@@ -9,8 +9,34 @@
 #include "../NodeRuntime.h"
 
 class JSValue {
+private:
+    static jfieldID jreference;
+    static jfieldID jcontext;
+    static jmethodID jconstructor;
+    static jmethodID jruntime;
 public:
-    static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> &value);
+    static jclass jclazz;
+
+    inline static jlong GetReference(JNIEnv *env, jobject jobj) {
+        return env->GetLongField(jobj, jreference);
+    }
+
+    inline static void SetReference(JNIEnv *env, jobject jobj, jlong value) {
+        env->SetLongField(jobj, jreference, value);
+    }
+
+    inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
+        return env->NewObject(jclazz, jconstructor, runtime->jcontext, (jlong) value);
+    }
+
+    inline static v8::Persistent<v8::Value> *Unwrap(JNIEnv *env, jobject jobj) {
+        return reinterpret_cast<v8::Persistent<v8::Value> *>(GetReference(env, jobj));
+    }
+
+    inline static NodeRuntime *GetRuntime(JNIEnv *env, jobject jobj) {
+        auto ptr = env->CallLongMethod(jobj, jruntime);
+        return reinterpret_cast<NodeRuntime *>(ptr);
+    }
 
     JNICALL static jstring ToString(JNIEnv *env, jobject jthis);
 
@@ -23,17 +49,6 @@ public:
     JNICALL static void Dispose(JNIEnv *env, jobject jthis);
 
     static jint OnLoad(JNIEnv *env);
-
-    static jclass & JVMClass();
-
-    static jobject GetContext(JNIEnv *env, jobject jobj);
-
-    static jlong GetReference(JNIEnv *env, jobject jobj);
-
-    static v8::Local<v8::Value> GetReference(JNIEnv *env, v8::Isolate *isolate, jobject jobj);
-
-    static void SetReference(JNIEnv *env, jobject jobj, jlong value);
-
 };
 
 #endif //NODE_JSVALUE_H

@@ -11,13 +11,21 @@ import java.lang.annotation.Native
  * @author linroid
  * @since 2019-10-19
  */
-open class JSValue(
-    context: JSContext?,
-    @Native protected val reference: Long
-) : Closeable {
+open class JSValue(context: JSContext? = null, @Native private val reference: Long) : Closeable {
 
     @Suppress("LeakingThis")
-    val context: JSContext = context ?: this as JSContext
+    protected lateinit var context: JSContext
+
+    init {
+        if (context != null) {
+            this.context = context
+        }
+    }
+
+    /** For native access runtime ptr */
+    private fun runtime(): Long {
+        return context.runtimePtr
+    }
 
     override fun toString(): String {
         return nativeToString()
@@ -36,7 +44,7 @@ open class JSValue(
     }
 
     fun empty(): Boolean {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return this is JSNull || this is JSUndefined || this.reference == 0L
     }
 
     fun isPromise(): Boolean {
@@ -45,7 +53,7 @@ open class JSValue(
 
     @Suppress("IMPLICIT_CAST_TO_ANY", "UNCHECKED_CAST")
     fun <T> toType(type: Class<T>): T? {
-        if (this is JSNull || this is JSUndefined) {
+        if (JSValue::class.java != type && this.empty()) {
             return null
         }
         val result = when {
@@ -63,7 +71,7 @@ open class JSValue(
                 check(this is JSArray) { "$this is not an JSArray" }
                 this.map { it.toType(type.componentType as Class<out Any>) }.toTypedArray()
             }
-            else -> throw TODO("Not support convert JSValue to $type class")
+            else -> KNode.gson.fromJson(toJson(), type)
         }
         return result as T?
     }
@@ -93,6 +101,10 @@ open class JSValue(
         return super.equals(other)
     }
 
+    fun sameReference(other: JSValue): Boolean {
+        return other.reference == reference
+    }
+
     override fun hashCode(): Int {
         return reference.hashCode()
     }
@@ -107,17 +119,18 @@ open class JSValue(
     companion object {
         fun from(context: JSContext, value: Any?): JSValue {
             return when (value) {
-                null -> JSNull(context)
+                null -> context.sharedNull
                 is JSValue -> value
                 is String -> JSString(context, value)
                 is Number -> JSNumber(context, value)
                 is Iterator<*> -> JSArray(context, value)
                 is Array<*> -> JSArray(context, value.iterator())
                 is JsonElement -> {
-                    // from(context, value)
                     context.parseJson(value.toString())
                 }
-                else -> throw IllegalStateException("Not support ${value.javaClass}")
+                else -> {
+                    context.parseJson(KNode.gson.toJson(value))
+                }
             }
         }
 

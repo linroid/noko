@@ -1,6 +1,5 @@
 package com.linroid.knode.js
 
-import android.util.Log
 import com.google.gson.JsonObject
 
 /**
@@ -25,10 +24,10 @@ open class JSObject : JSValue {
             return
         }
         javaClass.methods
-            .filter { it.isAnnotationPresent(Bind::class.java) }
+            .filter { it.isAnnotationPresent(BindJS::class.java) }
             .forEach { method ->
                 method.isAccessible = true
-                val bind = method.getAnnotation(Bind::class.java)!!
+                val bind = method.getAnnotation(BindJS::class.java)!!
                 val name = if (bind.name.isEmpty()) method.name else bind.name
                 set(name, object : JSFunction(context, name) {
                     override fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {

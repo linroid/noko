@@ -1,5 +1,6 @@
 package com.linroid.knode.js
 
+import android.net.Uri
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
@@ -63,6 +64,11 @@ open class JSValue(context: JSContext? = null, @Native private val reference: Lo
             type == Long::class.java -> toNumber().toLong()
             type == Float::class.java -> toNumber().toFloat()
             type == Double::class.java -> toNumber().toDouble()
+            type == Uri::class.java -> try {
+                Uri.parse(toString())
+            } catch (error: Exception) {
+                null
+            }
             type == JsonObject::class.java ||
                     type == JsonElement::class.java ||
                     type == JsonArray::class.java -> KNode.gson.toJsonTree(toJson())

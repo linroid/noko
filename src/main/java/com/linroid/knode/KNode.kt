@@ -15,7 +15,7 @@ import java.lang.annotation.Native
  * @since 2019-10-16
  */
 @Keep
-class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
+class KNode(private val pwd: File, private val output: StdOutput, private val supportColor: Boolean = true) : Closeable {
 
     @Native
     private var ptr: Long = nativeNew()
@@ -95,7 +95,6 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
     @Suppress("unused")
     private fun onBeforeStart(context: JSContext) {
         this.context = context
-        Log.i(TAG, "onBeforeStart: context.toString()=$context")
         attachStdOutput(context)
         val process: JSObject = context.get("process")
         val env: JSObject = process.get("env")
@@ -103,20 +102,29 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
         active = true
         env.set("PWD", pwd.absolutePath)
         customEnvs.forEach { env.set(it.key, it.value) }
+        if (supportColor) {
+            env.set("COLORTERM", "truecolor")
+        }
         process.set("argv0", "node")
         process.set("argv", arrayOf("node", file.absolutePath, *argv))
         customVersions.forEach {
             versions.set(it.key, it.value)
         }
-
         val chdir: JSFunction = process.get("chdir")
         chdir.call(process, JSString(context, pwd.absolutePath))
         eventOnPrepared(context)
         val cwdFunc: JSFunction = process.get("cwd")
         cwdFunc.call(process)
+        val setupTTY = if(!supportColor) "" else """
+            process.stderr.isTTY = true;
+            process.stderr.isRaw = false;
+            process.stdout.isTTY = true;
+            process.stdout.isRaw = false;"""
+
         val script = """(() => {
             const fs = require('fs');
-            const vm = require('vm');  
+            const vm = require('vm');
+            $setupTTY
             (new vm.Script(
             fs.readFileSync('${file.absolutePath}'),
             { filename: '${file.name}'} )).runInThisContext();

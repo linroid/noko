@@ -1,7 +1,5 @@
 package com.linroid.knode
 
-import android.os.Process
-import android.os.Process.THREAD_PRIORITY_FOREGROUND
 import android.util.Log
 import androidx.annotation.Keep
 import com.google.gson.Gson
@@ -9,17 +7,18 @@ import com.linroid.knode.js.*
 import java.io.Closeable
 import java.io.File
 import java.lang.annotation.Native
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.concurrent.thread
 
 /**
  * @author linroid
  * @since 2019-10-16
  */
 @Keep
-class KNode(private val pwd: File, private val output: StdOutput, private val supportColor: Boolean = true) : Closeable {
+class KNode(private val pwd: File, private val output: StdOutput, private val supportColor: Boolean = false) : Closeable {
 
     @Native
     private var ptr: Long = nativeNew()
-
     private val listeners = HashSet<EventListener>()
     private var active = false
     private var done = false
@@ -31,11 +30,10 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
     fun start(file: File, vararg argv: String) {
         this.file = file
         this.argv = argv
-        Thread({
-            Process.setThreadPriority(THREAD_PRIORITY_FOREGROUND)
+        thread(isDaemon = true, name = "knode-${seq.incrementAndGet()}") {
             val exitCode = nativeStart()
             eventOnExit(exitCode)
-        }, "knode").start()
+        }
     }
 
     fun addEventListener(listener: EventListener) = synchronized(this) {
@@ -115,7 +113,7 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
         eventOnPrepared(context)
         val cwdFunc: JSFunction = process.get("cwd")
         cwdFunc.call(process)
-        val setupTTY = if(!supportColor) "" else """
+        val setupTTY = if (!supportColor) "" else """
             process.stderr.isTTY = true;
             process.stderr.isRaw = false;
             process.stdout.isTTY = true;
@@ -206,6 +204,7 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
 
     companion object {
         private const val TAG = "KNode"
+        private val seq = AtomicInteger(0)
 
         private val customVersions = HashMap<String, String>()
         private val customEnvs = HashMap<String, String>()

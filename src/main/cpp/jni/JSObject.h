@@ -23,6 +23,8 @@ public:
 
     static JNICALL jobject Get(JNIEnv *env, jobject jthis, jstring jkey);
 
+    static JNICALL void Delete(JNIEnv *env, jobject jthis, jstring jkey);
+
     static JNICALL void Set(JNIEnv *env, jobject jthis, jstring jkey, jobject);
 
     static JNICALL jboolean Has(JNIEnv *env, jobject jthis, jstring jkey);

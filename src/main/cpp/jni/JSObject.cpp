@@ -60,6 +60,15 @@ void JSObject::New(JNIEnv *env, jobject jthis) {
     JSValue::SetReference(env, jthis, (jlong) result);
 }
 
+void JSObject::Delete(JNIEnv *env, jobject jthis, jstring jkey) {
+    const uint16_t *key = env->GetStringChars(jkey, nullptr);
+    const jint keyLen = env->GetStringLength(jkey);
+    V8_CONTEXT(env, jthis, v8::Object)
+        that->Delete(V8_STRING(key, keyLen));
+    V8_END()
+    env->ReleaseStringChars(jkey, key);
+}
+
 jint JSObject::OnLoad(JNIEnv *env) {
     jclass clazz = env->FindClass("com/linroid/knode/js/JSObject");
     if (!clazz) {
@@ -67,10 +76,11 @@ jint JSObject::OnLoad(JNIEnv *env) {
     }
 
     JNINativeMethod methods[] = {
-            {"nativeGet", "(Ljava/lang/String;)Lcom/linroid/knode/js/JSValue;",  (void *) (JSObject::Get)},
-            {"nativeSet", "(Ljava/lang/String;Lcom/linroid/knode/js/JSValue;)V", (void *) (JSObject::Set)},
-            {"nativeNew", "()V",                                                 (void *) (JSObject::New)},
-            {"nativeHas", "(Ljava/lang/String;)Z",                               (void *) (JSObject::Has)},
+            {"nativeGet",    "(Ljava/lang/String;)Lcom/linroid/knode/js/JSValue;",  (void *) (JSObject::Get)},
+            {"nativeSet",    "(Ljava/lang/String;Lcom/linroid/knode/js/JSValue;)V", (void *) (JSObject::Set)},
+            {"nativeNew",    "()V",                                                 (void *) (JSObject::New)},
+            {"nativeHas",    "(Ljava/lang/String;)Z",                               (void *) (JSObject::Has)},
+            {"nativeDelete", "(Ljava/lang/String;)V",                               (void *) (JSObject::Delete)},
     };
     jclazz = (jclass) env->NewGlobalRef(clazz);
     jconstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");

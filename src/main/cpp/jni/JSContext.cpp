@@ -66,12 +66,10 @@ jobject JSContext::Eval(JNIEnv *env, jstring jthis, jstring jcode, jstring jsour
             error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
             return;
         }
-        LOGI("Eval success");
         auto checkedResult = returned.ToLocalChecked();
         type = runtime->GetType(checkedResult);
         result = new v8::Persistent<v8::Value>(isolate, checkedResult);
     V8_END()
-    LOGE("EVAL result: %p", result);
     if (error) {
         JSError::Throw(env, runtime, error);
         return nullptr;

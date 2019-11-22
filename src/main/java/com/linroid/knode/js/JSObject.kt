@@ -60,7 +60,7 @@ open class JSObject : JSValue {
     }
 
     fun delete(key: String) {
-
+        nativeDelete(key)
     }
 
     fun keys(): Array<String> {
@@ -77,5 +77,6 @@ open class JSObject : JSValue {
     private external fun nativeKeys(): Array<String>
     private external fun nativeHas(key: String): Boolean
     private external fun nativeSet(key: String, value: JSValue?)
+    private external fun nativeDelete(key: String)
     private external fun nativeNew()
 }

@@ -31,10 +31,6 @@ class JSContext @NativeConstructor private constructor(
         return nativeParseJson(json)
     }
 
-    fun setExceptionHandler(handler: Any) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
     fun hold(obj: JSValue) {
         references.add(obj)
     }

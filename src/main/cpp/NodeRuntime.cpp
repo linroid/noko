@@ -87,7 +87,6 @@ void NodeRuntime::OnPrepared() {
 }
 
 void NodeRuntime::OnEnvReady(node::Environment *nodeEnv) {
-    LOGI("onEnvReady");
     v8::HandleScope handleScope(nodeEnv->isolate());
     v8::Context::Scope contextScope(nodeEnv->context());
 

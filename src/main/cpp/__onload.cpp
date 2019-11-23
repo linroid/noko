@@ -102,15 +102,14 @@ JNICALL jint start(JNIEnv *env, jobject jthis) {
 
 JNICALL void mountFs(JNIEnv *env, jobject _, jobject jfs) {
     V8_CONTEXT(env, jfs, v8::Value)
+        LOGI("mountFs");
         auto global = runtime->global->Get(isolate);
         auto privateKey = v8::Private::ForApi(isolate, v8::String::NewFromUtf8(isolate, "__fs"));
         global->SetPrivate(context, privateKey, that).FromJust();
-
-        v8::Local<v8::Object> console = context->Global()->Get(v8::String::NewFromUtf8(isolate, "console"))->ToObject(context).ToLocalChecked();
-        v8::Local<v8::Value> log = console->Get(v8::String::NewFromUtf8(isolate, "log"));
-        v8::Local<v8::Object> logFunc = log->ToObject(context).ToLocalChecked();
-        logFunc->CallAsFunction(context, console, 1, &that);
-        LOGI("fs mounted");
+        // v8::Local<v8::Object> console = context->Global()->Get(v8::String::NewFromUtf8(isolate, "console"))->ToObject(context).ToLocalChecked();
+        // v8::Local<v8::Value> log = console->Get(v8::String::NewFromUtf8(isolate, "log"));
+        // v8::Local<v8::Object> logFunc = log->ToObject(context).ToLocalChecked();
+        // logFunc->CallAsFunction(context, console, 1, &that);
     V8_END()
 }
 

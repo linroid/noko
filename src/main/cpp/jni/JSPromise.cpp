@@ -83,7 +83,6 @@ void JSPromise::Resolve(JNIEnv *env, jobject jthis, jobject jvalue) {
 void JSPromise::Then(JNIEnv *env, jobject jthis, jobject jcallback) {
     auto callback = reinterpret_cast<v8::Persistent<v8::Function> *>(JSValue::GetReference(env, jcallback));
     v8::Persistent<v8::Value> *error = nullptr;
-    LOGV("Then");
     V8_CONTEXT(env, jthis, v8::Promise)
         v8::TryCatch tryCatch(runtime->isolate);
         auto ret = that->Then(context, callback->Get(isolate));
@@ -98,7 +97,6 @@ void JSPromise::Then(JNIEnv *env, jobject jthis, jobject jcallback) {
 }
 
 void JSPromise::Catch(JNIEnv *env, jobject jthis, jobject jcallback) {
-    LOGV("Catch");
     auto callback = reinterpret_cast<v8::Persistent<v8::Function> *>(JSValue::GetReference(env, jcallback));
     v8::Persistent<v8::Value> *error = nullptr;
     V8_CONTEXT(env, jthis, v8::Promise)

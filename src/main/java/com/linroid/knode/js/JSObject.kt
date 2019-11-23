@@ -1,6 +1,8 @@
 package com.linroid.knode.js
 
+import android.util.Log
 import com.google.gson.JsonObject
+import java.lang.NullPointerException
 
 /**
  * @author linroid
@@ -52,11 +54,12 @@ open class JSObject : JSValue {
     }
 
     fun set(key: String, value: Any?) {
+        Log.i("JSObject", "set $key")
         nativeSet(key, from(context, value))
     }
 
     inline fun <reified T> get(key: String): T {
-        return opt<T>(key)!!
+        return opt<T>(key) ?: throw IllegalStateException("get $key shouldn't return null")
     }
 
     fun delete(key: String) {

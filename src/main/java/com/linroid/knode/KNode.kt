@@ -86,8 +86,8 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
         exit(0)
     }
 
-    fun mountFileSystem(obj: JSObject) {
-        // setFs(obj.valueHash())
+    fun mountFs(obj: JSObject) {
+        nativeMountFs(obj)
     }
 
     @Suppress("unused")
@@ -188,7 +188,7 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
 
     private external fun nativeDispose()
 
-    private external fun nativeSetFs(fsPtr: Long)
+    private external fun nativeMountFs(fs: JSObject)
 
     interface EventListener {
 

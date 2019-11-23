@@ -96,14 +96,22 @@ JNICALL jint start(JNIEnv *env, jobject jthis) {
     //     env->GetStringRegion(j_element, 0, len, element);
     //     args[i] = element;
     // }
-    auto node = reinterpret_cast<NodeRuntime *>(ptr);
-    return jint(node->Start());
+    auto runtime = reinterpret_cast<NodeRuntime *>(ptr);
+    return jint(runtime->Start());
 }
 
-JNICALL void setFs(JNIEnv *env, jobject jthis, jlong fsPtr) {
-    LOGD("setFs");
-    jlong ptr = env->GetLongField(jthis, nodeClass.ptr);
-    auto node = reinterpret_cast<NodeRuntime *>(ptr);
+JNICALL void mountFs(JNIEnv *env, jobject _, jobject jfs) {
+    V8_CONTEXT(env, jfs, v8::Value)
+        auto global = runtime->global->Get(isolate);
+        auto privateKey = v8::Private::ForApi(isolate, v8::String::NewFromUtf8(isolate, "__fs"));
+        global->SetPrivate(context, privateKey, that).FromJust();
+
+        v8::Local<v8::Object> console = context->Global()->Get(v8::String::NewFromUtf8(isolate, "console"))->ToObject(context).ToLocalChecked();
+        v8::Local<v8::Value> log = console->Get(v8::String::NewFromUtf8(isolate, "log"));
+        v8::Local<v8::Object> logFunc = log->ToObject(context).ToLocalChecked();
+        logFunc->CallAsFunction(context, console, 1, &that);
+        LOGI("fs mounted");
+    V8_END()
 }
 
 JNICALL void dispose(JNIEnv *env, jobject jthis) {
@@ -113,24 +121,24 @@ JNICALL void dispose(JNIEnv *env, jobject jthis) {
         LOGE("dispose but ptr is 0");
         return;
     }
-    auto node = reinterpret_cast<NodeRuntime *>(ptr);
-    node->Dispose();
-    delete node;
+    auto runtime = reinterpret_cast<NodeRuntime *>(ptr);
+    runtime->Dispose();
+    delete runtime;
     env->SetLongField(jthis, nodeClass.ptr, 0);
 }
 
 JNICALL jlong nativeNew(JNIEnv *env, jobject jthis) {
     LOGD("nativeNew");
-    auto *node = new NodeRuntime(env, jthis, nodeClass.onBeforeStart,
-                                 nodeClass.onBeforeExit);
-    return reinterpret_cast<jlong>(node);
+    auto *runtime = new NodeRuntime(env, jthis, nodeClass.onBeforeStart,
+                                    nodeClass.onBeforeExit);
+    return reinterpret_cast<jlong>(runtime);
 }
 
 static JNINativeMethod nodeMethods[] = {
-        {"nativeNew",    "()J",  (void *) nativeNew},
-        {"nativeStart",   "()I",  (void *) start},
-        {"nativeSetFs",   "(J)V", (void *) setFs},
-        {"nativeDispose", "()V",  (void *) dispose},
+        {"nativeNew",     "()J",                                (void *) nativeNew},
+        {"nativeStart",   "()I",                                (void *) start},
+        {"nativeMountFs", "(Lcom/linroid/knode/js/JSObject;)V", (void *) mountFs},
+        {"nativeDispose", "()V",                                (void *) dispose},
 };
 
 

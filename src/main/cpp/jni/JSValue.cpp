@@ -52,7 +52,7 @@ jstring JSValue::ToString(JNIEnv *env, jobject jthis) {
         v8::Locker _locker(runtime->isolate);
         v8::HandleScope _handleScope(runtime->isolate);
         auto context = runtime->context.Get(isolate);
-        v8::MaybeLocal<v8::String> str = value->Get(isolate)->ToString(context);
+        auto str = value->Get(isolate)->ToString(context);
         if (str.IsEmpty()) {
             unicodeChars = new uint16_t[0];
         } else {

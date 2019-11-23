@@ -132,9 +132,8 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
             context.eval(script, file.absolutePath, 0)
         } catch (error: JSException) {
             Log.e(TAG, "Execute failed: file=${file.absolutePath}", error)
-            close()
+            eventOnError(error)
         }
-
     }
 
     private fun attachStdOutput(context: JSContext) {

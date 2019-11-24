@@ -29,8 +29,9 @@ jint JSContext::OnLoad(JNIEnv *env) {
     jUndefinedId = env->GetFieldID(clazz, "sharedUndefined", "Lcom/linroid/knode/js/JSUndefined;");
 
     JNINativeMethod methods[] = {
-            {"nativeEval",      "(Ljava/lang/String;Ljava/lang/String;I)Lcom/linroid/knode/js/JSValue;", (void *) Eval},
-            {"nativeParseJson", "(Ljava/lang/String;)Lcom/linroid/knode/js/JSValue;",                    (void *) ParseJson},
+            {"nativeEval",       "(Ljava/lang/String;Ljava/lang/String;I)Lcom/linroid/knode/js/JSValue;", (void *) Eval},
+            {"nativeParseJson",  "(Ljava/lang/String;)Lcom/linroid/knode/js/JSValue;",                    (void *) ParseJson},
+            {"nativeThrowError", "(Ljava/lang/String;)V",                                                 (void *) ThrowError},
     };
 
     int rc = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
@@ -102,6 +103,17 @@ jobject JSContext::ParseJson(JNIEnv *env, jstring jthis, jstring jjson) {
     }
     env->ReleaseStringChars(jjson, json);
     return runtime->Wrap(env, result, type);
+}
+
+
+void JSContext::ThrowError(JNIEnv *env, jstring jthis, jstring jmessage) {
+    const uint16_t *message = env->GetStringChars(jmessage, nullptr);
+    const jint messageLen = env->GetStringLength(jmessage);
+    V8_CONTEXT(env, jthis, v8::Object)
+        auto error = v8::Exception::Error(V8_STRING(message, messageLen));
+        isolate->ThrowException(error);
+    V8_END()
+    env->ReleaseStringChars(jmessage, message);
 }
 
 void JSContext::SetShared(JNIEnv *env, NodeRuntime *runtime) {

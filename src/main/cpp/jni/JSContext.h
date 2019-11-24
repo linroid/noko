@@ -24,6 +24,8 @@ public:
 
     static JNICALL jobject Eval(JNIEnv *env, jstring jthis, jstring jcode, jstring jsource, jint jline);
 
+    static JNICALL void ThrowError(JNIEnv *env, jstring jthis, jstring jmessage);
+
     static jint OnLoad(JNIEnv *env);
 
     static void SetShared(JNIEnv *env, NodeRuntime *runtime);

@@ -35,10 +35,11 @@ class JSContext @NativeConstructor private constructor(
         references.add(obj)
     }
 
+    fun throwError(message: String) {
+        nativeThrowError(message)
+    }
+
     private external fun nativeEval(code: String, source: String, line: Int): JSValue
     private external fun nativeParseJson(json: String): JSValue
-
-    fun throwError(message: String) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    private external fun nativeThrowError(message: String)
 }

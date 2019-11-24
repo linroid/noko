@@ -192,13 +192,13 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
 
     interface EventListener {
 
-        fun onNodePrepared(context: JSContext)
+        fun onNodePrepared(context: JSContext) {}
 
-        fun onNodeFinished(exitCode: Int)
+        fun onNodeFinished(exitCode: Int) {}
 
-        fun onNodeExited(exitCode: Int)
+        fun onNodeExited(exitCode: Int) {}
 
-        fun onNodeError(error: JSException)
+        fun onNodeError(error: JSException) {}
     }
 
     companion object {

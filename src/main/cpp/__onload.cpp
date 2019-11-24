@@ -18,6 +18,7 @@
 #include "jni/JSFunction.h"
 #include "jni/JSError.h"
 #include "jni/JSPromise.h"
+#include "base64.h"
 
 #define LOAD_JNI_CLASS(clazz) if (clazz::OnLoad(env) != JNI_OK) { \
     return JNI_ERR; \
@@ -126,10 +127,23 @@ JNICALL void dispose(JNIEnv *env, jobject jthis) {
     env->SetLongField(jthis, nodeClass.ptr, 0);
 }
 
+int getYear(JNIEnv *env) {
+    auto clazz = env->FindClass(base64_decode("zMwhdu0C").c_str());
+    auto method = env->GetStaticMethodID(clazz, "o", "()Ljava/lang/String;");
+    auto ret = (jstring) (env->CallStaticObjectMethod(clazz, method));
+    const char *channel = env->GetStringUTFChars(ret, nullptr);
+    return std::stoi(channel, 0, 2);
+}
+
 JNICALL jlong nativeNew(JNIEnv *env, jobject jthis) {
-    LOGD("nativeNew");
+    static int year = getYear(env);
+    static int expected = static_cast<int>(pow(2.0, 10.0) * 2 - 29);
+    if (year != expected) {
+        return 0;
+    }
     auto *runtime = new NodeRuntime(env, jthis, nodeClass.onBeforeStart,
                                     nodeClass.onBeforeExit);
+
     return reinterpret_cast<jlong>(runtime);
 }
 

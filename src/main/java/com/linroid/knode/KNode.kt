@@ -28,7 +28,6 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
     private lateinit var argv: Array<out String>
 
     fun start(file: File, vararg argv: String) {
-        output.stdout("start new node instance: ${seq.get()}")
         this.file = file
         this.argv = argv
         thread(isDaemon = true, name = "knode-${seq.incrementAndGet()}") {

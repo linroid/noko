@@ -12,6 +12,7 @@
 #include "v8.h"
 #include "env.h"
 #include "util.h"
+#include "env-inl.h"
 
 enum JSType {
     None,

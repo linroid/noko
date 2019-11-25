@@ -54,7 +54,7 @@ open class JSObject : JSValue {
     }
 
     fun set(key: String, value: Any?) {
-        Log.i("JSObject", "set $key")
+        Log.i("JSObject", "set $key=$value")
         nativeSet(key, from(context, value))
     }
 

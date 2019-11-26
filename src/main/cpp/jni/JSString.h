@@ -12,16 +12,16 @@
 
 class JSString {
 private:
-    static jclass jclazz;
-    static jmethodID jconstructor;
+    static jclass jClazz;
+    static jmethodID jConstructor;
 
 public:
-    JNICALL static void New(JNIEnv *env, jobject jthis, jstring content);
+    JNICALL static void New(JNIEnv *env, jobject jThis, jstring content);
 
     inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
-        return env->NewObject(jclazz,
-                              jconstructor,
-                              runtime->jcontext,
+        return env->NewObject(jClazz,
+                              jConstructor,
+                              runtime->jContext,
                               (jlong) value);
     }
 

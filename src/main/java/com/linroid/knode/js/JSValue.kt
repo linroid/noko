@@ -40,12 +40,16 @@ open class JSValue(context: JSContext? = null, @Native private val reference: Lo
         return nativeToNumber()
     }
 
+    open fun toBoolean(): Boolean {
+        return toNumber() != 0
+    }
+
     fun typeOf(): String {
         return nativeTypeOf()
     }
 
     fun empty(): Boolean {
-        return this is JSNull || this is JSUndefined || this.reference == 0L
+        return this is JSNull || this is JSUndefined
     }
 
     fun isPromise(): Boolean {
@@ -61,6 +65,7 @@ open class JSValue(context: JSContext? = null, @Native private val reference: Lo
             type == String::class.java -> this.toString()
             type == Any::class.java -> this
             type == Int::class.java -> toNumber().toInt()
+            type == Boolean::class.java -> toBoolean()
             type == Long::class.java -> toNumber().toLong()
             type == Float::class.java -> toNumber().toFloat()
             type == Double::class.java -> toNumber().toDouble()
@@ -127,6 +132,7 @@ open class JSValue(context: JSContext? = null, @Native private val reference: Lo
             return when (value) {
                 null -> context.sharedNull
                 is JSValue -> value
+                is Boolean -> if (value) context.sharedTrue else context.sharedFalse
                 is String -> JSString(context, value)
                 is Number -> JSNumber(context, value)
                 is Iterator<*> -> JSArray(context, value)

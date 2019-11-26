@@ -10,12 +10,12 @@
 
 class JSUndefined {
 private:
-    static jclass jclazz;
-    static jmethodID jconstructor;
+    static jclass jClazz;
+    static jmethodID jConstructor;
 
 public:
     inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
-        return env->NewObject(jclazz, jconstructor, runtime->jcontext, (jlong) value);
+        return env->NewObject(jClazz, jConstructor, runtime->jContext, (jlong) value);
     }
 
     static jint OnLoad(JNIEnv *env);

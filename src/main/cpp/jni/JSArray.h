@@ -11,27 +11,27 @@
 
 class JSArray {
 private:
-    static jclass jclazz;
-    static jmethodID jconstructor;
+    static jclass jClazz;
+    static jmethodID jConstructor;
 
 public:
     inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
-        return env->NewObject(jclazz, jconstructor, runtime->jcontext, (jlong) value);
+        return env->NewObject(jClazz, jConstructor, runtime->jContext, (jlong) value);
     }
 
-    JNICALL static jint Size(JNIEnv *env, jobject jthis);
+    JNICALL static jint Size(JNIEnv *env, jobject jThis);
 
-    JNICALL static void New(JNIEnv *env, jobject jthis);
+    JNICALL static void New(JNIEnv *env, jobject jThis);
 
-    JNICALL static jobject Get(JNIEnv *env, jobject jthis, jint jindex);
+    JNICALL static jobject Get(JNIEnv *env, jobject jThis, jint jindex);
 
-    JNICALL static jboolean Add(JNIEnv *env, jobject jthis, jobject jelement);
+    JNICALL static jboolean Add(JNIEnv *env, jobject jThis, jobject jelement);
 
-    JNICALL static jboolean AddAt(JNIEnv *env, jobject jthis, jint jindex, jobject jelement);
+    JNICALL static jboolean AddAt(JNIEnv *env, jobject jThis, jint jindex, jobject jelement);
 
-    JNICALL static jboolean AddAll(JNIEnv *env, jobject jthis, jobjectArray jelements);
+    JNICALL static jboolean AddAll(JNIEnv *env, jobject jThis, jobjectArray jelements);
 
-    JNICALL static jboolean AddAllAt(JNIEnv *env, jobject jthis, jint jindex, jobjectArray jelements);
+    JNICALL static jboolean AddAllAt(JNIEnv *env, jobject jThis, jint jindex, jobjectArray jelements);
 
     static jint OnLoad(JNIEnv *env);
 };

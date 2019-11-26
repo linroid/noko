@@ -10,8 +10,8 @@
 #include "JSError.h"
 #include "JniCallback.h"
 
-jclass JSFunction::jclazz;
-jmethodID JSFunction::jconstructor;
+jclass JSFunction::jClazz;
+jmethodID JSFunction::jConstructor;
 jmethodID JSFunction::jonCall;
 
 void staticCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
@@ -21,12 +21,12 @@ void staticCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
     callback->Call(info);
 }
 
-void JSFunction::New(JNIEnv *env, jobject jthis, jstring jname) {
+void JSFunction::New(JNIEnv *env, jobject jThis, jstring jname) {
     v8::Persistent<v8::Value> *result = nullptr;
     const uint16_t *name = env->GetStringChars(jname, nullptr);
     const jint nameLen = env->GetStringLength(jname);
-    auto callback = new JniCallback(env, jthis, JSValue::jclazz, jonCall);
-    V8_SCOPE(env, jthis)
+    auto callback = new JniCallback(env, jThis, JSValue::jClazz, jonCall);
+    V8_SCOPE(env, jThis)
         callback->runtime = runtime;
         auto data = v8::External::New(runtime->isolate, callback);
         auto func = v8::FunctionTemplate::New(runtime->isolate, staticCallback, data)->GetFunction();
@@ -34,10 +34,10 @@ void JSFunction::New(JNIEnv *env, jobject jthis, jstring jname) {
         result = new v8::Persistent<v8::Value>(runtime->isolate, func);
     V8_END()
     env->ReleaseStringChars(jname, name);
-    JSValue::SetReference(env, jthis, (jlong) result);
+    JSValue::SetReference(env, jThis, (jlong) result);
 }
 
-jobject JSFunction::Call(JNIEnv *env, jobject jthis, jobject jreceiver, jobjectArray jparameters) {
+jobject JSFunction::Call(JNIEnv *env, jobject jThis, jobject jreceiver, jobjectArray jparameters) {
     v8::Persistent<v8::Value> *result = nullptr;
     v8::Persistent<v8::Value> *error = nullptr;
     JSType type = None;
@@ -51,7 +51,7 @@ jobject JSFunction::Call(JNIEnv *env, jobject jthis, jobject jreceiver, jobjectA
         parameters[i] = JSValue::Unwrap(env, jelement);
     }
 
-    V8_CONTEXT(env, jthis, v8::Function)
+    V8_CONTEXT(env, jThis, v8::Function)
         v8::Local<v8::Value> *argv = new v8::Local<v8::Value>[argc];
         for (int i = 0; i < argc; ++i) {
             argv[i] = parameters[i]->Get(isolate);
@@ -83,8 +83,8 @@ jint JSFunction::OnLoad(JNIEnv *env) {
             {"nativeCall", "(Lcom/linroid/knode/js/JSValue;[Lcom/linroid/knode/js/JSValue;)Lcom/linroid/knode/js/JSValue;", (void *) JSFunction::Call},
             {"nativeNew",  "(Ljava/lang/String;)V",                                                                         (void *) JSFunction::New},
     };
-    jclazz = (jclass) env->NewGlobalRef(clazz);
-    jconstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
+    jClazz = (jclass) env->NewGlobalRef(clazz);
+    jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
     jonCall = env->GetMethodID(clazz, "onCall",
                                "(Lcom/linroid/knode/js/JSValue;[Lcom/linroid/knode/js/JSValue;)Lcom/linroid/knode/js/JSValue;");
     env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));

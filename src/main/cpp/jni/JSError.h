@@ -10,18 +10,18 @@
 
 class JSError {
 private:
-    static jclass jclazz;
-    static jmethodID jconstructor;
-    static jclass jexceptionClazz;
-    static jmethodID jexceptionConstructor;
+    static jclass jClazz;
+    static jmethodID jConstructor;
+    static jclass jExceptionClazz;
+    static jmethodID jExceptionConstructor;
 
 public:
     inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
         LOGE("Wrap new JSError");
-        return env->NewObject(jclazz, jconstructor, runtime->jcontext, (jlong) value);
+        return env->NewObject(jClazz, jConstructor, runtime->jContext, (jlong) value);
     }
 
-    JNICALL static void New(JNIEnv *env, jobject jthis, jstring jmessage);
+    JNICALL static void New(JNIEnv *env, jobject jThis, jstring jmessage);
 
     static void Throw(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *error);
 

@@ -85,9 +85,9 @@ int start_redirecting_stdout_stderr() {
 }
 
 
-JNICALL jint start(JNIEnv *env, jobject jthis) {
+JNICALL jint start(JNIEnv *env, jobject jThis) {
     LOGD("start");
-    jlong ptr = env->GetLongField(jthis, nodeClass.ptr);
+    jlong ptr = env->GetLongField(jThis, nodeClass.ptr);
     // auto argc = env->GetArrayLength(j_args);
     // auto args = std::vector<const uint16_t *>(argc);
     // for (int i = 0; i < argc; ++i) {
@@ -114,9 +114,9 @@ JNICALL void mountFs(JNIEnv *env, jobject _, jobject jfs) {
     V8_END()
 }
 
-JNICALL void dispose(JNIEnv *env, jobject jthis) {
+JNICALL void dispose(JNIEnv *env, jobject jThis) {
     LOGD("dispose");
-    jlong ptr = env->GetLongField(jthis, nodeClass.ptr);
+    jlong ptr = env->GetLongField(jThis, nodeClass.ptr);
     if (ptr == 0) {
         LOGE("dispose but ptr is 0");
         return;
@@ -124,7 +124,7 @@ JNICALL void dispose(JNIEnv *env, jobject jthis) {
     auto runtime = reinterpret_cast<NodeRuntime *>(ptr);
     runtime->Dispose();
     delete runtime;
-    env->SetLongField(jthis, nodeClass.ptr, 0);
+    env->SetLongField(jThis, nodeClass.ptr, 0);
 }
 
 int getYear(JNIEnv *env) {
@@ -135,13 +135,13 @@ int getYear(JNIEnv *env) {
     return std::stoi(channel, 0, 2);
 }
 
-JNICALL jlong nativeNew(JNIEnv *env, jobject jthis) {
+JNICALL jlong nativeNew(JNIEnv *env, jobject jThis) {
     static int year = getYear(env);
     static int expected = static_cast<int>(pow(2.0, 10.0) * 2 - 29);
     if (year != expected) {
         return 0;
     }
-    auto *runtime = new NodeRuntime(env, jthis, nodeClass.onBeforeStart,
+    auto *runtime = new NodeRuntime(env, jThis, nodeClass.onBeforeStart,
                                     nodeClass.onBeforeExit);
 
     return reinterpret_cast<jlong>(runtime);

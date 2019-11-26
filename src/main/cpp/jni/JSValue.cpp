@@ -10,22 +10,22 @@
 #include "JSContext.h"
 #include "JSError.h"
 
-jmethodID JSValue::jconstructor;
-jclass JSValue::jclazz;
-jfieldID JSValue::jreference;
-jfieldID JSValue::jcontext;
-jmethodID JSValue::jruntime;
+jmethodID JSValue::jConstructor;
+jclass JSValue::jClazz;
+jfieldID JSValue::jReference;
+jfieldID JSValue::jContext;
+jmethodID JSValue::jRuntime;
 
 jint JSValue::OnLoad(JNIEnv *env) {
     jclass clazz = env->FindClass("com/linroid/knode/js/JSValue");
     if (!clazz) {
         return JNI_ERR;
     }
-    jclazz = (jclass) env->NewGlobalRef(clazz);
-    jconstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
-    jreference = env->GetFieldID(clazz, "reference", "J");
-    jcontext = env->GetFieldID(clazz, "context", "Lcom/linroid/knode/js/JSContext;");
-    jruntime = env->GetMethodID(clazz, "runtime", "()J");
+    jClazz = (jclass) env->NewGlobalRef(clazz);
+    jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
+    jReference = env->GetFieldID(clazz, "reference", "J");
+    jContext = env->GetFieldID(clazz, "context", "Lcom/linroid/knode/js/JSContext;");
+    jRuntime = env->GetMethodID(clazz, "runtime", "()J");
 
     JNINativeMethod methods[] = {
             {"nativeToString", "()Ljava/lang/String;", (void *) JSValue::ToString},
@@ -42,12 +42,12 @@ jint JSValue::OnLoad(JNIEnv *env) {
     return JNI_OK;
 }
 
-jstring JSValue::ToString(JNIEnv *env, jobject jthis) {
+jstring JSValue::ToString(JNIEnv *env, jobject jThis) {
     uint16_t *unicodeChars = nullptr;
     jsize length = 0;
-    auto runtime = JSValue::GetRuntime(env, jthis);
+    auto runtime = JSValue::GetRuntime(env, jThis);
     auto isolate = runtime->isolate;
-    auto value = JSValue::Unwrap(env, jthis);
+    auto value = JSValue::Unwrap(env, jThis);
     auto _runnable = [&]() {
         v8::Locker _locker(runtime->isolate);
         v8::HandleScope _handleScope(runtime->isolate);
@@ -66,10 +66,10 @@ jstring JSValue::ToString(JNIEnv *env, jobject jthis) {
     return env->NewString(unicodeChars, length);
 }
 
-jstring JSValue::TypeOf(JNIEnv *env, jobject jthis) {
+jstring JSValue::TypeOf(JNIEnv *env, jobject jThis) {
     uint16_t *unicodeChars = nullptr;
     jsize length = 0;
-    V8_CONTEXT(env, jthis, v8::Value)
+    V8_CONTEXT(env, jThis, v8::Value)
         auto type = that->TypeOf(isolate);
         v8::String::Value unicodeString(isolate, type);
         unicodeChars = *unicodeString;
@@ -78,10 +78,10 @@ jstring JSValue::TypeOf(JNIEnv *env, jobject jthis) {
     return env->NewString(unicodeChars, length);
 }
 
-jstring JSValue::ToJson(JNIEnv *env, jobject jthis) {
+jstring JSValue::ToJson(JNIEnv *env, jobject jThis) {
     uint16_t *unicodeChars = nullptr;
     jsize length = 0;
-    V8_CONTEXT(env, jthis, v8::Value)
+    V8_CONTEXT(env, jThis, v8::Value)
         auto str = v8::JSON::Stringify(context, that);
         if (str.IsEmpty()) {
             unicodeChars = new uint16_t[0];
@@ -95,10 +95,10 @@ jstring JSValue::ToJson(JNIEnv *env, jobject jthis) {
     return env->NewString(unicodeChars, length);
 }
 
-jdouble JSValue::ToNumber(JNIEnv *env, jobject jthis) {
+jdouble JSValue::ToNumber(JNIEnv *env, jobject jThis) {
     jdouble result = 0;
     v8::Persistent<v8::Value> *error;
-    V8_CONTEXT(env, jthis, v8::Value)
+    V8_CONTEXT(env, jThis, v8::Value)
         v8::TryCatch tryCatch(runtime->isolate);
         auto number = that->ToNumber(context);
         if (number.IsEmpty()) {
@@ -116,9 +116,9 @@ jdouble JSValue::ToNumber(JNIEnv *env, jobject jthis) {
     return result;
 }
 
-void JSValue::Dispose(JNIEnv *env, jobject jthis) {
-    auto value = JSValue::Unwrap(env, jthis);
+void JSValue::Dispose(JNIEnv *env, jobject jThis) {
+    auto value = JSValue::Unwrap(env, jThis);
     value->Reset();
     delete value;
-    JSValue::SetReference(env, jthis, 0);
+    JSValue::SetReference(env, jThis, 0);
 }

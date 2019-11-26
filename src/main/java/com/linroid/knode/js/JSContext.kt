@@ -14,6 +14,8 @@ class JSContext @NativeConstructor private constructor(
 
     internal lateinit var sharedNull: JSNull
     internal lateinit var sharedUndefined: JSUndefined
+    internal lateinit var sharedTrue: JSBoolean
+    internal lateinit var sharedFalse: JSBoolean
 
     init {
         context = this

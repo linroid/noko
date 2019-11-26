@@ -11,15 +11,13 @@
 
 class JSBoolean {
 private:
-    static jclass jclazz;
-    static jmethodID jconstructor;
-    
-public:
-    inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
-        return env->NewObject(jclazz, jconstructor, runtime->jcontext, value);
-    }
+    static jclass jClazz;
+    static jmethodID jConstructor;
 
-    JNICALL static void New(JNIEnv *env, jobject jthis, jboolean jdata);
+public:
+    inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, bool value) {
+        return env->NewObject(jClazz, jConstructor, runtime->jContext, value);
+    }
 
     static jint OnLoad(JNIEnv *env);
 };

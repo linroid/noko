@@ -32,7 +32,7 @@ enum JSType {
 class NodeRuntime {
 
 private:
-    jobject jthis;
+    jobject jThis;
     jmethodID onBeforeStart;
     jmethodID onBeforeExit;
 
@@ -52,9 +52,11 @@ private:
     void PostAndWait(std::function<void()> runnable);
 
 public:
-    jobject jcontext;
-    jobject jnull;
-    jobject jundefined;
+    jobject jContext;
+    jobject jNull;
+    jobject jUndefined;
+    jobject jTrue;
+    jobject jFalse;
     JavaVM *vm = nullptr;
 
     v8::Isolate *isolate;
@@ -66,7 +68,7 @@ public:
     node::IsolateData *isolateData;
     uv_loop_t *eventLoop;
 
-    NodeRuntime(JNIEnv *env, jobject jthis, jmethodID onBeforeStart, jmethodID onBeforeExit);
+    NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, jmethodID onBeforeExit);
 
     ~NodeRuntime();
 

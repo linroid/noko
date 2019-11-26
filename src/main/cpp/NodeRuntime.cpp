@@ -38,10 +38,10 @@ void beforeExitCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
     uv_stop(env->event_loop());
 }
 
-NodeRuntime::NodeRuntime(JNIEnv *env, jobject jthis, jmethodID onBeforeStart, jmethodID onBeforeExit)
+NodeRuntime::NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, jmethodID onBeforeExit)
         : onBeforeStart(onBeforeStart), onBeforeExit(onBeforeExit) {
     env->GetJavaVM(&vm);
-    this->jthis = env->NewGlobalRef(jthis);
+    this->jThis = env->NewGlobalRef(jThis);
 
     mutex.lock();
     ++instanceCount;
@@ -54,7 +54,7 @@ NodeRuntime::~NodeRuntime() {
     if (stat == JNI_EDETACHED) {
         vm->AttachCurrentThread(&env, nullptr);
     }
-    env->DeleteGlobalRef(jthis);
+    env->DeleteGlobalRef(jThis);
     if (stat == JNI_EDETACHED) {
         vm->DetachCurrentThread();
     }
@@ -77,7 +77,7 @@ void NodeRuntime::OnPrepared() {
     if (env->ExceptionCheck()) {
         LOGE("OnPrepared before call has a pending jni exception");
     }
-    env->CallVoidMethod(jthis, onBeforeStart, jcontext);
+    env->CallVoidMethod(jThis, onBeforeStart, jContext);
     if (env->ExceptionCheck()) {
         LOGE("OnPrepared has a pending jni exception");
     }
@@ -120,9 +120,11 @@ void NodeRuntime::OnEnvReady(node::Environment *nodeEnv) {
     }
     auto nullValue = new v8::Persistent<v8::Value>(isolate, v8::Null(isolate));
     auto undefinedValue = new v8::Persistent<v8::Value>(isolate, v8::Undefined(isolate));
-    this->jcontext = env->NewGlobalRef(JSContext::Wrap(env, this));
-    this->jnull = env->NewGlobalRef(JSNull::Wrap(env, this, nullValue));
-    this->jundefined = env->NewGlobalRef(JSUndefined::Wrap(env, this, undefinedValue));
+    this->jContext = env->NewGlobalRef(JSContext::Wrap(env, this));
+    this->jNull = env->NewGlobalRef(JSNull::Wrap(env, this, nullValue));
+    this->jUndefined = env->NewGlobalRef(JSUndefined::Wrap(env, this, undefinedValue));
+    this->jTrue = env->NewGlobalRef(JSBoolean::Wrap(env, this, true));
+    this->jFalse = env->NewGlobalRef(JSBoolean::Wrap(env, this, false));
     JSContext::SetShared(env, this);
     if (stat == JNI_EDETACHED) {
         vm->DetachCurrentThread();
@@ -175,17 +177,24 @@ NodeRuntime *NodeRuntime::GetCurrent(const v8::FunctionCallbackInfo<v8::Value> &
 jobject NodeRuntime::Wrap(JNIEnv *env, v8::Persistent<v8::Value> *value, JSType type) {
     switch (type) {
         case Null:
-            return this->jnull;
+            return this->jNull;
         case Undefined:
-            return this->jundefined;
+            return this->jUndefined;
+        case Boolean: {
+            auto local = value->Get(isolate);
+            v8::Local<v8::Boolean> target = local->ToBoolean(context.Get(isolate)).ToLocalChecked();
+            if (target->Value()) {
+                return this->jTrue;
+            } else {
+                return this->jFalse;
+            }
+        }
         case Object:
             return JSObject::Wrap(env, this, value);
         case String:
             return JSString::Wrap(env, this, value);
         case Number:
             return JSNumber::Wrap(env, this, value);
-        case Boolean:
-            return JSBoolean::Wrap(env, this, value);
         case Function:
             return JSFunction::Wrap(env, this, value);
         case Promise:

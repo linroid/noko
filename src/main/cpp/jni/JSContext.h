@@ -10,21 +10,23 @@
 
 class JSContext {
 private:
-    static jclass jclazz;
-    static jmethodID jconstructor;
-    static jfieldID jnullId;
+    static jclass jClazz;
+    static jmethodID jConstructor;
+    static jfieldID jNullId;
     static jfieldID jUndefinedId;
+    static jfieldID jTrueId;
+    static jfieldID jFalseId;
 
 public:
     inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime) {
-        return env->NewObject(jclazz, jconstructor, (jlong) runtime, (jlong) runtime->global);
+        return env->NewObject(jClazz, jConstructor, (jlong) runtime, (jlong) runtime->global);
     }
 
-    static JNICALL jobject ParseJson(JNIEnv *env, jstring jthis, jstring jjson);
+    static JNICALL jobject ParseJson(JNIEnv *env, jstring jThis, jstring jjson);
 
-    static JNICALL jobject Eval(JNIEnv *env, jstring jthis, jstring jcode, jstring jsource, jint jline);
+    static JNICALL jobject Eval(JNIEnv *env, jstring jThis, jstring jcode, jstring jsource, jint jline);
 
-    static JNICALL void ThrowError(JNIEnv *env, jstring jthis, jstring jmessage);
+    static JNICALL void ThrowError(JNIEnv *env, jstring jThis, jstring jmessage);
 
     static jint OnLoad(JNIEnv *env);
 

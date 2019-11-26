@@ -11,25 +11,25 @@
 
 class JSObject {
 private:
-    static jclass jclazz;
-    static jmethodID jconstructor;
+    static jclass jClazz;
+    static jmethodID jConstructor;
 
 public:
     inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
-        return env->NewObject(jclazz, jconstructor, runtime->jcontext, (jlong) value);
+        return env->NewObject(jClazz, jConstructor, runtime->jContext, (jlong) value);
     }
 
     static jint OnLoad(JNIEnv *env);
 
-    static JNICALL jobject Get(JNIEnv *env, jobject jthis, jstring jkey);
+    static JNICALL jobject Get(JNIEnv *env, jobject jThis, jstring jkey);
 
-    static JNICALL void Delete(JNIEnv *env, jobject jthis, jstring jkey);
+    static JNICALL void Delete(JNIEnv *env, jobject jThis, jstring jkey);
 
-    static JNICALL void Set(JNIEnv *env, jobject jthis, jstring jkey, jobject);
+    static JNICALL void Set(JNIEnv *env, jobject jThis, jstring jkey, jobject);
 
-    static JNICALL jboolean Has(JNIEnv *env, jobject jthis, jstring jkey);
+    static JNICALL jboolean Has(JNIEnv *env, jobject jThis, jstring jkey);
 
-    static JNICALL void New(JNIEnv *env, jobject jthis);
+    static JNICALL void New(JNIEnv *env, jobject jThis);
 };
 
 #endif //NODE_JSOBJECT_H

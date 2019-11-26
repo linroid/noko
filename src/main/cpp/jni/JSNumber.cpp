@@ -6,16 +6,16 @@
 #include "JSValue.h"
 #include "macros.h"
 
-jclass JSNumber::jclazz;
-jmethodID JSNumber::jconstructor;
+jclass JSNumber::jClazz;
+jmethodID JSNumber::jConstructor;
 
 jint JSNumber::OnLoad(JNIEnv *env) {
     jclass clazz = env->FindClass("com/linroid/knode/js/JSNumber");
     if (!clazz) {
         return JNI_ERR;
     }
-    jclazz = (jclass) env->NewGlobalRef(clazz);
-    jconstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
+    jClazz = (jclass) env->NewGlobalRef(clazz);
+    jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
     JNINativeMethod methods[] = {
             {"nativeNew", "(D)V", (void *) JSNumber::New},
     };
@@ -27,11 +27,11 @@ jint JSNumber::OnLoad(JNIEnv *env) {
     return JNI_OK;
 }
 
-void JSNumber::New(JNIEnv *env, jobject jthis, jdouble jdata) {
+void JSNumber::New(JNIEnv *env, jobject jThis, jdouble jdata) {
     v8::Persistent<v8::Value> *result = nullptr;
-    V8_SCOPE(env, jthis)
+    V8_SCOPE(env, jThis)
         auto value = v8::Number::New(runtime->isolate, jdata);
         result = new v8::Persistent<v8::Value>(runtime->isolate, value);
     V8_END()
-    JSValue::SetReference(env, jthis, (jlong) result);
+    JSValue::SetReference(env, jThis, (jlong) result);
 }

@@ -7,28 +7,28 @@
 #include "JSContext.h"
 #include "JSError.h"
 
-jclass JSArray::jclazz;
-jmethodID JSArray::jconstructor;
+jclass JSArray::jClazz;
+jmethodID JSArray::jConstructor;
 
-jint JSArray::Size(JNIEnv *env, jobject jthis) {
+jint JSArray::Size(JNIEnv *env, jobject jThis) {
     int result = 0;
-    V8_CONTEXT(env, jthis, v8::Array)
+    V8_CONTEXT(env, jThis, v8::Array)
         result = that->Length();
     V8_END();
     return result;
 }
 
 
-void JSArray::New(JNIEnv *env, jobject jthis) {
+void JSArray::New(JNIEnv *env, jobject jThis) {
     v8::Persistent<v8::Value> *result;
-    V8_SCOPE(env, jthis)
+    V8_SCOPE(env, jThis)
         auto value = v8::Array::New(runtime->isolate);
         result = new v8::Persistent<v8::Value>(runtime->isolate, value);
     V8_END()
-    JSValue::SetReference(env, jthis, (jlong) result);
+    JSValue::SetReference(env, jThis, (jlong) result);
 }
 
-jboolean JSArray::AddAll(JNIEnv *env, jobject jthis, jobjectArray jelements) {
+jboolean JSArray::AddAll(JNIEnv *env, jobject jThis, jobjectArray jelements) {
     auto size = env->GetArrayLength(jelements);
     bool result = true;
     v8::Persistent<v8::Value> *elements[size];
@@ -37,7 +37,7 @@ jboolean JSArray::AddAll(JNIEnv *env, jobject jthis, jobjectArray jelements) {
         auto jelement = env->GetObjectArrayElement(jelements, i);
         elements[i] = JSValue::Unwrap(env, jelement);
     }
-    V8_CONTEXT(env, jthis, v8::Array)
+    V8_CONTEXT(env, jThis, v8::Array)
         v8::TryCatch tryCatch(runtime->isolate);
         auto index = that->Length();
         for (int i = 0; i < size; ++i) {
@@ -74,17 +74,17 @@ jint JSArray::OnLoad(JNIEnv *env) {
             {"nativeAdd",      "(Lcom/linroid/knode/js/JSValue;)Z",                               (void *) (Add)},
             {"nativeAddAt",    "(ILcom/linroid/knode/js/JSValue;)Lcom/linroid/knode/js/JSValue;", (void *) (AddAllAt)},
     };
-    jclazz = (jclass) env->NewGlobalRef(clazz);
-    jconstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
+    jClazz = (jclass) env->NewGlobalRef(clazz);
+    jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
     env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
     return JNI_OK;
 }
 
-jobject JSArray::Get(JNIEnv *env, jobject jthis, jint jindex) {
+jobject JSArray::Get(JNIEnv *env, jobject jThis, jint jindex) {
     v8::Persistent<v8::Value> *error = nullptr;
     v8::Persistent<v8::Value> *result = nullptr;
     JSType type = None;
-    V8_CONTEXT(env, jthis, v8::Array)
+    V8_CONTEXT(env, jThis, v8::Array)
         v8::TryCatch tryCatch(runtime->isolate);
         auto value = that->Get(jindex);
         if (tryCatch.HasCaught()) {
@@ -101,11 +101,11 @@ jobject JSArray::Get(JNIEnv *env, jobject jthis, jint jindex) {
     return runtime->Wrap(env, result, type);
 }
 
-jboolean JSArray::Add(JNIEnv *env, jobject jthis, jobject jelement) {
+jboolean JSArray::Add(JNIEnv *env, jobject jThis, jobject jelement) {
     v8::Persistent<v8::Value> *error = nullptr;
     auto element = JSValue::Unwrap(env, jelement);
     bool success = false;
-    V8_CONTEXT(env, jthis, v8::TypedArray)
+    V8_CONTEXT(env, jThis, v8::TypedArray)
         v8::TryCatch tryCatch(runtime->isolate);
         success = that->Set(that->Length(), element->Get(isolate));
         if (tryCatch.HasCaught()) {
@@ -119,10 +119,10 @@ jboolean JSArray::Add(JNIEnv *env, jobject jthis, jobject jelement) {
     return static_cast<jboolean>(success);
 }
 
-jboolean JSArray::AddAt(JNIEnv *env, jobject jthis, jint jindex, jobject jelement) {
+jboolean JSArray::AddAt(JNIEnv *env, jobject jThis, jint jindex, jobject jelement) {
 
 }
 
-jboolean JSArray::AddAllAt(JNIEnv *env, jobject jthis, jint jindex, jobjectArray jelements) {
+jboolean JSArray::AddAllAt(JNIEnv *env, jobject jThis, jint jindex, jobjectArray jelements) {
     return 0;
 }

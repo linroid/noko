@@ -10,26 +10,26 @@
 
 class JSPromise {
 private:
-    static jclass jclazz;
-    static jmethodID jconstructor;
-    static jfieldID jresolver;
+    static jclass jClazz;
+    static jmethodID jConstructor;
+    static jfieldID jResolver;
 
 public:
     inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
-        return env->NewObject(jclazz, jconstructor, runtime->jcontext, (jlong) value);
+        return env->NewObject(jClazz, jConstructor, runtime->jContext, (jlong) value);
     }
 
     static jint OnLoad(JNIEnv *env);
 
-    static JNICALL void New(JNIEnv *env, jobject jthis);
+    static JNICALL void New(JNIEnv *env, jobject jThis);
 
-    static JNICALL void Reject(JNIEnv *env, jobject jthis, jobject jerror);
+    static JNICALL void Reject(JNIEnv *env, jobject jThis, jobject jerror);
 
-    static JNICALL void Resolve(JNIEnv *env, jobject jthis, jobject jvalue);
+    static JNICALL void Resolve(JNIEnv *env, jobject jThis, jobject jvalue);
 
-    static JNICALL void Then(JNIEnv *env, jobject jthis, jobject jcallback);
+    static JNICALL void Then(JNIEnv *env, jobject jThis, jobject jcallback);
 
-    static JNICALL void Catch(JNIEnv *env, jobject jthis, jobject jcallback);
+    static JNICALL void Catch(JNIEnv *env, jobject jThis, jobject jcallback);
 };
 
 

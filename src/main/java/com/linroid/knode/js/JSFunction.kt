@@ -1,5 +1,7 @@
 package com.linroid.knode.js
 
+import android.util.Log
+
 /**
  * @author linroid
  * @since 2019-10-19
@@ -23,7 +25,14 @@ open class JSFunction : JSObject {
 
     protected open fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
         if (callable != null) {
-            return callable.invoke(receiver, parameters)
+            val ret = try {
+                callable.invoke(receiver, parameters)
+            } catch (error: Exception) {
+                error.printStackTrace()
+                throw error
+            }
+            Log.i("JSFunction", ret.toString())
+
         }
         return null
     }

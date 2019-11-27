@@ -29,7 +29,9 @@ void JniCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
     auto jret = env->CallObjectMethod(that, methodId, runtime->Wrap(env, value, type), parameters);
     if (jret != 0) {
         auto result = JSValue::Unwrap(env, jret);
-        info.GetReturnValue().Set(result->Get(runtime->isolate));
+        if (result != nullptr) {
+            info.GetReturnValue().Set(result->Get(runtime->isolate));
+        }
     }
     if (stat == JNI_EDETACHED) {
         vm->DetachCurrentThread();

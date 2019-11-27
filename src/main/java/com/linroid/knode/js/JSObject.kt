@@ -34,7 +34,9 @@ open class JSObject : JSValue {
                 set(name, object : JSFunction(context, name) {
                     override fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
                         val result = method.invoke(this@JSObject, *convertParameters(parameters, method.parameterTypes))
-                        return from(context, result)
+                        val jsRet = from(context, result)
+                        Log.i("JSObject", "jsRet=$jsRet")
+                        return jsRet
                     }
                 })
             }

@@ -1,9 +1,11 @@
 package com.linroid.knode.js
 
 import android.net.Uri
+import android.util.Log
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
+import com.google.gson.JsonSyntaxException
 import com.linroid.knode.KNode
 import java.io.Closeable
 import java.lang.annotation.Native
@@ -128,6 +130,8 @@ open class JSValue(context: JSContext? = null, @Native private val reference: Lo
     private external fun nativeDispose()
 
     companion object {
+        private const val TAG = "JSValue"
+
         fun from(context: JSContext, value: Any?): JSValue {
             return when (value) {
                 null -> context.sharedNull

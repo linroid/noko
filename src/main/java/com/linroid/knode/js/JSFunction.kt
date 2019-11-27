@@ -1,6 +1,7 @@
 package com.linroid.knode.js
 
 import android.util.Log
+import java.lang.reflect.InvocationTargetException
 
 /**
  * @author linroid
@@ -25,14 +26,13 @@ open class JSFunction : JSObject {
 
     protected open fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
         if (callable != null) {
-            val ret = try {
+            return try {
                 callable.invoke(receiver, parameters)
-            } catch (error: Exception) {
-                error.printStackTrace()
-                throw error
+            } catch (error: InvocationTargetException) {
+                Log.e(TAG, "Failed to invoke $callable", error)
+                context.throwError("A unexpected error occurs during call native function: ${error.targetException.message}")
+                return context.sharedUndefined
             }
-            Log.i("JSFunction", ret.toString())
-
         }
         return null
     }
@@ -44,4 +44,8 @@ open class JSFunction : JSObject {
 
     private external fun nativeCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue?
     private external fun nativeNew(name: String)
+
+    companion object {
+        private const val TAG = "JSFunction"
+    }
 }

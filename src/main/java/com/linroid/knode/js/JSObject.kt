@@ -2,7 +2,7 @@ package com.linroid.knode.js
 
 import android.util.Log
 import com.google.gson.JsonObject
-import java.lang.NullPointerException
+import java.lang.reflect.InvocationTargetException
 
 /**
  * @author linroid
@@ -33,10 +33,14 @@ open class JSObject : JSValue {
                 val name = if (bind.name.isEmpty()) method.name else bind.name
                 set(name, object : JSFunction(context, name) {
                     override fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
-                        val result = method.invoke(this@JSObject, *convertParameters(parameters, method.parameterTypes))
-                        val jsRet = from(context, result)
-                        Log.i("JSObject", "jsRet=$jsRet")
-                        return jsRet
+                        val result = try {
+                            method.invoke(this@JSObject, *convertParameters(parameters, method.parameterTypes))
+                        } catch (error: InvocationTargetException) {
+                            Log.e(TAG, "Failed to invoke $name function", error)
+                            context.throwError("A unexpected error occurs during call '$name' native function: ${error.targetException.message}")
+                            return context.sharedUndefined
+                        }
+                        return from(context, result)
                     }
                 })
             }
@@ -56,7 +60,7 @@ open class JSObject : JSValue {
     }
 
     fun set(key: String, value: Any?) {
-        Log.i("JSObject", "set $key=$value")
+        Log.i(TAG, "set $key=$value")
         nativeSet(key, from(context, value))
     }
 
@@ -84,4 +88,8 @@ open class JSObject : JSValue {
     private external fun nativeSet(key: String, value: JSValue?)
     private external fun nativeDelete(key: String)
     private external fun nativeNew()
+
+    companion object {
+        private const val TAG = "JSObject"
+    }
 }

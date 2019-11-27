@@ -208,38 +208,34 @@ jobject NodeRuntime::Wrap(JNIEnv *env, v8::Persistent<v8::Value> *value, JSType 
     }
 }
 
-void NodeRuntime::Run(std::function<void()> runnable) {
+void NodeRuntime::Submit(std::function<void()> runnable) {
     if (std::this_thread::get_id() == threadId) {
-        return runnable();
-    } else {
-        return PostAndWait(runnable);
-    }
-}
-
-void NodeRuntime::PostAndWait(std::function<void()> runnable) {
-    std::condition_variable cv;
-    bool signaled = false;
-    auto callback = [&]() {
         runnable();
-        {
-            std::lock_guard<std::mutex> lk(asyncMutex);
-            signaled = true;
+    } else {
+        std::condition_variable cv;
+        bool signaled = false;
+        auto callback = [&]() {
+            runnable();
+            {
+                std::lock_guard<std::mutex> lk(asyncMutex);
+                signaled = true;
+            }
+            cv.notify_one();
+        };
+
+        std::unique_lock<std::mutex> lk(asyncMutex);
+        callbacks.push_back(callback);
+
+        if (!asyncHandle) {
+            asyncHandle = new uv_async_t();
+            asyncHandle->data = this;
+            uv_async_init(eventLoop, asyncHandle, NodeRuntime::StaticHandle);
+            uv_async_send(asyncHandle);
         }
-        cv.notify_one();
-    };
 
-    std::unique_lock<std::mutex> lk(asyncMutex);
-    callbacks.push_back(callback);
-
-    if (!asyncHandle) {
-        asyncHandle = new uv_async_t();
-        asyncHandle->data = this;
-        uv_async_init(eventLoop, asyncHandle, NodeRuntime::StaticHandle);
-        uv_async_send(asyncHandle);
+        cv.wait(lk, [&] { return signaled; });
+        lk.unlock();
     }
-
-    cv.wait(lk, [&] { return signaled; });
-    lk.unlock();
 }
 
 void NodeRuntime::StaticHandle(uv_async_t *handle) {

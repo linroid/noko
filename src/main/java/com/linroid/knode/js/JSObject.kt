@@ -60,7 +60,7 @@ open class JSObject : JSValue {
     }
 
     fun set(key: String, value: Any?) {
-        Log.i(TAG, "set $key=$value")
+        Log.i(Thread.currentThread().name + "]" + TAG, "set $key=$value")
         nativeSet(key, from(context, value))
     }
 

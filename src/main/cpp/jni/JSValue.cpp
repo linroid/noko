@@ -62,7 +62,7 @@ jstring JSValue::ToString(JNIEnv *env, jobject jThis) {
         }
 
     };
-    runtime->Run(_runnable);
+    runtime->Submit(_runnable);
     return env->NewString(unicodeChars, length);
 }
 

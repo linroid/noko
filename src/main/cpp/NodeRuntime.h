@@ -32,11 +32,11 @@ enum JSType {
 class NodeRuntime {
 
 private:
-    jobject jThis;
-    jmethodID onBeforeStart;
-    jmethodID onBeforeExit;
+    jobject jThis = nullptr;
+    jmethodID onBeforeStart = nullptr;
+    jmethodID onBeforeExit = nullptr;
 
-    bool running;
+    bool running = false;
     std::thread::id threadId;
     std::mutex asyncMutex;
     std::vector<std::function<void()>> callbacks;
@@ -49,23 +49,21 @@ private:
 
     void Handle(uv_async_t *handle);
 
-    void PostAndWait(std::function<void()> runnable);
-
 public:
-    jobject jContext;
-    jobject jNull;
-    jobject jUndefined;
-    jobject jTrue;
-    jobject jFalse;
+    jobject jContext = nullptr;
+    jobject jNull = nullptr;
+    jobject jUndefined = nullptr;
+    jobject jTrue = nullptr;
+    jobject jFalse = nullptr;
     JavaVM *vm = nullptr;
 
-    v8::Isolate *isolate;
+    v8::Isolate *isolate = nullptr;
     v8::Persistent<v8::Context> context;
     v8::Persistent<v8::Object> process;
-    v8::Persistent<v8::Object> *global;
-    v8::Locker *locker;
-    node::Environment *nodeEnv;
-    node::IsolateData *isolateData;
+    v8::Persistent<v8::Object> *global = nullptr;
+    v8::Locker *locker = nullptr;
+    node::Environment *nodeEnv = nullptr;
+    node::IsolateData *isolateData = nullptr;
     uv_loop_t *eventLoop;
 
     NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, jmethodID onBeforeExit);
@@ -78,7 +76,7 @@ public:
 
     void OnPrepared();
 
-    void Run(std::function<void()> runnable);
+    void Submit(std::function<void()> runnable);
 
     void OnEnvReady(node::Environment *nodeEnv);
 

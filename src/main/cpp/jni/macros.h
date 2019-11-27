@@ -24,7 +24,7 @@
 
 #define V8_END()  \
     }; \
-    runtime->Run(_runnable);
+    runtime->Submit(_runnable);
 
 #define V8_UTF_STRING(isolate, str) v8::String::NewFromUtf8(isolate, str, v8::NewStringType::kNormal).ToLocalChecked()
 #define V8_STRING(str, length) v8::String::NewFromTwoByte(isolate, str, v8::NewStringType::kNormal, length).ToLocalChecked()

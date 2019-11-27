@@ -36,6 +36,8 @@ struct JvmNodeClass {
     jmethodID onBeforeExit;
 } nodeClass;
 
+jmethodID jRunMethodId;
+
 void *thread_stderr_func(void *) {
     ssize_t redirect_size;
     char buf[2048];
@@ -101,6 +103,29 @@ JNICALL jint start(JNIEnv *env, jobject jThis) {
     return jint(runtime->Start());
 }
 
+JNICALL void submit(JNIEnv *env, jobject jThis, jobject jRunnable) {
+    jlong ptr = env->GetLongField(jThis, nodeClass.ptr);
+    if (ptr == 0) {
+        LOGE("submit but ptr is 0");
+        return;
+    }
+    auto runtime = reinterpret_cast<NodeRuntime *>(ptr);
+    JavaVM *vm;
+    env->GetJavaVM(&vm);
+    auto runnable = env->NewGlobalRef(jRunnable);
+    runtime->Submit([&] {
+        auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);
+        if (stat == JNI_EDETACHED) {
+            vm->AttachCurrentThread(&env, nullptr);
+        }
+        env->CallVoidMethod(runnable, jRunMethodId);
+        env->DeleteGlobalRef(runnable);
+        if (stat == JNI_EDETACHED) {
+            vm->DetachCurrentThread();
+        }
+    });
+}
+
 JNICALL void mountFs(JNIEnv *env, jobject _, jobject jfs) {
     V8_CONTEXT(env, jfs, v8::Value)
         LOGI("mountFs");
@@ -154,6 +179,7 @@ static JNINativeMethod nodeMethods[] = {
         {"nativeStart",   "()I",                                (void *) start},
         {"nativeMountFs", "(Lcom/linroid/knode/js/JSObject;)V", (void *) mountFs},
         {"nativeDispose", "()V",                                (void *) dispose},
+        {"nativeSubmit",  "(Ljava/lang/Runnable;)V",            (void *) submit},
 };
 
 
@@ -177,6 +203,10 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
     if (rc != JNI_OK) {
         return rc;
     }
+
+    jclass jRunnableClass = env->FindClass("java/lang/Runnable");
+    jRunMethodId = env->GetMethodID(jRunnableClass, "run", "()V");
+
     nodeClass.ptr = env->GetFieldID(clazz, "ptr", "J");
     nodeClass.onBeforeStart = env->GetMethodID(clazz, "onBeforeStart",
                                                "(Lcom/linroid/knode/js/JSContext;)V");

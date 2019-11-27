@@ -90,6 +90,10 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
         nativeMountFs(obj)
     }
 
+    fun submit(runnable: Runnable) {
+        nativeSubmit(runnable)
+    }
+
     @Suppress("unused")
     private fun onBeforeStart(context: JSContext) {
         this.context = context
@@ -189,6 +193,8 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
     private external fun nativeDispose()
 
     private external fun nativeMountFs(fs: JSObject)
+
+    private external fun nativeSubmit(runnable: Runnable)
 
     interface EventListener {
 

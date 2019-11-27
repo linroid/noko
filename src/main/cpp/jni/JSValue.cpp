@@ -97,7 +97,7 @@ jstring JSValue::ToJson(JNIEnv *env, jobject jThis) {
 
 jdouble JSValue::ToNumber(JNIEnv *env, jobject jThis) {
     jdouble result = 0;
-    v8::Persistent<v8::Value> *error;
+    v8::Persistent<v8::Value> *error = nullptr;
     V8_CONTEXT(env, jThis, v8::Value)
         v8::TryCatch tryCatch(runtime->isolate);
         auto number = that->ToNumber(context);

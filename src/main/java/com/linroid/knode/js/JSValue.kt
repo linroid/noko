@@ -14,7 +14,7 @@ import java.lang.annotation.Native
  * @author linroid
  * @since 2019-10-19
  */
-open class JSValue(context: JSContext? = null, @Native private val reference: Long) : Closeable {
+open class JSValue(context: JSContext? = null, @Native protected val reference: Long) : Closeable {
 
     @Suppress("LeakingThis")
     protected lateinit var context: JSContext

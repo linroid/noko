@@ -44,7 +44,7 @@ class JSObjectTest : KNodeTest() {
         obj.set("stringValue", "string")
         obj.set("stringValue", "string2")
         val stringValue = obj.get<JSValue>("stringValue")
-        assertInstance(doubleValue, JSString::class)
+        assertInstance(stringValue, JSString::class)
         assertEquals("string2", stringValue.toString())
 
 

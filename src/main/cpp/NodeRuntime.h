@@ -45,7 +45,7 @@ private:
     static std::mutex mutex;
     static jint instanceCount;
 
-    static void StaticAwaitHandle(uv_async_t *handle);
+    static void StaticHandle(uv_async_t *handle);
 
     void Handle(uv_async_t *handle);
 

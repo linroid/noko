@@ -229,7 +229,7 @@ void NodeRuntime::Await(std::function<void()> runnable) {
         if (!asyncHandle) {
             asyncHandle = new uv_async_t();
             asyncHandle->data = this;
-            uv_async_init(eventLoop, asyncHandle, NodeRuntime::StaticAwaitHandle);
+            uv_async_init(eventLoop, asyncHandle, NodeRuntime::StaticHandle);
             uv_async_send(asyncHandle);
         }
 
@@ -245,13 +245,13 @@ void NodeRuntime::Post(std::function<void()> runnable) {
     if (!asyncHandle) {
         asyncHandle = new uv_async_t();
         asyncHandle->data = this;
-        uv_async_init(eventLoop, asyncHandle, NodeRuntime::StaticAwaitHandle);
+        uv_async_init(eventLoop, asyncHandle, NodeRuntime::StaticHandle);
         uv_async_send(asyncHandle);
     }
     lk.unlock();
 }
 
-void NodeRuntime::StaticAwaitHandle(uv_async_t *handle) {
+void NodeRuntime::StaticHandle(uv_async_t *handle) {
     NodeRuntime *runtime = reinterpret_cast<NodeRuntime *>(handle->data);
     runtime->Handle(handle);
 }

@@ -65,8 +65,4 @@ class JSContextTest : KNodeTest() {
         obj as JSObject
         assertEquals(1, obj.get<Int>("value"))
     }
-
-    private fun assertInstance(obj: Any, clazz: KClass<*>) {
-        assertTrue("${obj.javaClass} is not an instance of $clazz ", clazz.isInstance(obj))
-    }
 }

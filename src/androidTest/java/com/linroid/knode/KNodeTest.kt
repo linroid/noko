@@ -3,10 +3,13 @@ package com.linroid.knode
 import androidx.test.platform.app.InstrumentationRegistry
 import com.linroid.knode.js.JSContext
 import org.junit.After
+import org.junit.Assert
 import org.junit.Before
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlin.contracts.contract
+import kotlin.reflect.KClass
 
 /**
  * @author linroid

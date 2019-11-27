@@ -17,7 +17,7 @@
 
 #define V8_CONTEXT(env, jThis, type) \
         V8_SCOPE(env, jThis) \
-        assert(_reference != 0); \
+        CHECK(_reference != 0); \
         auto context = runtime->context.Get(isolate); \
         auto _persistent = reinterpret_cast<v8::Persistent<type> *>(_reference); \
         auto that = v8::Local<type>::New(runtime->isolate, *_persistent);

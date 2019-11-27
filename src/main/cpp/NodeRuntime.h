@@ -61,9 +61,6 @@ public:
     v8::Persistent<v8::Context> context;
     v8::Persistent<v8::Object> process;
     v8::Persistent<v8::Object> *global = nullptr;
-    v8::Locker *locker = nullptr;
-    node::Environment *nodeEnv = nullptr;
-    node::IsolateData *isolateData = nullptr;
     uv_loop_t *eventLoop;
 
     NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, jmethodID onBeforeExit);

@@ -6,6 +6,7 @@ import com.google.gson.Gson
 import com.linroid.knode.js.*
 import java.io.Closeable
 import java.io.File
+import java.lang.Exception
 import java.lang.annotation.Native
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
@@ -21,7 +22,6 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
     private var ptr: Long = nativeNew()
     private val listeners = HashSet<EventListener>()
     private var active = false
-    private var done = false
     private lateinit var context: JSContext
 
     private lateinit var file: File
@@ -33,6 +33,7 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
         thread(isDaemon = true, name = "knode-${seq.incrementAndGet()}") {
             val exitCode = nativeStart()
             eventOnExit(exitCode)
+            nativeDispose()
         }
     }
 
@@ -83,7 +84,11 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
     // }
 
     override fun close() {
-        exit(0)
+        if (isActive()) {
+            exit(0)
+        } else {
+            Log.w(TAG, "Close but not active")
+        }
     }
 
     fun mountFs(obj: JSObject) {
@@ -91,17 +96,24 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
     }
 
     fun submit(runnable: Runnable) {
-        nativeSubmit(runnable)
+        if (isActive()) {
+            nativeSubmit(runnable)
+        } else {
+            val isInitialized = this::context::isInitialized
+            Log.e(TAG, "submit but not active: active=$active, isInitialized=${isInitialized}, ptr=$ptr", Exception())
+        }
     }
 
     @Suppress("unused")
     private fun onBeforeStart(context: JSContext) {
+        Log.i(TAG, "onBeforeStart")
         this.context = context
+        active = true
+        check(isActive()) { "isActive is not match the current state" }
         attachStdOutput(context)
         val process: JSObject = context.get("process")
         val env: JSObject = process.get("env")
         val versions: JSObject = process.get("versions")
-        active = true
         env.set("PWD", pwd.absolutePath)
         customEnvs.forEach { env.set(it.key, it.value) }
         if (supportColor) {
@@ -115,8 +127,6 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
         val chdir: JSFunction = process.get("chdir")
         chdir.call(process, JSString(context, pwd.absolutePath))
         eventOnPrepared(context)
-        val cwdFunc: JSFunction = process.get("cwd")
-        cwdFunc.call(process)
         val setupTTY = if (!supportColor) "" else """
             process.stderr.isTTY = true;
             process.stderr.isRaw = false;
@@ -160,8 +170,8 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
 
     @Suppress("unused")
     private fun onBeforeExit(exitCode: Int) {
+        Log.w(TAG, "onBeforeExit: exitCode=$exitCode")
         active = false
-        done = true
         nativeDispose()
         eventOnExit(exitCode)
     }

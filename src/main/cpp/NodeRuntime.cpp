@@ -49,6 +49,7 @@ NodeRuntime::NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, jm
 }
 
 NodeRuntime::~NodeRuntime() {
+    LOGE("~NodeRuntime()");
     JNIEnv *env;
     auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);
     if (stat == JNI_EDETACHED) {
@@ -58,6 +59,9 @@ NodeRuntime::~NodeRuntime() {
     if (stat == JNI_EDETACHED) {
         vm->DetachCurrentThread();
     }
+    eventLoop = nullptr;
+    global = nullptr;
+    isolate = nullptr;
     running = false;
     mutex.lock();
     --instanceCount;
@@ -87,6 +91,7 @@ void NodeRuntime::OnPrepared() {
 }
 
 void NodeRuntime::OnEnvReady(node::Environment *nodeEnv) {
+    LOGI("OnEnvReady");
     v8::HandleScope handleScope(nodeEnv->isolate());
     v8::Context::Scope contextScope(nodeEnv->context());
 
@@ -103,15 +108,12 @@ void NodeRuntime::OnEnvReady(node::Environment *nodeEnv) {
     global->Set(V8_UTF_STRING(isolate, "__onPrepared"), v8::FunctionTemplate::New(isolate, onPreparedCallback, data)->GetFunction());
 
     this->isolate = isolate;
-    this->nodeEnv = nodeEnv;
     this->running = true;
     this->eventLoop = nodeEnv->event_loop();
-    this->isolateData = nodeEnv->isolate_data();
     this->isolate = nodeEnv->isolate();
     this->context.Reset(isolate, context);
     this->process.Reset(isolate, process);
     this->global = new v8::Persistent<v8::Object>(isolate, global);
-    this->locker = new v8::Locker(isolate);
 
     JNIEnv *env;
     auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);
@@ -240,8 +242,11 @@ void NodeRuntime::Await(std::function<void()> runnable) {
 
 void NodeRuntime::Post(std::function<void()> runnable) {
     std::unique_lock<std::mutex> lk(asyncMutex);
+    if (!eventLoop) {
+        LOGE("Post but eventLopp is NULL");
+        return;
+    }
     callbacks.push_back(runnable);
-
     if (!asyncHandle) {
         asyncHandle = new uv_async_t();
         asyncHandle->data = this;

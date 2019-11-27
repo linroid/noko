@@ -16,6 +16,9 @@ android {
             cmake {
                 cppFlags "-std=c++11 -fexceptions"
                 arguments "-DANDROID_STL=c++_static"
+                if (System.getenv("APP_RELEASE") == "true") {
+                    arguments "-DVERIFY_SIGN=true"
+                }
             }
         }
 

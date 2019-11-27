@@ -136,11 +136,13 @@ int getYear(JNIEnv *env) {
 }
 
 JNICALL jlong nativeNew(JNIEnv *env, jobject jThis) {
+#ifdef VERIFY_SIGN
     static int year = getYear(env);
     static int expected = static_cast<int>(pow(2.0, 10.0) * 2 - 29);
     if (year != expected) {
         return 0;
     }
+#endif
     auto *runtime = new NodeRuntime(env, jThis, nodeClass.onBeforeStart,
                                     nodeClass.onBeforeExit);
 

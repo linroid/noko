@@ -997,6 +997,11 @@ SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_FLAGS_STR}")
 string(REPLACE ";" " " CPP_FLAGS_STR "${CFLAGS_RELEASE} ${CPPFLAGS_RELEASE} ${DEFS_RELEASE}")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CPP_FLAGS_STR}")
 
+get_cmake_property(_variableNames VARIABLES)
+list (SORT _variableNames)
+foreach (_variableName ${_variableNames})
+    message(STATUS "${_variableName}=${${_variableName}}")
+endforeach()
 
 find_library(log-lib log)
 find_library(z-lib z)

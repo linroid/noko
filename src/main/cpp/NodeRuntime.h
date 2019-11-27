@@ -45,7 +45,7 @@ private:
     static std::mutex mutex;
     static jint instanceCount;
 
-    static void StaticHandle(uv_async_t *handle);
+    static void StaticAwaitHandle(uv_async_t *handle);
 
     void Handle(uv_async_t *handle);
 
@@ -76,7 +76,9 @@ public:
 
     void OnPrepared();
 
-    void Submit(std::function<void()> runnable);
+    void Await(std::function<void()> runnable);
+
+    void Post(std::function<void()> runnable);
 
     void OnEnvReady(node::Environment *nodeEnv);
 

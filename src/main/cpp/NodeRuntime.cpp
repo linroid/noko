@@ -208,7 +208,7 @@ jobject NodeRuntime::Wrap(JNIEnv *env, v8::Persistent<v8::Value> *value, JSType 
     }
 }
 
-void NodeRuntime::Submit(std::function<void()> runnable) {
+void NodeRuntime::Await(std::function<void()> runnable) {
     if (std::this_thread::get_id() == threadId) {
         runnable();
     } else {
@@ -229,7 +229,7 @@ void NodeRuntime::Submit(std::function<void()> runnable) {
         if (!asyncHandle) {
             asyncHandle = new uv_async_t();
             asyncHandle->data = this;
-            uv_async_init(eventLoop, asyncHandle, NodeRuntime::StaticHandle);
+            uv_async_init(eventLoop, asyncHandle, NodeRuntime::StaticAwaitHandle);
             uv_async_send(asyncHandle);
         }
 
@@ -238,7 +238,20 @@ void NodeRuntime::Submit(std::function<void()> runnable) {
     }
 }
 
-void NodeRuntime::StaticHandle(uv_async_t *handle) {
+void NodeRuntime::Post(std::function<void()> runnable) {
+    std::unique_lock<std::mutex> lk(asyncMutex);
+    callbacks.push_back(runnable);
+
+    if (!asyncHandle) {
+        asyncHandle = new uv_async_t();
+        asyncHandle->data = this;
+        uv_async_init(eventLoop, asyncHandle, NodeRuntime::StaticAwaitHandle);
+        uv_async_send(asyncHandle);
+    }
+    lk.unlock();
+}
+
+void NodeRuntime::StaticAwaitHandle(uv_async_t *handle) {
     NodeRuntime *runtime = reinterpret_cast<NodeRuntime *>(handle->data);
     runtime->Handle(handle);
 }

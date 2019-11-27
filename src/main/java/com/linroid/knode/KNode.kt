@@ -55,7 +55,7 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
      * @return true if active, false otherwise
      */
     private fun isActive(): Boolean {
-        return active && ::context.isInitialized
+        return active && ::context.isInitialized && ptr != 0L
     }
 
     /**

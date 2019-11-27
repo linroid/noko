@@ -103,32 +103,37 @@ JNICALL jint start(JNIEnv *env, jobject jThis) {
     return jint(runtime->Start());
 }
 
+struct SubmitData {
+    jobject runnable;
+    NodeRuntime *runtime;
+};
+
 JNICALL void submit(JNIEnv *env, jobject jThis, jobject jRunnable) {
     jlong ptr = env->GetLongField(jThis, nodeClass.ptr);
     if (ptr == 0) {
         LOGE("submit but ptr is 0");
         return;
     }
-    auto runtime = reinterpret_cast<NodeRuntime *>(ptr);
-    JavaVM *vm;
-    env->GetJavaVM(&vm);
-    auto runnable = env->NewGlobalRef(jRunnable);
-    runtime->Submit([&] {
-        auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);
+    SubmitData *data = new SubmitData();
+    data->runtime = reinterpret_cast<NodeRuntime *>(ptr);;
+    data->runnable = env->NewGlobalRef(jRunnable);
+    data->runtime->Post([data] {
+        JNIEnv *_env;
+        auto stat = data->runtime->vm->GetEnv((void **) (&_env), JNI_VERSION_1_6);
         if (stat == JNI_EDETACHED) {
-            vm->AttachCurrentThread(&env, nullptr);
+            data->runtime->vm->AttachCurrentThread(&_env, nullptr);
         }
-        env->CallVoidMethod(runnable, jRunMethodId);
-        env->DeleteGlobalRef(runnable);
+        _env->CallVoidMethod(data->runnable, jRunMethodId);
+        _env->DeleteGlobalRef(data->runnable);
         if (stat == JNI_EDETACHED) {
-            vm->DetachCurrentThread();
+            data->runtime->vm->DetachCurrentThread();
         }
+        delete data;
     });
 }
 
 JNICALL void mountFs(JNIEnv *env, jobject _, jobject jfs) {
     V8_CONTEXT(env, jfs, v8::Value)
-        LOGI("mountFs");
         auto global = runtime->global->Get(isolate);
         auto privateKey = v8::Private::ForApi(isolate, v8::String::NewFromUtf8(isolate, "__fs"));
         global->SetPrivate(context, privateKey, that).FromJust();

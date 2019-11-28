@@ -12,7 +12,6 @@ set(OPENSSL_SOURCE ${NODE_SOURCE}/deps/openssl/openssl)
 set(SOURCES
         __onload.cpp
         base64.cpp
-        util.h
         NodeRuntime.cpp
         jni/JSContext.cpp
         jni/JSValue.cpp

@@ -5,7 +5,6 @@
 #include <string>
 #include "JSString.h"
 #include "JSValue.h"
-#include "macros.h"
 #include "JSContext.h"
 
 jclass JSString::jClazz;

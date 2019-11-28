@@ -7,7 +7,6 @@
 
 #include <jni.h>
 #include "../NodeRuntime.h"
-#include "macros.h"
 
 class JSArray {
 private:

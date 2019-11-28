@@ -3,7 +3,6 @@
 //
 
 #include "JSPromise.h"
-#include "macros.h"
 #include "JSValue.h"
 #include "JSError.h"
 

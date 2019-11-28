@@ -4,7 +4,6 @@
 
 #include "JSNumber.h"
 #include "JSValue.h"
-#include "macros.h"
 
 jclass JSNumber::jClazz;
 jmethodID JSNumber::jConstructor;

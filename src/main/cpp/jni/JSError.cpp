@@ -6,7 +6,6 @@
 #include "JSValue.h"
 #include "JSString.h"
 #include "JSError.h"
-#include "macros.h"
 
 jclass JSError::jClazz;
 jmethodID JSError::jConstructor;

@@ -5,7 +5,6 @@
 #include <jni.h>
 #include "../NodeRuntime.h"
 #include "JSValue.h"
-#include "macros.h"
 #include "JSString.h"
 #include "JSContext.h"
 #include "JSError.h"

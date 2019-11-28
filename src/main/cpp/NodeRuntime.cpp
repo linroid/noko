@@ -13,7 +13,6 @@
 #include "jni/JSNumber.h"
 #include "jni/JSObject.h"
 #include "jni/JSString.h"
-#include "jni/macros.h"
 #include "jni/JSFunction.h"
 #include "jni/JSNull.h"
 #include "jni/JSPromise.h"
@@ -23,12 +22,12 @@
 int NodeRuntime::instanceCount = 0;
 std::mutex NodeRuntime::mutex;
 
-void onPreparedCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
+static void onPreparedCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
     NodeRuntime *instance = NodeRuntime::GetCurrent(info);
     instance->OnPrepared();
 }
 
-void beforeExitCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
+static void beforeExitCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
     auto *env = node::Environment::GetCurrent(args);
     int code = args[0]->Int32Value(env->context()).FromMaybe(0);
     LOGI("beforeExitCallback: %d", code);
@@ -40,6 +39,8 @@ void beforeExitCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
 
 NodeRuntime::NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, jmethodID onBeforeExit)
         : onBeforeStart(onBeforeStart), onBeforeExit(onBeforeExit) {
+    LOGI("New NodeRuntime: %d", std::this_thread::get_id());
+
     env->GetJavaVM(&vm);
     this->jThis = env->NewGlobalRef(jThis);
 
@@ -49,7 +50,7 @@ NodeRuntime::NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, jm
 }
 
 NodeRuntime::~NodeRuntime() {
-    LOGE("~NodeRuntime()");
+    LOGE("~NodeRuntime(): %d", std::this_thread::get_id());
     JNIEnv *env;
     auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);
     if (stat == JNI_EDETACHED) {
@@ -99,14 +100,6 @@ void NodeRuntime::OnEnvReady(node::Environment *nodeEnv) {
     auto context = nodeEnv->context();
     auto process = nodeEnv->process_object();
     auto global = context->Global();
-
-    nodeEnv->SetMethod(process, "reallyExit", beforeExitCallback);
-    nodeEnv->SetMethod(process, "abort", beforeExitCallback);
-    nodeEnv->SetMethod(process, "_kill", beforeExitCallback);
-
-    auto data = v8::External::New(isolate, this);
-    global->Set(V8_UTF_STRING(isolate, "__onPrepared"), v8::FunctionTemplate::New(isolate, onPreparedCallback, data)->GetFunction());
-
     this->isolate = isolate;
     this->running = true;
     this->eventLoop = nodeEnv->event_loop();
@@ -115,22 +108,23 @@ void NodeRuntime::OnEnvReady(node::Environment *nodeEnv) {
     this->process.Reset(isolate, process);
     this->global = new v8::Persistent<v8::Object>(isolate, global);
 
-    JNIEnv *env;
-    auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);
-    if (stat == JNI_EDETACHED) {
-        vm->AttachCurrentThread(&env, nullptr);
-    }
-    auto nullValue = new v8::Persistent<v8::Value>(isolate, v8::Null(isolate));
-    auto undefinedValue = new v8::Persistent<v8::Value>(isolate, v8::Undefined(isolate));
-    this->jContext = env->NewGlobalRef(JSContext::Wrap(env, this));
-    this->jNull = env->NewGlobalRef(JSNull::Wrap(env, this, nullValue));
-    this->jUndefined = env->NewGlobalRef(JSUndefined::Wrap(env, this, undefinedValue));
-    this->jTrue = env->NewGlobalRef(JSBoolean::Wrap(env, this, true));
-    this->jFalse = env->NewGlobalRef(JSBoolean::Wrap(env, this, false));
-    JSContext::SetShared(env, this);
-    if (stat == JNI_EDETACHED) {
-        vm->DetachCurrentThread();
-    }
+    ENTER_JNI(vm);
+        auto nullValue = new v8::Persistent<v8::Value>(isolate, v8::Null(isolate));
+        auto undefinedValue = new v8::Persistent<v8::Value>(isolate, v8::Undefined(isolate));
+        this->jContext = env->NewGlobalRef(JSContext::Wrap(env, this));
+        this->jNull = env->NewGlobalRef(JSNull::Wrap(env, this, nullValue));
+        this->jUndefined = env->NewGlobalRef(JSUndefined::Wrap(env, this, undefinedValue));
+        this->jTrue = env->NewGlobalRef(JSBoolean::Wrap(env, this, true));
+        this->jFalse = env->NewGlobalRef(JSBoolean::Wrap(env, this, false));
+        JSContext::SetShared(env, this);
+    EXIT_JNI(vm);
+
+    nodeEnv->SetMethod(process, "reallyExit", beforeExitCallback);
+    nodeEnv->SetMethod(process, "abort", beforeExitCallback);
+    nodeEnv->SetMethod(process, "_kill", beforeExitCallback);
+
+    auto data = v8::External::New(isolate, this);
+    global->Set(V8_UTF_STRING(isolate, "__onPrepared"), v8::FunctionTemplate::New(isolate, onPreparedCallback, data)->GetFunction());
 }
 
 int NodeRuntime::Start() {
@@ -211,6 +205,11 @@ jobject NodeRuntime::Wrap(JNIEnv *env, v8::Persistent<v8::Value> *value, JSType 
 }
 
 void NodeRuntime::Await(std::function<void()> runnable) {
+    CHECK_NOT_NULL(isolate);
+    if (!isolate) {
+        LOGE("Await but isolate is null");
+        return;
+    }
     if (std::this_thread::get_id() == threadId) {
         runnable();
     } else {
@@ -224,7 +223,6 @@ void NodeRuntime::Await(std::function<void()> runnable) {
             }
             cv.notify_one();
         };
-
         std::unique_lock<std::mutex> lk(asyncMutex);
         callbacks.push_back(callback);
 

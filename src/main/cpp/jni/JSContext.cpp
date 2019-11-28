@@ -8,7 +8,6 @@
 #include "JSNumber.h"
 #include "JSObject.h"
 #include "JSValue.h"
-#include "macros.h"
 #include "JSString.h"
 #include "../NodeRuntime.h"
 #include "JSError.h"

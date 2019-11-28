@@ -7,7 +7,6 @@
 
 #include <jni.h>
 #include "JSContext.h"
-#include "../util.h"
 
 class JSObject {
 private:

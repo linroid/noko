@@ -4,7 +4,6 @@
 
 #include "JSBoolean.h"
 #include "JSContext.h"
-#include "macros.h"
 
 jclass JSBoolean::jClazz;
 jmethodID JSBoolean::jConstructor;

@@ -3,7 +3,6 @@
 //
 
 #include "JSNull.h"
-#include "macros.h"
 #include "JSValue.h"
 
 jclass JSNull::jClazz;

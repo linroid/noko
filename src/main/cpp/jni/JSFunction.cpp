@@ -3,7 +3,6 @@
 //
 
 #include "JSFunction.h"
-#include "macros.h"
 #include "JSValue.h"
 #include "JSContext.h"
 #include "JSString.h"

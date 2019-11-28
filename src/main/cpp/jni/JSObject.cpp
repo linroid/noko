@@ -5,7 +5,6 @@
 #include <jni.h>
 #include "util.h"
 #include "env.h"
-#include "macros.h"
 #include "JSObject.h"
 #include "JSValue.h"
 #include "JSString.h"

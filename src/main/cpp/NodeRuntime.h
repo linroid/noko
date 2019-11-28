@@ -13,6 +13,7 @@
 #include "env.h"
 #include "util.h"
 #include "env-inl.h"
+#include "macros.h"
 
 enum JSType {
     None,

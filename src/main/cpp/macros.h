@@ -5,6 +5,8 @@
 #ifndef NODE_MACROS_H
 #define NODE_MACROS_H
 
+#include <android/log.h>
+#include <jni.h>
 #include "v8.h"
 
 #define V8_SCOPE(env, jThis) \
@@ -29,4 +31,26 @@
 #define V8_UTF_STRING(isolate, str) v8::String::NewFromUtf8(isolate, str, v8::NewStringType::kNormal).ToLocalChecked()
 #define V8_STRING(str, length) v8::String::NewFromTwoByte(isolate, str, v8::NewStringType::kNormal, length).ToLocalChecked()
 
+
+#define LOG_TAG "KNode"
+#define LOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, __VA_ARGS__)
+#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+#define ALOG(level, ...) __android_log_print(level, LOG_TAG, __VA_ARGS__)
+
+#define ENTER_JNI(vm) \
+    { \
+        JNIEnv *env; \
+        auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6); \
+        if (stat == JNI_EDETACHED) { \
+            vm->AttachCurrentThread(&env, nullptr); \
+        }
+
+#define EXIT_JNI(vm) \
+        if (stat == JNI_EDETACHED) { \
+            vm->DetachCurrentThread(); \
+        } \
+    }
 #endif //NODE_MACROS_H

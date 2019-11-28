@@ -32,8 +32,7 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
         this.argv = argv
         thread(isDaemon = true, name = "knode-${seq.incrementAndGet()}") {
             val exitCode = nativeStart()
-            eventOnExit(exitCode)
-            nativeDispose()
+            dispose(exitCode)
         }
     }
 
@@ -100,7 +99,7 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
             nativeSubmit(runnable)
         } else {
             val isInitialized = this::context::isInitialized
-            Log.e(TAG, "submit but not active: active=$active, isInitialized=${isInitialized}, ptr=$ptr", Exception())
+            Log.e(TAG, "Submit but not active: active=$active, isInitialized=${isInitialized}, ptr=$ptr", Exception())
         }
     }
 
@@ -171,9 +170,7 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
     @Suppress("unused")
     private fun onBeforeExit(exitCode: Int) {
         Log.w(TAG, "onBeforeExit: exitCode=$exitCode")
-        active = false
-        nativeDispose()
-        eventOnExit(exitCode)
+        dispose(exitCode)
     }
 
     private fun eventOnPrepared(context: JSContext) {
@@ -194,6 +191,16 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
     private fun eventOnError(error: JSException) {
         Log.e(TAG, "eventOnError}")
         listeners.forEach { it.onNodeError(error) }
+    }
+
+    fun dispose(exitCode: Int = 0) {
+        if (!isActive()) {
+            Log.w(TAG, "dispose but not active")
+            Thread.dumpStack()
+        }
+        eventOnExit(exitCode)
+        nativeDispose()
+        active = false
     }
 
     private external fun nativeNew(): Long

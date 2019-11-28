@@ -145,7 +145,6 @@ JNICALL void mountFs(JNIEnv *env, jobject _, jobject jfs) {
 }
 
 JNICALL void dispose(JNIEnv *env, jobject jThis) {
-    LOGD("dispose");
     jlong ptr = env->GetLongField(jThis, nodeClass.ptr);
     if (ptr == 0) {
         LOGE("dispose but ptr is 0");

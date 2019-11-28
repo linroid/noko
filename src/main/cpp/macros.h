@@ -32,7 +32,7 @@
 #define V8_STRING(str, length) v8::String::NewFromTwoByte(isolate, str, v8::NewStringType::kNormal, length).ToLocalChecked()
 
 
-#define LOG_TAG "KNode"
+#define LOG_TAG "KNode_Native"
 #define LOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, __VA_ARGS__)
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -40,17 +40,23 @@
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 #define ALOG(level, ...) __android_log_print(level, LOG_TAG, __VA_ARGS__)
 
-#define ENTER_JNI(vm) \
-    { \
-        JNIEnv *env; \
-        auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6); \
-        if (stat == JNI_EDETACHED) { \
-            vm->AttachCurrentThread(&env, nullptr); \
+#define ENTER_JNI(vm)                                                           \
+    {                                                                           \
+        JNIEnv *env;                                                            \
+        auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);              \
+        if (stat == JNI_EDETACHED) {                                            \
+            vm->AttachCurrentThread(&env, nullptr);                             \
+        }                                                                       \
+        if (env->ExceptionCheck()) {                                            \
+            LOGE("Enter jni env, but with pending Exception", __FILE__);        \
         }
 
-#define EXIT_JNI(vm) \
-        if (stat == JNI_EDETACHED) { \
-            vm->DetachCurrentThread(); \
-        } \
+#define EXIT_JNI(vm)                                                            \
+        if (env->ExceptionCheck()) {                                            \
+            LOGE("Exit jni env, but with pending Exception", __FILE__);         \
+        }                                                                       \
+        if (stat == JNI_EDETACHED) {                                            \
+            vm->DetachCurrentThread();                                          \
+        }                                                                       \
     }
 #endif //NODE_MACROS_H

@@ -28,9 +28,9 @@ static void onPreparedCallback(const v8::FunctionCallbackInfo<v8::Value> &info) 
 }
 
 static void beforeExitCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto *env = node::Environment::GetCurrent(args);
+    auto env = node::Environment::GetCurrent(args);
     int code = args[0]->Int32Value(env->context()).FromMaybe(0);
-    LOGI("beforeExitCallback: %d", code);
+    LOGW("beforeExitCallback: %d", code);
     uv_walk(env->event_loop(), [](uv_handle_t *h, void *arg) {
         uv_unref(h);
     }, nullptr);
@@ -74,21 +74,9 @@ void NodeRuntime::OnPrepared() {
     auto localGlobal = global->Get(isolate);
     localGlobal->Delete(v8::String::NewFromUtf8(isolate, "__onPrepared"));
 
-    JNIEnv *env;
-    auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);
-    if (stat == JNI_EDETACHED) {
-        vm->AttachCurrentThread(&env, nullptr);
-    }
-    if (env->ExceptionCheck()) {
-        LOGE("OnPrepared before call has a pending jni exception");
-    }
-    env->CallVoidMethod(jThis, onBeforeStart, jContext);
-    if (env->ExceptionCheck()) {
-        LOGE("OnPrepared has a pending jni exception");
-    }
-    if (stat == JNI_EDETACHED) {
-        vm->DetachCurrentThread();
-    }
+    ENTER_JNI(vm);
+        env->CallVoidMethod(jThis, onBeforeStart, jContext);
+    EXIT_JNI(vm);
 }
 
 void NodeRuntime::OnEnvReady(node::Environment *nodeEnv) {

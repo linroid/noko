@@ -5,6 +5,7 @@ package com.linroid.knode.js
  * @since 2019/11/1
  */
 class JSPromise : JSObject {
+
     private var resolverPtr: Long = 0
 
     @NativeConstructor

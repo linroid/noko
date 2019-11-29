@@ -15,8 +15,8 @@ private:
     static jmethodID jConstructor;
 
 public:
-    inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, bool value) {
-        return env->NewObject(jClazz, jConstructor, runtime->jContext, value);
+    inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value, bool data) {
+        return env->NewObject(jClazz, jConstructor, runtime->jContext, (jlong) value, data);
     }
 
     static jint OnLoad(JNIEnv *env);

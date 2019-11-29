@@ -99,11 +99,13 @@ void NodeRuntime::OnEnvReady(node::Environment *nodeEnv) {
     ENTER_JNI(vm);
         auto nullValue = new v8::Persistent<v8::Value>(isolate, v8::Null(isolate));
         auto undefinedValue = new v8::Persistent<v8::Value>(isolate, v8::Undefined(isolate));
+        auto trueValue = new v8::Persistent<v8::Value>(isolate, v8::True(isolate));
+        auto falseValue = new v8::Persistent<v8::Value>(isolate, v8::False(isolate));
         this->jContext = env->NewGlobalRef(JSContext::Wrap(env, this));
         this->jNull = env->NewGlobalRef(JSNull::Wrap(env, this, nullValue));
         this->jUndefined = env->NewGlobalRef(JSUndefined::Wrap(env, this, undefinedValue));
-        this->jTrue = env->NewGlobalRef(JSBoolean::Wrap(env, this, true));
-        this->jFalse = env->NewGlobalRef(JSBoolean::Wrap(env, this, false));
+        this->jTrue = env->NewGlobalRef(JSBoolean::Wrap(env, this, trueValue, true));
+        this->jFalse = env->NewGlobalRef(JSBoolean::Wrap(env, this, falseValue, false));
         JSContext::SetShared(env, this);
     EXIT_JNI(vm);
 

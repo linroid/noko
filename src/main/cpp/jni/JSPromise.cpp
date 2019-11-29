@@ -43,8 +43,8 @@ void JSPromise::New(JNIEnv *env, jobject jThis) {
     env->SetLongField(jThis, jResolver, reinterpret_cast<jlong>(resolverResult));
 }
 
-void JSPromise::Reject(JNIEnv *env, jobject jThis, jobject jerror) {
-    auto value = JSValue::Unwrap(env, jerror);
+void JSPromise::Reject(JNIEnv *env, jobject jThis, jobject jError) {
+    auto value = JSValue::Unwrap(env, jError);
     jlong resolverPtr = env->GetLongField(jThis, jResolver);
     auto resolver = reinterpret_cast<v8::Persistent<v8::Promise::Resolver> *>(resolverPtr);
     v8::Persistent<v8::Value> *error = nullptr;
@@ -61,8 +61,8 @@ void JSPromise::Reject(JNIEnv *env, jobject jThis, jobject jerror) {
     }
 }
 
-void JSPromise::Resolve(JNIEnv *env, jobject jThis, jobject jvalue) {
-    auto value = JSValue::Unwrap(env, jvalue);
+void JSPromise::Resolve(JNIEnv *env, jobject jThis, jobject jValue) {
+    auto value = JSValue::Unwrap(env, jValue);
     jlong resolverPtr = env->GetLongField(jThis, jResolver);
     auto resolver = reinterpret_cast<v8::Persistent<v8::Promise::Resolver> *>(resolverPtr);
     v8::Persistent<v8::Value> *error = nullptr;
@@ -79,8 +79,8 @@ void JSPromise::Resolve(JNIEnv *env, jobject jThis, jobject jvalue) {
     }
 }
 
-void JSPromise::Then(JNIEnv *env, jobject jThis, jobject jcallback) {
-    auto callback = reinterpret_cast<v8::Persistent<v8::Function> *>(JSValue::GetReference(env, jcallback));
+void JSPromise::Then(JNIEnv *env, jobject jThis, jobject jCallback) {
+    auto callback = reinterpret_cast<v8::Persistent<v8::Function> *>(JSValue::GetReference(env, jCallback));
     v8::Persistent<v8::Value> *error = nullptr;
     V8_CONTEXT(env, jThis, v8::Promise)
         v8::TryCatch tryCatch(runtime->isolate);
@@ -95,8 +95,8 @@ void JSPromise::Then(JNIEnv *env, jobject jThis, jobject jcallback) {
     }
 }
 
-void JSPromise::Catch(JNIEnv *env, jobject jThis, jobject jcallback) {
-    auto callback = reinterpret_cast<v8::Persistent<v8::Function> *>(JSValue::GetReference(env, jcallback));
+void JSPromise::Catch(JNIEnv *env, jobject jThis, jobject jCallback) {
+    auto callback = reinterpret_cast<v8::Persistent<v8::Function> *>(JSValue::GetReference(env, jCallback));
     v8::Persistent<v8::Value> *error = nullptr;
     V8_CONTEXT(env, jThis, v8::Promise)
         v8::TryCatch tryCatch(runtime->isolate);

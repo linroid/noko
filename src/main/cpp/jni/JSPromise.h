@@ -23,13 +23,13 @@ public:
 
     static JNICALL void New(JNIEnv *env, jobject jThis);
 
-    static JNICALL void Reject(JNIEnv *env, jobject jThis, jobject jerror);
+    static JNICALL void Reject(JNIEnv *env, jobject jThis, jobject jError);
 
-    static JNICALL void Resolve(JNIEnv *env, jobject jThis, jobject jvalue);
+    static JNICALL void Resolve(JNIEnv *env, jobject jThis, jobject jValue);
 
-    static JNICALL void Then(JNIEnv *env, jobject jThis, jobject jcallback);
+    static JNICALL void Then(JNIEnv *env, jobject jThis, jobject jCallback);
 
-    static JNICALL void Catch(JNIEnv *env, jobject jThis, jobject jcallback);
+    static JNICALL void Catch(JNIEnv *env, jobject jThis, jobject jCallback);
 };
 
 

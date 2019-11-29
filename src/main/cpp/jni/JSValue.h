@@ -29,8 +29,8 @@ public:
         return env->NewObject(jClazz, jConstructor, runtime->jContext, (jlong) value);
     }
 
-    inline static v8::Persistent<v8::Value> *Unwrap(JNIEnv *env, jobject jobj) {
-        return reinterpret_cast<v8::Persistent<v8::Value> *>(GetReference(env, jobj));
+    inline static v8::Persistent<v8::Value> *Unwrap(JNIEnv *env, jobject jObj) {
+        return reinterpret_cast<v8::Persistent<v8::Value> *>(GetReference(env, jObj));
     }
 
     inline static NodeRuntime *GetRuntime(JNIEnv *env, jobject jObj) {

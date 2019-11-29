@@ -3,13 +3,10 @@ package com.linroid.knode
 import androidx.test.platform.app.InstrumentationRegistry
 import com.linroid.knode.js.JSContext
 import org.junit.After
-import org.junit.Assert
 import org.junit.Before
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import kotlin.contracts.contract
-import kotlin.reflect.KClass
 
 /**
  * @author linroid
@@ -20,7 +17,7 @@ abstract class KNodeTest : KNode.EventListener, StdOutput {
     protected lateinit var node: KNode
     protected lateinit var context: JSContext
     private lateinit var file: File
-    private val startlatch = CountDownLatch(1)
+    private val startLatch = CountDownLatch(1)
     @Before
     fun setupNode() {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
@@ -29,13 +26,13 @@ abstract class KNodeTest : KNode.EventListener, StdOutput {
         node = KNode(appContext.cacheDir, this, false)
         node.start(file)
         node.addEventListener(this)
-        startlatch.await(3, TimeUnit.SECONDS)
+        startLatch.await(3, TimeUnit.SECONDS)
     }
 
     override fun onNodePrepared(context: JSContext) {
         super.onNodePrepared(context)
         this.context = context
-        startlatch.countDown()
+        startLatch.countDown()
     }
 
     @After

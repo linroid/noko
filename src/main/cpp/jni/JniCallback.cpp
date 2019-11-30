@@ -10,8 +10,6 @@ JniCallback::JniCallback(JNIEnv *env, jobject that, jclass clazz, jmethodID meth
 }
 
 void JniCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
-    LOGI("JniCallback::Call");
-
     ENTER_JNI(runtime->vm);
         auto parameters = env->NewObjectArray(info.kArgsLength, clazz, nullptr);
         for (int i = 0; i < info.kArgsLength; ++i) {

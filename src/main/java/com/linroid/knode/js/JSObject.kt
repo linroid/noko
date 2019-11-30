@@ -3,6 +3,7 @@ package com.linroid.knode.js
 import android.util.Log
 import com.google.gson.JsonObject
 import com.google.gson.JsonSyntaxException
+import java.lang.Exception
 import java.lang.reflect.InvocationTargetException
 
 /**
@@ -43,6 +44,9 @@ open class JSObject : JSValue {
                         } catch (error: JsonSyntaxException) {
                             Log.e(TAG, "Failed to parse arguments for '$name' function", error)
                             context.throwError("Failed to parse arguments for '$name' native function")
+                            return context.sharedUndefined
+                        } catch (error: Exception) {
+                            context.throwError("Unexpected error occurs when calling '$name' native function")
                             return context.sharedUndefined
                         }
                         return from(context, result)

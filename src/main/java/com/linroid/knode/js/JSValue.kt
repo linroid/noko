@@ -76,7 +76,7 @@ open class JSValue(context: JSContext? = null, @Native protected val reference: 
             }
             type == JsonObject::class.java ||
                     type == JsonElement::class.java ||
-                    type == JsonArray::class.java -> KNode.gson.toJsonTree(toJson())
+                    type == JsonArray::class.java -> KNode.gson.fromJson(toJson(), JsonElement::class.java)
             JSValue::class.java.isAssignableFrom(type) -> this
             type.isArray -> {
                 check(this is JSArray) { "$this is not an JSArray" }

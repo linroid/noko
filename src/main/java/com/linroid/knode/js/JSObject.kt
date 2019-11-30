@@ -65,7 +65,7 @@ open class JSObject : JSValue {
     }
 
     fun set(key: String, value: Any?) {
-        Log.d(TAG, "set $key @${Thread.currentThread().name}")
+        // Log.d(TAG, "set $key @${Thread.currentThread().name}")
         // Thread.dumpStack()
         nativeSet(key, from(context, value))
     }

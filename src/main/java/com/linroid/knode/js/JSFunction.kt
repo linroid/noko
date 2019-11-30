@@ -37,12 +37,12 @@ open class JSFunction : JSObject {
         return null
     }
 
-    fun call(receiver: JSValue, vararg parameters: Any): JSValue? {
+    fun call(receiver: JSValue, vararg parameters: Any): JSValue {
         val v8Parameters = Array(parameters.size) { from(context, parameters[it]) }
         return nativeCall(receiver, v8Parameters)
     }
 
-    private external fun nativeCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue?
+    private external fun nativeCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue
     private external fun nativeNew(name: String)
 
     companion object {

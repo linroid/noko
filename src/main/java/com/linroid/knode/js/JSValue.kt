@@ -1,11 +1,9 @@
 package com.linroid.knode.js
 
 import android.net.Uri
-import android.util.Log
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
-import com.google.gson.JsonSyntaxException
 import com.linroid.knode.KNode
 import java.io.Closeable
 import java.lang.annotation.Native
@@ -50,7 +48,7 @@ open class JSValue(context: JSContext? = null, @Native protected val reference: 
         return nativeTypeOf()
     }
 
-    fun empty(): Boolean {
+    fun hasValue(): Boolean {
         return this is JSNull || this is JSUndefined
     }
 
@@ -60,7 +58,7 @@ open class JSValue(context: JSContext? = null, @Native protected val reference: 
 
     @Suppress("IMPLICIT_CAST_TO_ANY", "UNCHECKED_CAST")
     fun <T> toType(type: Class<T>): T? {
-        if (JSValue::class.java != type && this.empty()) {
+        if (JSValue::class.java != type && this.hasValue()) {
             return null
         }
         val result = when {
@@ -168,4 +166,11 @@ open class JSValue(context: JSContext? = null, @Native protected val reference: 
         //     }
         // }
     }
+}
+
+fun JSValue?.hasValue(): Boolean {
+    if (this == null) return false
+    if (this is JSNull) return false
+    if (this is JSUndefined) return false
+    return true
 }

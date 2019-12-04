@@ -75,7 +75,7 @@ open class JSObject : JSValue {
     }
 
     inline fun <reified T> get(key: String): T {
-        return opt<T>(key) ?: throw IllegalStateException("get $key shouldn't return null")
+        return opt<T>(key) ?: throw IllegalStateException("get $key from $this shouldn't return null")
     }
 
     fun delete(key: String) {

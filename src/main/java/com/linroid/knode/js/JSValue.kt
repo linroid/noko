@@ -49,7 +49,7 @@ open class JSValue(context: JSContext? = null, @Native protected val reference: 
     }
 
     fun hasValue(): Boolean {
-        return this is JSNull || this is JSUndefined
+        return this !is JSNull && this !is JSUndefined
     }
 
     fun isPromise(): Boolean {
@@ -58,7 +58,7 @@ open class JSValue(context: JSContext? = null, @Native protected val reference: 
 
     @Suppress("IMPLICIT_CAST_TO_ANY", "UNCHECKED_CAST")
     fun <T> toType(type: Class<T>): T? {
-        if (JSValue::class.java != type && this.hasValue()) {
+        if (JSValue::class.java != type && !this.hasValue()) {
             return null
         }
         val result = when {

@@ -19,7 +19,7 @@ class JSPromise : JSObject {
         nativeReject(JSError(context, error))
     }
 
-    fun resolve(value: Any) {
+    fun resolve(value: Any?) {
         nativeResolve(from(context, value))
     }
 

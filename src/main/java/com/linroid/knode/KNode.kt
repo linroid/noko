@@ -123,6 +123,7 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
         customVersions.forEach {
             versions.set(it.key, it.value)
         }
+        process.set("execPath", execFile.absolutePath)
         val chdir: JSFunction = process.get("chdir")
         chdir.call(process, JSString(context, pwd.absolutePath))
         eventOnPrepared(context)
@@ -132,15 +133,16 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
             process.stdout.isTTY = true;
             process.stdout.isRaw = false;"""
 
-        val script = """(() => {
-            const fs = require('fs');
-            const vm = require('vm');
-            $setupTTY
-            (new vm.Script(
-            fs.readFileSync('${file.absolutePath}'),
-            { filename: '${file.name}'} )).runInThisContext();
-            })()
-             """
+        // val script = """(() => {
+        //     const fs = require('fs');
+        //     const vm = require('vm');
+        //     $setupTTY
+        //     (new vm.Script(
+        //     fs.readFileSync('${file.absolutePath}'),
+        //     { filename: '${file.name}'} )).runInThisContext();
+        //     })()
+        //      """
+        val script = """require('${file.absolutePath}');"""
         try {
             context.eval(script, file.absolutePath, 0)
         } catch (error: JSException) {
@@ -231,6 +233,7 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
         private val customVersions = HashMap<String, String>()
         private val customEnvs = HashMap<String, String>()
         var gson: Gson = Gson()
+        var execFile: File = File("/bin/node")
 
         init {
             System.loadLibrary("knode")

@@ -78,6 +78,10 @@ open class JSObject : JSValue {
         return opt<T>(key) ?: throw IllegalStateException("get $key from $this shouldn't return null")
     }
 
+    inline fun <reified T> get(key: String, default: T): T {
+        return opt<T>(key) ?: default
+    }
+
     fun delete(key: String) {
         nativeDelete(key)
     }

@@ -123,7 +123,7 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
         customVersions.forEach {
             versions.set(it.key, it.value)
         }
-        process.set("execPath", execFile.absolutePath)
+        // process.set("execPath", execFile.absolutePath)
         val chdir: JSFunction = process.get("chdir")
         chdir.call(process, JSString(context, pwd.absolutePath))
         eventOnPrepared(context)
@@ -142,7 +142,8 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
         //     { filename: '${file.name}'} )).runInThisContext();
         //     })()
         //      """
-        val script = """require('${file.absolutePath}');"""
+        val script = """$setupTTY
+            require('${file.absolutePath}');""".trimMargin()
         try {
             context.eval(script, file.absolutePath, 0)
         } catch (error: JSException) {

@@ -34,7 +34,7 @@ jint JSContext::OnLoad(JNIEnv *env) {
     JNINativeMethod methods[] = {
             {"nativeEval",       "(Ljava/lang/String;Ljava/lang/String;I)Lcom/linroid/knode/js/JSValue;", (void *) Eval},
             {"nativeParseJson",  "(Ljava/lang/String;)Lcom/linroid/knode/js/JSValue;",                    (void *) ParseJson},
-            {"nativeThrowError", "(Ljava/lang/String;)V",                                                 (void *) ThrowError},
+            {"nativeThrowError", "(Ljava/lang/String;)Lcom/linroid/knode/js/JSError;",                    (void *) ThrowError},
     };
 
     int rc = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
@@ -109,14 +109,17 @@ jobject JSContext::ParseJson(JNIEnv *env, jstring jThis, jstring jjson) {
 }
 
 
-void JSContext::ThrowError(JNIEnv *env, jstring jThis, jstring jmessage) {
+jobject JSContext::ThrowError(JNIEnv *env, jstring jThis, jstring jmessage) {
     const uint16_t *message = env->GetStringChars(jmessage, nullptr);
     const jint messageLen = env->GetStringLength(jmessage);
+    v8::Persistent<v8::Value> *result = nullptr;
     V8_CONTEXT(env, jThis, v8::Object)
         auto error = v8::Exception::Error(V8_STRING(message, messageLen));
         isolate->ThrowException(error);
+        result = new v8::Persistent<v8::Value>(isolate, error);
     V8_END()
     env->ReleaseStringChars(jmessage, message);
+    return runtime->Wrap(env, result, JSType::Error);
 }
 
 void JSContext::SetShared(JNIEnv *env, NodeRuntime *runtime) {

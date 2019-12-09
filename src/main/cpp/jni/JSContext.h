@@ -26,7 +26,7 @@ public:
 
     static JNICALL jobject Eval(JNIEnv *env, jstring jThis, jstring jcode, jstring jsource, jint jline);
 
-    static JNICALL void ThrowError(JNIEnv *env, jstring jThis, jstring jmessage);
+    static JNICALL jobject ThrowError(JNIEnv *env, jstring jThis, jstring jmessage);
 
     static jint OnLoad(JNIEnv *env);
 

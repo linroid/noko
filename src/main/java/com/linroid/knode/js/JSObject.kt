@@ -1,9 +1,6 @@
 package com.linroid.knode.js
 
-import android.util.Log
 import com.google.gson.JsonObject
-import com.google.gson.JsonSyntaxException
-import java.lang.Exception
 import java.lang.reflect.InvocationTargetException
 
 /**
@@ -38,16 +35,7 @@ open class JSObject : JSValue {
                         val result = try {
                             method.invoke(this@JSObject, *convertParameters(parameters, method.parameterTypes))
                         } catch (error: InvocationTargetException) {
-                            Log.e(TAG, "Failed to invoke $name function", error)
-                            context.throwError("A unexpected error occurs during call '$name' native function: ${error.targetException.message}")
-                            return context.sharedUndefined
-                        } catch (error: JsonSyntaxException) {
-                            Log.e(TAG, "Failed to parse arguments for '$name' function", error)
-                            context.throwError("Failed to parse arguments for '$name' native function")
-                            return context.sharedUndefined
-                        } catch (error: Exception) {
-                            context.throwError("Unexpected error occurs when calling '$name' native function")
-                            return context.sharedUndefined
+                            context.throwError("An unexpected error occurs during call '$name' native function: ${error.targetException.message}")
                         }
                         return from(context, result)
                     }
@@ -92,7 +80,6 @@ open class JSObject : JSValue {
 
     inline fun <reified T> opt(key: String): T? {
         val value = nativeGet(key)
-        @Suppress("IMPLICIT_CAST_TO_ANY")
         return value.toType(T::class.java)
     }
 

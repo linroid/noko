@@ -4,6 +4,7 @@ import android.net.Uri
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
+import com.google.gson.JsonSyntaxException
 import com.linroid.knode.KNode
 import java.io.Closeable
 import java.lang.annotation.Native
@@ -82,7 +83,14 @@ open class JSValue(context: JSContext? = null, @Native protected val reference: 
                 check(this is JSArray) { "$this is not an JSArray" }
                 this.map { it.toType(type.componentType as Class<out Any>) }.toTypedArray()
             }
-            else -> KNode.gson.fromJson(toJson(), type)
+            else -> {
+                val json = toJson()
+                try {
+                    KNode.gson.fromJson(json, type)
+                } catch (error: JsonSyntaxException) {
+                    throw IllegalArgumentException("Illegal data: $json")
+                }
+            }
         }
         return result as T?
     }

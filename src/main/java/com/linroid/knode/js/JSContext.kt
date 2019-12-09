@@ -37,11 +37,11 @@ class JSContext @NativeConstructor private constructor(
         references.add(obj)
     }
 
-    fun throwError(message: String) {
-        nativeThrowError(message)
+    fun throwError(message: String): JSError {
+        return nativeThrowError(message)
     }
 
     private external fun nativeEval(code: String, source: String, line: Int): JSValue
     private external fun nativeParseJson(json: String): JSValue
-    private external fun nativeThrowError(message: String)
+    private external fun nativeThrowError(message: String): JSError
 }

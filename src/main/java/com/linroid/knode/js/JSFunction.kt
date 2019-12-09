@@ -29,9 +29,9 @@ open class JSFunction : JSObject {
             return try {
                 callable.invoke(receiver, parameters)
             } catch (error: InvocationTargetException) {
-                Log.e(TAG, "Failed to invoke $callable", error)
                 context.throwError("A unexpected error occurs during call native function: ${error.targetException.message}")
-                return context.sharedUndefined
+            } catch (error: Exception) {
+                throw error
             }
         }
         return null

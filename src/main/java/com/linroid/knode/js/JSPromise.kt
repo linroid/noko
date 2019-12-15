@@ -34,10 +34,10 @@ class JSPromise : JSObject {
         return this
     }
 
-    fun catch(callback: (JSError) -> Unit): JSPromise {
+    fun catch(callback: (JSObject) -> Unit): JSPromise {
         val then = JSFunction(context, "catch") { _, argv ->
             val result: JSValue = argv[0]
-            check(result is JSError) { "catch() should receive an JSError parameter not ${result.javaClass.simpleName}(${result.typeOf()})}: ${result.toJson()}" }
+            check(result is JSObject) { "catch() should receive an JSObject parameter not ${result.javaClass.simpleName}(${result.typeOf()})}: ${result.toJson()}" }
             callback.invoke(result)
             return@JSFunction null
         }

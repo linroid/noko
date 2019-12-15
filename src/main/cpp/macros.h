@@ -53,7 +53,7 @@
 
 #define EXIT_JNI(vm)                                                            \
         if (env->ExceptionCheck()) {                                            \
-            LOGE("Exit jni env, but with pending Exception", __FILE__);         \
+            LOGE("Exit jni env, but with pending Exception, %s:%d", __FILE__, __LINE__); \
         }                                                                       \
         if (stat == JNI_EDETACHED) {                                            \
             vm->DetachCurrentThread();                                          \

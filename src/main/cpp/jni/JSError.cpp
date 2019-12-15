@@ -34,7 +34,7 @@ jint JSError::OnLoad(JNIEnv *env) {
         return JNI_ERR;
     }
     jExceptionClazz = (jclass) env->NewGlobalRef(clazz);
-    jExceptionConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSError;)V");
+    jExceptionConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSObject;)V");
 
     return JNI_OK;
 }

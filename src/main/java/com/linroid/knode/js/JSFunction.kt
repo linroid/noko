@@ -31,6 +31,7 @@ open class JSFunction : JSObject {
             } catch (error: InvocationTargetException) {
                 context.throwError("A unexpected error occurs during call native function: ${error.targetException.message}")
             } catch (error: Exception) {
+                // context.throwError(error.message ?: "An error occurred when calling native function")
                 throw error
             }
         }

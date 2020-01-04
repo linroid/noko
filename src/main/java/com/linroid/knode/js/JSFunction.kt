@@ -1,6 +1,5 @@
 package com.linroid.knode.js
 
-import android.util.Log
 import java.lang.reflect.InvocationTargetException
 
 /**

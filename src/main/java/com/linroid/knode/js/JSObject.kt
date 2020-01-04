@@ -1,6 +1,7 @@
 package com.linroid.knode.js
 
 import com.google.gson.JsonObject
+import java.lang.Exception
 import java.lang.reflect.InvocationTargetException
 
 /**
@@ -24,6 +25,7 @@ open class JSObject : JSValue {
         if (javaClass == JSObject::class.java) {
             return
         }
+        val className = javaClass.simpleName
         javaClass.methods
             .filter { it.isAnnotationPresent(BindJS::class.java) }
             .forEach { method ->
@@ -35,7 +37,9 @@ open class JSObject : JSValue {
                         val result = try {
                             method.invoke(this@JSObject, *convertParameters(parameters, method.parameterTypes))
                         } catch (error: InvocationTargetException) {
-                            context.throwError("An unexpected error occurs during call '$name' native function: ${error.targetException.message}")
+                            context.throwError("Unexpected error occurred during call '${className}#$name()': ${error.targetException.message}")
+                        } catch (error: Exception) {
+                            context.throwError("Unexpected error occurred during call '${className}#$name()': ${error.message}")
                         }
                         return from(context, result)
                     }

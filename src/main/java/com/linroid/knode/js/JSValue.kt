@@ -88,7 +88,7 @@ open class JSValue(context: JSContext? = null, @Native protected val reference: 
                 try {
                     KNode.gson.fromJson(json, type)
                 } catch (error: JsonSyntaxException) {
-                    throw IllegalArgumentException("Illegal data: $json")
+                    throw IllegalArgumentException("Illegal data: $json, required an object")
                 }
             }
         }

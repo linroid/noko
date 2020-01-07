@@ -146,6 +146,7 @@ open class JSValue(context: JSContext? = null, @Native protected val reference: 
                 is String -> JSString(context, value)
                 is Number -> JSNumber(context, value)
                 is Iterator<*> -> JSArray(context, value)
+                is List<*> -> JSArray(context, value.iterator())
                 is Array<*> -> JSArray(context, value.iterator())
                 is JsonElement -> {
                     context.parseJson(value.toString())

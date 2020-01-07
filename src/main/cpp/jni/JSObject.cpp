@@ -14,39 +14,39 @@
 jclass JSObject::jClazz;
 jmethodID JSObject::jConstructor;
 
-JNICALL void JSObject::Set(JNIEnv *env, jobject jThis, jstring jkey, jobject jvalue) {
-    const char *key = env->GetStringUTFChars(jkey, nullptr);
+JNICALL void JSObject::Set(JNIEnv *env, jobject jThis, jstring jKey, jobject jvalue) {
+    const char *key = env->GetStringUTFChars(jKey, nullptr);
     auto value = JSValue::Unwrap(env, jvalue);
-    // const jint keyLen = env->GetStringLength(jkey);
+    // const jint keyLen = env->GetStringLength(jKey);
     V8_CONTEXT(env, jThis, v8::Object)
         CHECK_NOT_NULL(*that);
         that->Set(V8_UTF_STRING(isolate, key), value->Get(isolate));
     V8_END()
-    env->ReleaseStringUTFChars(jkey, key);
+    env->ReleaseStringUTFChars(jKey, key);
 }
 
-JNICALL jobject JSObject::Get(JNIEnv *env, jobject jThis, jstring jkey) {
+JNICALL jobject JSObject::Get(JNIEnv *env, jobject jThis, jstring jKey) {
     v8::Persistent<v8::Value> *result = nullptr;
     JSType type = None;
-    const uint16_t *key = env->GetStringChars(jkey, nullptr);
-    const jint keyLen = env->GetStringLength(jkey);
+    const uint16_t *key = env->GetStringChars(jKey, nullptr);
+    const jint keyLen = env->GetStringLength(jKey);
     V8_CONTEXT(env, jThis, v8::Object)
         auto value = that->Get(V8_STRING(key, keyLen));
         type = runtime->GetType(value);
         result = new v8::Persistent<v8::Value>(isolate, value);
     V8_END()
-    env->ReleaseStringChars(jkey, key);
+    env->ReleaseStringChars(jKey, key);
     return runtime->Wrap(env, result, type);
 }
 
-jboolean JSObject::Has(JNIEnv *env, jobject jThis, jstring jkey) {
+jboolean JSObject::Has(JNIEnv *env, jobject jThis, jstring jKey) {
     bool result = false;
-    const uint16_t *key = env->GetStringChars(jkey, nullptr);
-    const jint keyLen = env->GetStringLength(jkey);
+    const uint16_t *key = env->GetStringChars(jKey, nullptr);
+    const jint keyLen = env->GetStringLength(jKey);
     V8_CONTEXT(env, jThis, v8::Object)
         result = that->Has(V8_STRING(key, keyLen));
     V8_END()
-    env->ReleaseStringChars(jkey, key);
+    env->ReleaseStringChars(jKey, key);
     return static_cast<jboolean>(result);
 }
 
@@ -59,13 +59,13 @@ void JSObject::New(JNIEnv *env, jobject jThis) {
     JSValue::SetReference(env, jThis, (jlong) result);
 }
 
-void JSObject::Delete(JNIEnv *env, jobject jThis, jstring jkey) {
-    const uint16_t *key = env->GetStringChars(jkey, nullptr);
-    const jint keyLen = env->GetStringLength(jkey);
+void JSObject::Delete(JNIEnv *env, jobject jThis, jstring jKey) {
+    const uint16_t *key = env->GetStringChars(jKey, nullptr);
+    const jint keyLen = env->GetStringLength(jKey);
     V8_CONTEXT(env, jThis, v8::Object)
         that->Delete(V8_STRING(key, keyLen));
     V8_END()
-    env->ReleaseStringChars(jkey, key);
+    env->ReleaseStringChars(jKey, key);
 }
 
 jint JSObject::OnLoad(JNIEnv *env) {

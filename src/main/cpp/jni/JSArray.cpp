@@ -28,14 +28,14 @@ void JSArray::New(JNIEnv *env, jobject jThis) {
     JSValue::SetReference(env, jThis, (jlong) result);
 }
 
-jboolean JSArray::AddAll(JNIEnv *env, jobject jThis, jobjectArray jelements) {
-    auto size = env->GetArrayLength(jelements);
+jboolean JSArray::AddAll(JNIEnv *env, jobject jThis, jobjectArray jElements) {
+    auto size = env->GetArrayLength(jElements);
     bool result = true;
     v8::Persistent<v8::Value> *elements[size];
     v8::Persistent<v8::Value> *error = nullptr;
     for (int i = 0; i < size; ++i) {
-        auto jelement = env->GetObjectArrayElement(jelements, i);
-        elements[i] = JSValue::Unwrap(env, jelement);
+        auto jElement = env->GetObjectArrayElement(jElements, i);
+        elements[i] = JSValue::Unwrap(env, jElement);
     }
     V8_CONTEXT(env, jThis, v8::Array)
         v8::TryCatch tryCatch(runtime->isolate);
@@ -101,9 +101,9 @@ jobject JSArray::Get(JNIEnv *env, jobject jThis, jint jindex) {
     return runtime->Wrap(env, result, type);
 }
 
-jboolean JSArray::Add(JNIEnv *env, jobject jThis, jobject jelement) {
+jboolean JSArray::Add(JNIEnv *env, jobject jThis, jobject jElement) {
     v8::Persistent<v8::Value> *error = nullptr;
-    auto element = JSValue::Unwrap(env, jelement);
+    auto element = JSValue::Unwrap(env, jElement);
     bool success = false;
     V8_CONTEXT(env, jThis, v8::TypedArray)
         v8::TryCatch tryCatch(runtime->isolate);
@@ -119,10 +119,10 @@ jboolean JSArray::Add(JNIEnv *env, jobject jThis, jobject jelement) {
     return static_cast<jboolean>(success);
 }
 
-jboolean JSArray::AddAt(JNIEnv *env, jobject jThis, jint jindex, jobject jelement) {
+jboolean JSArray::AddAt(JNIEnv *env, jobject jThis, jint jindex, jobject jElement) {
 
 }
 
-jboolean JSArray::AddAllAt(JNIEnv *env, jobject jThis, jint jindex, jobjectArray jelements) {
+jboolean JSArray::AddAllAt(JNIEnv *env, jobject jThis, jint jindex, jobjectArray jElements) {
     return 0;
 }

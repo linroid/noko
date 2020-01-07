@@ -24,13 +24,13 @@ public:
 
     JNICALL static jobject Get(JNIEnv *env, jobject jThis, jint jindex);
 
-    JNICALL static jboolean Add(JNIEnv *env, jobject jThis, jobject jelement);
+    JNICALL static jboolean Add(JNIEnv *env, jobject jThis, jobject jElement);
 
-    JNICALL static jboolean AddAt(JNIEnv *env, jobject jThis, jint jindex, jobject jelement);
+    JNICALL static jboolean AddAt(JNIEnv *env, jobject jThis, jint jindex, jobject jElement);
 
-    JNICALL static jboolean AddAll(JNIEnv *env, jobject jThis, jobjectArray jelements);
+    JNICALL static jboolean AddAll(JNIEnv *env, jobject jThis, jobjectArray jElements);
 
-    JNICALL static jboolean AddAllAt(JNIEnv *env, jobject jThis, jint jindex, jobjectArray jelements);
+    JNICALL static jboolean AddAllAt(JNIEnv *env, jobject jThis, jint jindex, jobjectArray jElements);
 
     static jint OnLoad(JNIEnv *env);
 };

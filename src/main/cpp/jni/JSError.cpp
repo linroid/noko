@@ -39,9 +39,9 @@ jint JSError::OnLoad(JNIEnv *env) {
     return JNI_OK;
 }
 
-void JSError::New(JNIEnv *env, jobject jThis, jstring jmessage) {
-    auto messageChars = env->GetStringChars(jmessage, nullptr);
-    const jint messageLen = env->GetStringLength(jmessage);
+void JSError::New(JNIEnv *env, jobject jThis, jstring jMessage) {
+    auto messageChars = env->GetStringChars(jMessage, nullptr);
+    const jint messageLen = env->GetStringLength(jMessage);
     v8::Persistent<v8::Value> *result = nullptr;
 
     V8_SCOPE(env, jThis)
@@ -49,7 +49,7 @@ void JSError::New(JNIEnv *env, jobject jThis, jstring jmessage) {
         auto value = v8::Exception::Error(message);
         result = new v8::Persistent<v8::Value>(runtime->isolate, value);
     V8_END()
-    env->ReleaseStringChars(jmessage, messageChars);
+    env->ReleaseStringChars(jMessage, messageChars);
     JSValue::SetReference(env, jThis, (jlong) result);
 }
 

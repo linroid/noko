@@ -21,7 +21,7 @@ public:
         return env->NewObject(jClazz, jConstructor, runtime->jContext, (jlong) value);
     }
 
-    JNICALL static void New(JNIEnv *env, jobject jThis, jstring jmessage);
+    JNICALL static void New(JNIEnv *env, jobject jThis, jstring jMessage);
 
     static void Throw(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *error);
 

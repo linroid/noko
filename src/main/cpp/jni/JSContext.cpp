@@ -44,20 +44,20 @@ jint JSContext::OnLoad(JNIEnv *env) {
     return JNI_OK;
 }
 
-jobject JSContext::Eval(JNIEnv *env, jstring jThis, jstring jcode, jstring jsource, jint jline) {
+jobject JSContext::Eval(JNIEnv *env, jstring jThis, jstring jCode, jstring jSource, jint jLine) {
     v8::Persistent<v8::Value> *result = nullptr;
     JSType type = None;
     v8::Persistent<v8::Value> *error = nullptr;
 
-    jint codeLen = env->GetStringLength(jcode);
-    auto code = env->GetStringChars(jcode, nullptr);
+    jint codeLen = env->GetStringLength(jCode);
+    auto code = env->GetStringChars(jCode, nullptr);
 
-    jint sourceLen = env->GetStringLength(jsource);
-    auto source = env->GetStringChars(jsource, nullptr);
+    jint sourceLen = env->GetStringLength(jSource);
+    auto source = env->GetStringChars(jSource, nullptr);
 
     V8_CONTEXT(env, jThis, v8::Object)
         v8::TryCatch tryCatch(runtime->isolate);
-        v8::ScriptOrigin scriptOrigin(V8_STRING(source, sourceLen), v8::Integer::New(runtime->isolate, jline));
+        v8::ScriptOrigin scriptOrigin(V8_STRING(source, sourceLen), v8::Integer::New(runtime->isolate, jLine));
         auto script = v8::Script::Compile(context, V8_STRING(code, codeLen), &scriptOrigin);
         if (script.IsEmpty()) {
             LOGE("Compile script with an exception");
@@ -78,17 +78,17 @@ jobject JSContext::Eval(JNIEnv *env, jstring jThis, jstring jcode, jstring jsour
         JSError::Throw(env, runtime, error);
         return nullptr;
     }
-    env->ReleaseStringChars(jcode, code);
-    env->ReleaseStringChars(jsource, source);
+    env->ReleaseStringChars(jCode, code);
+    env->ReleaseStringChars(jSource, source);
     return runtime->Wrap(env, result, type);
 }
 
-jobject JSContext::ParseJson(JNIEnv *env, jstring jThis, jstring jjson) {
+jobject JSContext::ParseJson(JNIEnv *env, jstring jThis, jstring jJson) {
     v8::Persistent<v8::Value> *result = nullptr;
     JSType type = None;
     v8::Persistent<v8::Value> *error = nullptr;
-    const uint16_t *json = env->GetStringChars(jjson, nullptr);
-    const jint jsonLen = env->GetStringLength(jjson);
+    const uint16_t *json = env->GetStringChars(jJson, nullptr);
+    const jint jsonLen = env->GetStringLength(jJson);
     V8_CONTEXT(env, jThis, v8::Object)
         v8::TryCatch tryCatch(isolate);
         auto returned = v8::JSON::Parse(isolate, V8_STRING(json, jsonLen));
@@ -104,21 +104,21 @@ jobject JSContext::ParseJson(JNIEnv *env, jstring jThis, jstring jjson) {
         JSError::Throw(env, runtime, error);
         return nullptr;
     }
-    env->ReleaseStringChars(jjson, json);
+    env->ReleaseStringChars(jJson, json);
     return runtime->Wrap(env, result, type);
 }
 
 
-jobject JSContext::ThrowError(JNIEnv *env, jstring jThis, jstring jmessage) {
-    const uint16_t *message = env->GetStringChars(jmessage, nullptr);
-    const jint messageLen = env->GetStringLength(jmessage);
+jobject JSContext::ThrowError(JNIEnv *env, jstring jThis, jstring jMessage) {
+    const uint16_t *message = env->GetStringChars(jMessage, nullptr);
+    const jint messageLen = env->GetStringLength(jMessage);
     v8::Persistent<v8::Value> *result = nullptr;
     V8_CONTEXT(env, jThis, v8::Object)
         auto error = v8::Exception::Error(V8_STRING(message, messageLen));
         isolate->ThrowException(error);
         result = new v8::Persistent<v8::Value>(isolate, error);
     V8_END()
-    env->ReleaseStringChars(jmessage, message);
+    env->ReleaseStringChars(jMessage, message);
     return runtime->Wrap(env, result, JSType::Error);
 }
 

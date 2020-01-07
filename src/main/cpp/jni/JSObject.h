@@ -20,13 +20,13 @@ public:
 
     static jint OnLoad(JNIEnv *env);
 
-    static JNICALL jobject Get(JNIEnv *env, jobject jThis, jstring jkey);
+    static JNICALL jobject Get(JNIEnv *env, jobject jThis, jstring jKey);
 
-    static JNICALL void Delete(JNIEnv *env, jobject jThis, jstring jkey);
+    static JNICALL void Delete(JNIEnv *env, jobject jThis, jstring jKey);
 
-    static JNICALL void Set(JNIEnv *env, jobject jThis, jstring jkey, jobject);
+    static JNICALL void Set(JNIEnv *env, jobject jThis, jstring jKey, jobject);
 
-    static JNICALL jboolean Has(JNIEnv *env, jobject jThis, jstring jkey);
+    static JNICALL jboolean Has(JNIEnv *env, jobject jThis, jstring jKey);
 
     static JNICALL void New(JNIEnv *env, jobject jThis);
 };

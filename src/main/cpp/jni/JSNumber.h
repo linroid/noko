@@ -18,7 +18,7 @@ public:
         return env->NewObject(jClazz, jConstructor, runtime->jContext, (jlong) value);
     }
 
-    JNICALL static void New(JNIEnv *env, jobject jThis, jdouble jdata);
+    JNICALL static void New(JNIEnv *env, jobject jThis, jdouble jData);
 
     static jint OnLoad(JNIEnv *env);
 };

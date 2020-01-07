@@ -20,10 +20,10 @@ void staticCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
     callback->Call(info);
 }
 
-void JSFunction::New(JNIEnv *env, jobject jThis, jstring jname) {
+void JSFunction::New(JNIEnv *env, jobject jThis, jstring jName) {
     v8::Persistent<v8::Value> *result = nullptr;
-    const uint16_t *name = env->GetStringChars(jname, nullptr);
-    const jint nameLen = env->GetStringLength(jname);
+    const uint16_t *name = env->GetStringChars(jName, nullptr);
+    const jint nameLen = env->GetStringLength(jName);
     auto callback = new JniCallback(env, jThis, JSValue::jClazz, jonCall);
     V8_SCOPE(env, jThis)
         callback->runtime = runtime;
@@ -32,22 +32,22 @@ void JSFunction::New(JNIEnv *env, jobject jThis, jstring jname) {
         func->SetName(V8_STRING(name, nameLen));
         result = new v8::Persistent<v8::Value>(runtime->isolate, func);
     V8_END()
-    env->ReleaseStringChars(jname, name);
+    env->ReleaseStringChars(jName, name);
     JSValue::SetReference(env, jThis, (jlong) result);
 }
 
-jobject JSFunction::Call(JNIEnv *env, jobject jThis, jobject jreceiver, jobjectArray jparameters) {
+jobject JSFunction::Call(JNIEnv *env, jobject jThis, jobject jReceiver, jobjectArray jParameters) {
     v8::Persistent<v8::Value> *result = nullptr;
     v8::Persistent<v8::Value> *error = nullptr;
     JSType type = None;
 
-    auto receiver = JSValue::Unwrap(env, jreceiver);
+    auto receiver = JSValue::Unwrap(env, jReceiver);
 
-    int argc = env->GetArrayLength(jparameters);
+    int argc = env->GetArrayLength(jParameters);
     v8::Persistent<v8::Value> *parameters[argc];
     for (int i = 0; i < argc; ++i) {
-        auto jelement = env->GetObjectArrayElement(jparameters, i);
-        parameters[i] = JSValue::Unwrap(env, jelement);
+        auto jElement = env->GetObjectArrayElement(jParameters, i);
+        parameters[i] = JSValue::Unwrap(env, jElement);
     }
 
     V8_CONTEXT(env, jThis, v8::Function)

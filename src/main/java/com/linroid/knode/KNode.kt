@@ -63,6 +63,7 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
      * @param exitCode The exit code
      */
     fun exit(exitCode: Int) {
+        Log.d(TAG, "exit($exitCode)")
         if (isActive() && ::context.isInitialized) {
             context.eval("process.exit($exitCode);")
         }
@@ -181,11 +182,6 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
         listeners.forEach { it.onNodePrepared(context) }
     }
 
-    private fun eventOnFinished(exitCode: Int) {
-        Log.i(TAG, "eventOnFinished: exitCode=$exitCode")
-        listeners.forEach { it.onNodeFinished(exitCode) }
-    }
-
     private fun eventOnExit(exitCode: Int) {
         Log.w(TAG, "eventOnExit: exitCode=$exitCode")
         listeners.forEach { it.onNodeExited(exitCode) }
@@ -203,6 +199,7 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
         }
         eventOnExit(exitCode)
         nativeDispose()
+        Log.i(TAG, "after nativeDispose")
         active = false
     }
 
@@ -219,8 +216,6 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
     interface EventListener {
 
         fun onNodePrepared(context: JSContext) {}
-
-        fun onNodeFinished(exitCode: Int) {}
 
         fun onNodeExited(exitCode: Int) {}
 

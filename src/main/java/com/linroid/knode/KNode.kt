@@ -128,7 +128,7 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
         val chdir: JSFunction = process.get("chdir")
         chdir.call(process, JSString(context, pwd.absolutePath))
         eventOnPrepared(context)
-        val setupTTY = if (!supportColor) "" else """
+        val setupTTY = """
             process.stderr.isTTY = true;
             process.stderr.isRaw = false;
             process.stdout.isTTY = true;

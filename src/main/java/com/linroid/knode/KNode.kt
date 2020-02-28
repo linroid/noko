@@ -16,7 +16,7 @@ import kotlin.concurrent.thread
  * @since 2019-10-16
  */
 @Keep
-class KNode(private val pwd: File, private val output: StdOutput, private val supportColor: Boolean = false) : Closeable {
+class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
 
     @Native
     private var ptr: Long = nativeNew()
@@ -116,7 +116,7 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
         val versions: JSObject = process.get("versions")
         env.set("PWD", pwd.absolutePath)
         customEnvs.forEach { env.set(it.key, it.value) }
-        if (supportColor) {
+        if (output.supportsColor) {
             env.set("COLORTERM", "truecolor")
         }
         process.set("argv0", "node")
@@ -128,12 +128,14 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
         val chdir: JSFunction = process.get("chdir")
         chdir.call(process, JSString(context, pwd.absolutePath))
         eventOnPrepared(context)
-        val setupTTY = """
+        val setupCode = StringBuilder()
+        if (output.supportsColor) {
+            setupCode.append("""
             process.stderr.isTTY = true;
-            process.stderr.isRaw = false;
+            process.stderr.isRaw = true;
             process.stdout.isTTY = true;
-            process.stdout.isRaw = false;"""
-
+            process.stdout.isRaw = true;""")
+        }
         // val script = """(() => {
         //     const fs = require('fs');
         //     const vm = require('vm');
@@ -143,10 +145,9 @@ class KNode(private val pwd: File, private val output: StdOutput, private val su
         //     { filename: '${file.name}'} )).runInThisContext();
         //     })()
         //      """
-        val script = """$setupTTY
-            require('${file.absolutePath}');""".trimMargin()
+        setupCode.append("require('${file.absolutePath}');")
         try {
-            context.eval(script, file.absolutePath, 0)
+            context.eval(setupCode.toString(), file.absolutePath, 0)
         } catch (error: JSException) {
             Log.e(TAG, "Execute failed: file=${file.absolutePath}, stack=${error.stack()}", error)
             eventOnError(error)

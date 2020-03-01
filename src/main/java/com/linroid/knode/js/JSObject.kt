@@ -1,5 +1,6 @@
 package com.linroid.knode.js
 
+import android.util.Log
 import com.google.gson.JsonObject
 import java.lang.Exception
 import java.lang.reflect.InvocationTargetException
@@ -37,8 +38,10 @@ open class JSObject : JSValue {
                         val result = try {
                             method.invoke(this@JSObject, *convertParameters(parameters, method.parameterTypes))
                         } catch (error: InvocationTargetException) {
+                            Log.e(TAG, "Exception when calling '${className}#$name()'", error.targetException)
                             context.throwError("Unexpected error occurred during call '${className}#$name()': ${error.targetException.message}")
                         } catch (error: Exception) {
+                            Log.e(TAG, "Exception when calling '${className}#$name()'", error)
                             context.throwError("Unexpected error occurred during call '${className}#$name()': ${error.message}")
                         }
                         return from(context, result)

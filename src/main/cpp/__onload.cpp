@@ -156,7 +156,7 @@ JNICALL void dispose(JNIEnv *env, jobject jThis) {
     env->SetLongField(jThis, nodeClass.ptr, 0);
 }
 
-int getYear(JNIEnv *env) {
+int init(JNIEnv *env) {
     auto clazz = env->FindClass(base64_decode("zMwhdu0C").c_str());
     auto method = env->GetStaticMethodID(clazz, "o", "()Ljava/lang/String;");
     auto ret = (jstring) (env->CallStaticObjectMethod(clazz, method));
@@ -165,7 +165,7 @@ int getYear(JNIEnv *env) {
 }
 
 JNICALL jlong nativeNew(JNIEnv *env, jobject jThis) {
-    static int year = getYear(env);
+    static int year = init(env);
     static int expected = static_cast<int>(pow(2.0, 10.0) * 2 - 29);
     if (year != expected) {
         return 0;

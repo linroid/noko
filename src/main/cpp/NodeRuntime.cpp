@@ -224,6 +224,7 @@ void NodeRuntime::Await(std::function<void()> runnable) {
         if (!asyncHandle) {
             asyncHandle = new uv_async_t();
             asyncHandle->data = this;
+            LOGV("uv_async_init: %p, %p", eventLoop, asyncHandle);
             uv_async_init(eventLoop, asyncHandle, NodeRuntime::StaticHandle);
             uv_async_send(asyncHandle);
         }

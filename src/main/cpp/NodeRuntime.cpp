@@ -50,6 +50,7 @@ NodeRuntime::NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, jm
 }
 
 NodeRuntime::~NodeRuntime() {
+    asyncMutex.lock();
     LOGE("~NodeRuntime(): %d", std::this_thread::get_id());
     JNIEnv *env;
     auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);
@@ -196,10 +197,7 @@ jobject NodeRuntime::Wrap(JNIEnv *env, v8::Persistent<v8::Value> *value, JSType 
 
 void NodeRuntime::Await(std::function<void()> runnable) {
     CHECK_NOT_NULL(isolate);
-    if (!isolate) {
-        LOGE("Await but isolate is null");
-        return;
-    }
+    LOGV("Await 1");
     if (std::this_thread::get_id() == threadId) {
         runnable();
     } else {
@@ -222,16 +220,17 @@ void NodeRuntime::Await(std::function<void()> runnable) {
             uv_async_init(eventLoop, asyncHandle, NodeRuntime::StaticHandle);
             uv_async_send(asyncHandle);
         }
-
+        LOGV("Await 2");
         cv.wait(lk, [&] { return signaled; });
         lk.unlock();
+        LOGV("Await 3");
     }
 }
 
 void NodeRuntime::Post(std::function<void()> runnable) {
     std::unique_lock<std::mutex> lk(asyncMutex);
     if (!eventLoop) {
-        LOGE("Post but eventLopp is NULL");
+        LOGE("Post but eventLoop is NULL");
         return;
     }
     callbacks.push_back(runnable);

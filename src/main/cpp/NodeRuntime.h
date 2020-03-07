@@ -40,6 +40,7 @@ private:
     bool running = false;
     std::thread::id threadId;
     std::mutex asyncMutex;
+    std::mutex instanceMutex;
     std::vector<std::function<void()>> callbacks;
     uv_async_t *asyncHandle = nullptr;
 

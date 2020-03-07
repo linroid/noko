@@ -56,8 +56,8 @@ NodeRuntime::NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, jm
 
 NodeRuntime::~NodeRuntime() {
     LOGE("~NodeRuntime(): %p, thread_id=%d", this, std::this_thread::get_id());
+    std::lock_guard<std::mutex> instanceLock(instanceMutex);
     std::lock_guard<std::mutex> lock(asyncMutex);
-
     ENTER_JNI(vm)
         env->DeleteGlobalRef(jThis);
     EXIT_JNI(vm)
@@ -228,6 +228,7 @@ void NodeRuntime::Await(std::function<void()> runnable) {
             cv.notify_one();
         };
 
+        std::lock_guard<std::mutex> instanceLock(instanceMutex);
         std::unique_lock<std::mutex> lock(asyncMutex);
         if (!running) {
             LOGE("Instance has been destroyed, ignore await");
@@ -236,7 +237,7 @@ void NodeRuntime::Await(std::function<void()> runnable) {
         callbacks.push_back(callback);
         this->TryLoop();
 
-        cv.wait(lock, [&] { return signaled && running; });
+        cv.wait(lock, [&] { return signaled; });
         LOGD("cv.wait(lock, [&] { return signaled; })");
         lock.unlock();
     }

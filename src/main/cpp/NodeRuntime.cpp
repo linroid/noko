@@ -216,30 +216,34 @@ void NodeRuntime::Await(std::function<void()> runnable) {
     if (std::this_thread::get_id() == threadId) {
         runnable();
     } else {
-        std::condition_variable cv;
-        bool signaled = false;
-        auto callback = [&]() {
-            runnable();
-            {
-                std::lock_guard<std::mutex> lock(asyncMutex);
-                LOGD("signaled = true;");
-                signaled = true;
-            }
-            cv.notify_one();
-        };
-
-        std::lock_guard<std::mutex> instanceLock(instanceMutex);
-        std::unique_lock<std::mutex> lock(asyncMutex);
-        if (!running) {
-            LOGE("Instance has been destroyed, ignore await");
-            return;
-        }
-        callbacks.push_back(callback);
-        this->TryLoop();
-
-        cv.wait(lock, [&] { return signaled; });
-        LOGD("cv.wait(lock, [&] { return signaled; })");
-        lock.unlock();
+        ENTER_JNI(vm)
+        env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), "Illegal thread access");
+        EXIT_JNI(vm)
+        return;;
+        // std::condition_variable cv;
+        // bool signaled = false;
+        // auto callback = [&]() {
+        //     runnable();
+        //     {
+        //         std::lock_guard<std::mutex> lock(asyncMutex);
+        //         LOGD("signaled = true;");
+        //         signaled = true;
+        //     }
+        //     cv.notify_one();
+        // };
+        //
+        // std::lock_guard<std::mutex> instanceLock(instanceMutex);
+        // std::unique_lock<std::mutex> lock(asyncMutex);
+        // if (!running) {
+        //     LOGE("Instance has been destroyed, ignore await");
+        //     return;
+        // }
+        // callbacks.push_back(callback);
+        // this->TryLoop();
+        //
+        // cv.wait(lock, [&] { return signaled; });
+        // LOGD("cv.wait(lock, [&] { return signaled; })");
+        // lock.unlock();
     }
 }
 

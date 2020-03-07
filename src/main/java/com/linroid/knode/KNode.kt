@@ -65,7 +65,9 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
     fun exit(exitCode: Int) {
         Log.d(TAG, "exit($exitCode)")
         if (isActive() && ::context.isInitialized) {
-            context.eval("process.exit($exitCode);")
+            submit(Runnable {
+                context.eval("process.exit($exitCode);")
+            })
         }
     }
 

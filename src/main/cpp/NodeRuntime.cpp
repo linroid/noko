@@ -35,7 +35,6 @@ void NodeRuntime::StaticBeforeExit(const v8::FunctionCallbackInfo<v8::Value> &in
     uv_walk(env->event_loop(), [](uv_handle_t *h, void *arg) {
         uv_unref(h);
     }, nullptr);
-    uv_stop(env->event_loop());
 }
 
 void NodeRuntime::StaticHandle(uv_async_t *handle) {
@@ -58,15 +57,12 @@ NodeRuntime::NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, jm
 NodeRuntime::~NodeRuntime() {
     LOGE("~NodeRuntime(): %p, thread_id=%d", this, std::this_thread::get_id());
     std::lock_guard<std::mutex> lock(asyncMutex);
-    JNIEnv *env;
-    auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);
-    if (stat == JNI_EDETACHED) {
-        vm->AttachCurrentThread(&env, nullptr);
-    }
-    env->DeleteGlobalRef(jThis);
-    if (stat == JNI_EDETACHED) {
-        vm->DetachCurrentThread();
-    }
+
+    ENTER_JNI(vm)
+        env->DeleteGlobalRef(jThis);
+    EXIT_JNI(vm)
+
+    uv_stop(eventLoop);
     eventLoop = nullptr;
     global = nullptr;
     isolate = nullptr;
@@ -226,6 +222,7 @@ void NodeRuntime::Await(std::function<void()> runnable) {
             runnable();
             {
                 std::lock_guard<std::mutex> lock(asyncMutex);
+                LOGD("signaled = true;");
                 signaled = true;
             }
             cv.notify_one();
@@ -239,7 +236,8 @@ void NodeRuntime::Await(std::function<void()> runnable) {
         callbacks.push_back(callback);
         this->TryLoop();
 
-        cv.wait(lock, [&] { return signaled; });
+        cv.wait(lock, [&] { return signaled && running; });
+        LOGD("cv.wait(lock, [&] { return signaled; })");
         lock.unlock();
     }
 }

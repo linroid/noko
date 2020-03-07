@@ -9,6 +9,17 @@
 #include <jni.h>
 #include "v8.h"
 
+
+#define LOG_TAG "KNode_Native"
+#define LOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, __VA_ARGS__)
+#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+#define ALOG(level, ...) __android_log_print(level, LOG_TAG, __VA_ARGS__)
+
+// LOGD("%s(%d)-<%s>",  __FILE__, __LINE__, __FUNCTION__); \
+
 #define V8_SCOPE(env, jThis) \
     auto runtime = JSValue::GetRuntime(env, jThis); \
     auto isolate = runtime->isolate; \
@@ -31,14 +42,6 @@
 #define V8_UTF_STRING(isolate, str) v8::String::NewFromUtf8(isolate, str, v8::NewStringType::kNormal).ToLocalChecked()
 #define V8_STRING(str, length) v8::String::NewFromTwoByte(isolate, str, v8::NewStringType::kNormal, length).ToLocalChecked()
 
-
-#define LOG_TAG "KNode_Native"
-#define LOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, __VA_ARGS__)
-#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
-#define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
-#define ALOG(level, ...) __android_log_print(level, LOG_TAG, __VA_ARGS__)
 
 #define ENTER_JNI(vm)                                                           \
     {                                                                           \

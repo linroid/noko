@@ -43,12 +43,15 @@ private:
     std::vector<std::function<void()>> callbacks;
     uv_async_t *asyncHandle = nullptr;
 
-    static std::mutex mutex;
+    static std::mutex sharedMutex;
     static jint instanceCount;
 
+    static void StaticOnPrepared(const v8::FunctionCallbackInfo<v8::Value> &info);
+    static void StaticBeforeExit(const v8::FunctionCallbackInfo<v8::Value> &info);
     static void StaticHandle(uv_async_t *handle);
 
     void Handle(uv_async_t *handle);
+    void TryLoop();
 
 public:
     jobject jContext = nullptr;
@@ -76,7 +79,7 @@ public:
 
     void Await(std::function<void()> runnable);
 
-    void Post(std::function<void()> runnable);
+    void Async(std::function<void()> runnable);
 
     void OnEnvReady(node::Environment *nodeEnv);
 

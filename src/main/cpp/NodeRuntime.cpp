@@ -20,39 +20,44 @@
 #include "jni/JSError.h"
 
 int NodeRuntime::instanceCount = 0;
-std::mutex NodeRuntime::mutex;
+std::mutex NodeRuntime::sharedMutex;
 
-static void onPreparedCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
+void NodeRuntime::StaticOnPrepared(const v8::FunctionCallbackInfo<v8::Value> &info) {
+    LOGD("StaticOnPrepared");
     NodeRuntime *instance = NodeRuntime::GetCurrent(info);
     instance->OnPrepared();
 }
 
-static void beforeExitCallback(const v8::FunctionCallbackInfo<v8::Value> &args) {
-    auto env = node::Environment::GetCurrent(args);
-    int code = args[0]->Int32Value(env->context()).FromMaybe(0);
-    LOGW("beforeExitCallback: %d", code);
+void NodeRuntime::StaticBeforeExit(const v8::FunctionCallbackInfo<v8::Value> &info) {
+    auto env = node::Environment::GetCurrent(info);
+    int code = info[0]->Int32Value(env->context()).FromMaybe(0);
+    LOGD("StaticBeforeExit: %d", code);
     uv_walk(env->event_loop(), [](uv_handle_t *h, void *arg) {
         uv_unref(h);
     }, nullptr);
     uv_stop(env->event_loop());
 }
 
+void NodeRuntime::StaticHandle(uv_async_t *handle) {
+    NodeRuntime *runtime = reinterpret_cast<NodeRuntime *>(handle->data);
+    runtime->Handle(handle);
+}
+
 NodeRuntime::NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, jmethodID onBeforeExit)
         : onBeforeStart(onBeforeStart), onBeforeExit(onBeforeExit) {
-    LOGI("New NodeRuntime: %d", std::this_thread::get_id());
+    LOGD("Construct NodeRuntime: %d", std::this_thread::get_id());
 
     env->GetJavaVM(&vm);
     this->jThis = env->NewGlobalRef(jThis);
 
-    mutex.lock();
+    sharedMutex.lock();
     ++instanceCount;
-    mutex.unlock();
+    sharedMutex.unlock();
 }
 
 NodeRuntime::~NodeRuntime() {
-    std::unique_lock<std::mutex> lk(asyncMutex);
-
-    LOGE("~NodeRuntime(): %d", std::this_thread::get_id());
+    LOGE("~NodeRuntime(): %p, thread_id=%d", this, std::this_thread::get_id());
+    std::lock_guard<std::mutex> lock(asyncMutex);
     JNIEnv *env;
     auto stat = vm->GetEnv((void **) (&env), JNI_VERSION_1_6);
     if (stat == JNI_EDETACHED) {
@@ -66,11 +71,10 @@ NodeRuntime::~NodeRuntime() {
     global = nullptr;
     isolate = nullptr;
     running = false;
-    mutex.lock();
+    sharedMutex.lock();
     --instanceCount;
-    mutex.unlock();
-
-    lk.unlock();
+    sharedMutex.unlock();
+    LOGE("~NodeRuntime() finished");
 }
 
 void NodeRuntime::OnPrepared() {
@@ -113,12 +117,12 @@ void NodeRuntime::OnEnvReady(node::Environment *nodeEnv) {
         JSContext::SetShared(env, this);
     EXIT_JNI(vm);
 
-    nodeEnv->SetMethod(process, "reallyExit", beforeExitCallback);
-    nodeEnv->SetMethod(process, "abort", beforeExitCallback);
-    nodeEnv->SetMethod(process, "_kill", beforeExitCallback);
+    nodeEnv->SetMethod(process, "reallyExit", StaticBeforeExit);
+    nodeEnv->SetMethod(process, "abort", StaticBeforeExit);
+    nodeEnv->SetMethod(process, "_kill", StaticBeforeExit);
 
     auto data = v8::External::New(isolate, this);
-    global->Set(V8_UTF_STRING(isolate, "__onPrepared"), v8::FunctionTemplate::New(isolate, onPreparedCallback, data)->GetFunction());
+    global->Set(V8_UTF_STRING(isolate, "__onPrepared"), v8::FunctionTemplate::New(isolate, StaticOnPrepared, data)->GetFunction());
 }
 
 int NodeRuntime::Start() {
@@ -198,6 +202,19 @@ jobject NodeRuntime::Wrap(JNIEnv *env, v8::Persistent<v8::Value> *value, JSType 
     }
 }
 
+void NodeRuntime::TryLoop() {
+    if (!eventLoop) {
+        LOGE("TryLoop but eventLoop is NULL");
+        return;
+    }
+    if (!asyncHandle) {
+        asyncHandle = new uv_async_t();
+        asyncHandle->data = this;
+        uv_async_init(eventLoop, asyncHandle, NodeRuntime::StaticHandle);
+        uv_async_send(asyncHandle);
+    }
+}
+
 void NodeRuntime::Await(std::function<void()> runnable) {
     CHECK_NOT_NULL(isolate);
     if (std::this_thread::get_id() == threadId) {
@@ -208,50 +225,33 @@ void NodeRuntime::Await(std::function<void()> runnable) {
         auto callback = [&]() {
             runnable();
             {
-                std::lock_guard<std::mutex> lk(asyncMutex);
+                std::lock_guard<std::mutex> lock(asyncMutex);
                 signaled = true;
             }
             cv.notify_one();
         };
 
-        std::unique_lock<std::mutex> lk(asyncMutex);
-        if (!this || !eventLoop) {
-            LOGE("Instance has destroyed, ignore await");
+        std::unique_lock<std::mutex> lock(asyncMutex);
+        if (!running) {
+            LOGE("Instance has been destroyed, ignore await");
             return;
         }
         callbacks.push_back(callback);
+        this->TryLoop();
 
-        if (!asyncHandle) {
-            asyncHandle = new uv_async_t();
-            asyncHandle->data = this;
-            LOGV("uv_async_init: %p, %p", eventLoop, asyncHandle);
-            uv_async_init(eventLoop, asyncHandle, NodeRuntime::StaticHandle);
-            uv_async_send(asyncHandle);
-        }
-        cv.wait(lk, [&] { return signaled; });
-        lk.unlock();
+        cv.wait(lock, [&] { return signaled; });
+        lock.unlock();
     }
 }
 
-void NodeRuntime::Post(std::function<void()> runnable) {
-    std::unique_lock<std::mutex> lk(asyncMutex);
-    if (!eventLoop) {
-        LOGE("Post but eventLoop is NULL");
-        return;
+void NodeRuntime::Async(std::function<void()> runnable) {
+    if (std::this_thread::get_id() == threadId) {
+        runnable();
+    } else {
+        std::lock_guard<std::mutex> lock(asyncMutex);
+        callbacks.push_back(runnable);
+        this->TryLoop();
     }
-    callbacks.push_back(runnable);
-    if (!asyncHandle) {
-        asyncHandle = new uv_async_t();
-        asyncHandle->data = this;
-        uv_async_init(eventLoop, asyncHandle, NodeRuntime::StaticHandle);
-        uv_async_send(asyncHandle);
-    }
-    lk.unlock();
-}
-
-void NodeRuntime::StaticHandle(uv_async_t *handle) {
-    NodeRuntime *runtime = reinterpret_cast<NodeRuntime *>(handle->data);
-    runtime->Handle(handle);
 }
 
 void NodeRuntime::Handle(uv_async_t *handle) {

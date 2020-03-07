@@ -117,7 +117,7 @@ JNICALL void submit(JNIEnv *env, jobject jThis, jobject jRunnable) {
     SubmitData *data = new SubmitData();
     data->runtime = reinterpret_cast<NodeRuntime *>(ptr);;
     data->runnable = env->NewGlobalRef(jRunnable);
-    data->runtime->Post([data] {
+    data->runtime->Async([data] {
         JNIEnv *_env;
         auto stat = data->runtime->vm->GetEnv((void **) (&_env), JNI_VERSION_1_6);
         if (stat == JNI_EDETACHED) {

@@ -16,7 +16,7 @@ import java.lang.annotation.Native
 open class JSValue(context: JSContext? = null, @Native protected val reference: Long) : Closeable {
 
     @Suppress("LeakingThis")
-    protected lateinit var context: JSContext
+    lateinit var context: JSContext
 
     init {
         if (context != null) {

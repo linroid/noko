@@ -109,6 +109,8 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
         Log.i(TAG, "onBeforeStart")
         this.context = context
         active = true
+        context.thread = Thread.currentThread()
+        context.node = this
         check(isActive()) { "isActive is not match the current state" }
         attachStdOutput(context)
         val process: JSObject = context.get("process")

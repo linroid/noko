@@ -2,7 +2,7 @@ package com.linroid.knode.js
 
 import android.util.Log
 import com.google.gson.JsonObject
-import java.lang.Exception
+import com.linroid.knode.BuildConfig
 import java.lang.reflect.InvocationTargetException
 
 /**
@@ -70,11 +70,21 @@ open class JSObject : JSValue {
     }
 
     inline fun <reified T> get(key: String): T {
-        return opt<T>(key) ?: throw IllegalStateException("get $key from $this shouldn't return null")
+        return get(key, T::class.java) ?: throw IllegalStateException("get $key from $this shouldn't return null")
     }
 
-    inline fun <reified T> get(key: String, default: T): T {
-        return opt<T>(key) ?: default
+    inline fun <reified T> opt(key: String): T? {
+        return get(key, T::class.java)
+    }
+
+    fun <T> get(key: String, clazz: Class<T>): T? {
+        if (BuildConfig.DEBUG) {
+            check(Thread.currentThread() == context.thread) {
+                "Couldn't operate node object non origin thread: ${Thread.currentThread()}"
+            }
+        }
+        val value = nativeGet(key)
+        return value.toType(clazz)
     }
 
     fun delete(key: String) {
@@ -85,12 +95,7 @@ open class JSObject : JSValue {
         return nativeKeys()
     }
 
-    inline fun <reified T> opt(key: String): T? {
-        val value = nativeGet(key)
-        return value.toType(T::class.java)
-    }
-
-    external fun nativeGet(key: String): JSValue
+    private external fun nativeGet(key: String): JSValue
     private external fun nativeKeys(): Array<String>
     private external fun nativeHas(key: String): Boolean
     private external fun nativeSet(key: String, value: JSValue?)

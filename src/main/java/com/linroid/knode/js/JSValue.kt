@@ -176,10 +176,3 @@ open class JSValue(context: JSContext? = null, @Native protected val reference: 
         // }
     }
 }
-
-fun JSValue?.hasValue(): Boolean {
-    if (this == null) return false
-    if (this is JSNull) return false
-    if (this is JSUndefined) return false
-    return true
-}

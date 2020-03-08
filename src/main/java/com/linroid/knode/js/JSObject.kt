@@ -20,6 +20,12 @@ open class JSObject : JSValue {
             set(it.key, from(context, it.value))
         }
         addBinds()
+
+        if (BuildConfig.DEBUG) {
+            check(Thread.currentThread() == context.thread) {
+                "Couldn't operate node object non origin thread: ${Thread.currentThread()}"
+            }
+        }
     }
 
     private fun addBinds() {

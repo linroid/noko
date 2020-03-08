@@ -43,9 +43,11 @@ private:
     std::mutex instanceMutex;
     std::vector<std::function<void()>> callbacks;
     uv_async_t *asyncHandle = nullptr;
+    int id = -1;
 
     static std::mutex sharedMutex;
     static jint instanceCount;
+    static jint seq;
 
     static void StaticOnPrepared(const v8::FunctionCallbackInfo<v8::Value> &info);
     static void StaticBeforeExit(const v8::FunctionCallbackInfo<v8::Value> &info);
@@ -78,9 +80,9 @@ public:
 
     void OnPrepared();
 
-    void Await(std::function<void()> runnable);
+    bool Await(std::function<void()> runnable);
 
-    void Async(std::function<void()> runnable);
+    bool Post(std::function<void()> runnable);
 
     void OnEnvReady(node::Environment *nodeEnv);
 

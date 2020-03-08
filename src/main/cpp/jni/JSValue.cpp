@@ -59,7 +59,6 @@ jstring JSValue::ToString(JNIEnv *env, jobject jThis) {
             unicodeChars = *unicodeString;
             length = unicodeString.length();
         }
-
     };
     runtime->Await(_runnable);
     return env->NewString(unicodeChars, length);

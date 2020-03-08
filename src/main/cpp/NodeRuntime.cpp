@@ -21,6 +21,7 @@
 
 int NodeRuntime::instanceCount = 0;
 std::mutex NodeRuntime::sharedMutex;
+int NodeRuntime::seq = 0;
 
 void NodeRuntime::StaticOnPrepared(const v8::FunctionCallbackInfo<v8::Value> &info) {
     LOGD("StaticOnPrepared");
@@ -44,18 +45,19 @@ void NodeRuntime::StaticHandle(uv_async_t *handle) {
 
 NodeRuntime::NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, jmethodID onBeforeExit)
         : onBeforeStart(onBeforeStart), onBeforeExit(onBeforeExit) {
-    LOGD("Construct NodeRuntime: %d", std::this_thread::get_id());
-
     env->GetJavaVM(&vm);
     this->jThis = env->NewGlobalRef(jThis);
 
     sharedMutex.lock();
     ++instanceCount;
+    ++seq;
+    id = seq;
     sharedMutex.unlock();
+    LOGD("Construct NodeRuntime: thread_id=%d, id=%d, this=%p", std::this_thread::get_id(), id, this);
 }
 
 NodeRuntime::~NodeRuntime() {
-    LOGE("~NodeRuntime(): %p, thread_id=%d", this, std::this_thread::get_id());
+    LOGE("~NodeRuntime(): thread_id=%d, id=%d, this=%p", std::this_thread::get_id(), id, this);
     std::lock_guard<std::mutex> instanceLock(instanceMutex);
     std::lock_guard<std::mutex> lock(asyncMutex);
     ENTER_JNI(vm)
@@ -211,15 +213,16 @@ void NodeRuntime::TryLoop() {
     }
 }
 
-void NodeRuntime::Await(std::function<void()> runnable) {
+bool NodeRuntime::Await(std::function<void()> runnable) {
     CHECK_NOT_NULL(isolate);
     if (std::this_thread::get_id() == threadId) {
         runnable();
+        return true;
     } else {
         ENTER_JNI(vm)
-        env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), "Illegal thread access");
+            env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), "Illegal thread access");
         EXIT_JNI(vm)
-        return;;
+        return true;
         // std::condition_variable cv;
         // bool signaled = false;
         // auto callback = [&]() {
@@ -247,13 +250,19 @@ void NodeRuntime::Await(std::function<void()> runnable) {
     }
 }
 
-void NodeRuntime::Async(std::function<void()> runnable) {
+bool NodeRuntime::Post(std::function<void()> runnable) {
     if (std::this_thread::get_id() == threadId) {
         runnable();
+        return true;
     } else {
         std::lock_guard<std::mutex> lock(asyncMutex);
+        if (!running) {
+            runnable();
+            return false;
+        }
         callbacks.push_back(runnable);
         this->TryLoop();
+        return true;
     }
 }
 

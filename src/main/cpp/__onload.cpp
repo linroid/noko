@@ -108,16 +108,16 @@ struct SubmitData {
     NodeRuntime *runtime;
 };
 
-JNICALL void submit(JNIEnv *env, jobject jThis, jobject jRunnable) {
+JNICALL bool submit(JNIEnv *env, jobject jThis, jobject jRunnable) {
     jlong ptr = env->GetLongField(jThis, nodeClass.ptr);
     if (ptr == 0) {
         LOGE("submit but ptr is 0");
-        return;
+        return false;
     }
     SubmitData *data = new SubmitData();
     data->runtime = reinterpret_cast<NodeRuntime *>(ptr);;
     data->runnable = env->NewGlobalRef(jRunnable);
-    data->runtime->Async([data] {
+    auto success = data->runtime->Post([data] {
         JNIEnv *_env;
         auto stat = data->runtime->vm->GetEnv((void **) (&_env), JNI_VERSION_1_6);
         if (stat == JNI_EDETACHED) {
@@ -130,6 +130,11 @@ JNICALL void submit(JNIEnv *env, jobject jThis, jobject jRunnable) {
         }
         delete data;
     });
+    if (!success) {
+        env->DeleteGlobalRef(data->runnable);
+        delete data;
+    }
+    return success;
 }
 
 JNICALL void mountFs(JNIEnv *env, jobject _, jobject jfs) {
@@ -181,7 +186,7 @@ static JNINativeMethod nodeMethods[] = {
         {"nativeStart",   "()I",                                (void *) start},
         {"nativeMountFs", "(Lcom/linroid/knode/js/JSObject;)V", (void *) mountFs},
         {"nativeDispose", "()V",                                (void *) dispose},
-        {"nativeSubmit",  "(Ljava/lang/Runnable;)V",            (void *) submit},
+        {"nativeSubmit",  "(Ljava/lang/Runnable;)Z",            (void *) submit},
 };
 
 

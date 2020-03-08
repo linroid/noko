@@ -6,7 +6,6 @@ import com.google.gson.Gson
 import com.linroid.knode.js.*
 import java.io.Closeable
 import java.io.File
-import java.lang.Exception
 import java.lang.annotation.Native
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
@@ -97,13 +96,13 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
         nativeMountFs(obj)
     }
 
-    fun submit(runnable: Runnable) {
-        if (isActive()) {
-            nativeSubmit(runnable)
-        } else {
+    fun submit(action: Runnable): Boolean {
+        if (!isActive()) {
             val isInitialized = this::context::isInitialized
             Log.e(TAG, "Submit but not active: active=$active, isInitialized=${isInitialized}, ptr=$ptr", Exception())
+            return false
         }
+        return nativeSubmit(action)
     }
 
     @Suppress("unused")
@@ -134,11 +133,13 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
         eventOnPrepared(context)
         val setupCode = StringBuilder()
         if (output.supportsColor) {
-            setupCode.append("""
+            setupCode.append(
+                """
             process.stderr.isTTY = true;
             process.stderr.isRaw = true;
             process.stdout.isTTY = true;
-            process.stdout.isRaw = true;""")
+            process.stdout.isRaw = true;"""
+            )
         }
         // val script = """(() => {
         //     const fs = require('fs');
@@ -216,7 +217,7 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
 
     private external fun nativeMountFs(fs: JSObject)
 
-    private external fun nativeSubmit(runnable: Runnable)
+    private external fun nativeSubmit(action: Runnable): Boolean
 
     interface EventListener {
 

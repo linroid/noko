@@ -1,6 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
+def isRelease = System.getenv("APP_RELEASE") == "true"
 android {
     compileSdkVersion rootProject.compileSdkVersion
 
@@ -16,10 +17,14 @@ android {
             cmake {
                 cppFlags "-std=c++11 -fexceptions"
                 arguments "-DANDROID_STL=c++_static"
+
+                if (!isRelease) {
+                    cppFlags += " -DNODE_DEBUG"
+                }
             }
         }
 
-        if (System.getenv("APP_RELEASE") == "true") {
+        if (isRelease) {
             ndk {
                 abiFilters 'armeabi-v7a'
             }

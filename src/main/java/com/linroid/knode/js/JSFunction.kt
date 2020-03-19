@@ -10,42 +10,42 @@ typealias Callable = (receiver: JSValue, parameters: Array<out JSValue>) -> JSVa
 
 open class JSFunction : JSObject {
 
-    private val callable: Callable?
+  private val callable: Callable?
 
-    @NativeConstructor
-    private constructor(context: JSContext, reference: Long) : super(context, reference) {
-        this.callable = null
+  @NativeConstructor
+  private constructor(context: JSContext, reference: Long) : super(context, reference) {
+    this.callable = null
+  }
+
+  constructor(context: JSContext, name: String, callable: Callable? = null) : super(context, 0) {
+    this.callable = callable
+    nativeNew(name)
+    context.hold(this)
+  }
+
+  protected open fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
+    if (callable != null) {
+      return try {
+        callable.invoke(receiver, parameters)
+      } catch (error: InvocationTargetException) {
+        context.throwError("A unexpected error occurs during call native function: ${error.targetException.message}")
+      } catch (error: Exception) {
+        // context.throwError(error.message ?: "An error occurred when calling native function")
+        throw error
+      }
     }
+    return null
+  }
 
-    constructor(context: JSContext, name: String, callable: Callable? = null) : super(context, 0) {
-        this.callable = callable
-        nativeNew(name)
-        context.hold(this)
-    }
+  fun call(receiver: JSValue, vararg parameters: Any): JSValue {
+    val v8Parameters = Array(parameters.size) { from(context, parameters[it]) }
+    return nativeCall(receiver, v8Parameters)
+  }
 
-    protected open fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
-        if (callable != null) {
-            return try {
-                callable.invoke(receiver, parameters)
-            } catch (error: InvocationTargetException) {
-                context.throwError("A unexpected error occurs during call native function: ${error.targetException.message}")
-            } catch (error: Exception) {
-                // context.throwError(error.message ?: "An error occurred when calling native function")
-                throw error
-            }
-        }
-        return null
-    }
+  private external fun nativeCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue
+  private external fun nativeNew(name: String)
 
-    fun call(receiver: JSValue, vararg parameters: Any): JSValue {
-        val v8Parameters = Array(parameters.size) { from(context, parameters[it]) }
-        return nativeCall(receiver, v8Parameters)
-    }
-
-    private external fun nativeCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue
-    private external fun nativeNew(name: String)
-
-    companion object {
-        private const val TAG = "JSFunction"
-    }
+  companion object {
+    private const val TAG = "JSFunction"
+  }
 }

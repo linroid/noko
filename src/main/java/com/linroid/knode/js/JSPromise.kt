@@ -6,49 +6,49 @@ package com.linroid.knode.js
  */
 class JSPromise : JSObject {
 
-    private var resolverPtr: Long = 0
+  private var resolverPtr: Long = 0
 
-    @NativeConstructor
-    private constructor(context: JSContext, reference: Long) : super(context, reference)
+  @NativeConstructor
+  private constructor(context: JSContext, reference: Long) : super(context, reference)
 
-    constructor(context: JSContext) : super(context, 0) {
-        nativeNew()
+  constructor(context: JSContext) : super(context, 0) {
+    nativeNew()
+  }
+
+  fun reject(error: String) {
+    nativeReject(JSError(context, error))
+  }
+
+  fun resolve(value: Any?) {
+    nativeResolve(from(context, value))
+  }
+
+  fun then(callback: (JSValue) -> Unit): JSPromise {
+    val then = JSFunction(context, "then") { _, argv ->
+      check(argv.isNotEmpty()) { "then() should receive a JSValue argument" }
+      val result: JSValue = argv[0]
+      callback.invoke(result)
+      return@JSFunction null
     }
+    nativeThen(then)
+    return this
+  }
 
-    fun reject(error: String) {
-        nativeReject(JSError(context, error))
+  fun catch(callback: (JSObject) -> Unit): JSPromise {
+    val then = JSFunction(context, "catch") { _, argv ->
+      val result: JSValue = argv[0]
+      check(result is JSObject) { "catch() should receive an JSObject parameter not ${result.javaClass.simpleName}(${result.typeOf()})}: ${result.toJson()}" }
+      callback.invoke(result)
+      return@JSFunction null
     }
+    nativeCatch(then)
+    return this
+  }
 
-    fun resolve(value: Any?) {
-        nativeResolve(from(context, value))
-    }
+  private external fun nativeNew()
+  private external fun nativeReject(error: JSError)
+  private external fun nativeResolve(value: JSValue)
 
-    fun then(callback: (JSValue) -> Unit): JSPromise {
-        val then = JSFunction(context, "then") { _, argv ->
-            check(argv.isNotEmpty()) { "then() should receive a JSValue argument" }
-            val result: JSValue = argv[0]
-            callback.invoke(result)
-            return@JSFunction null
-        }
-        nativeThen(then)
-        return this
-    }
-
-    fun catch(callback: (JSObject) -> Unit): JSPromise {
-        val then = JSFunction(context, "catch") { _, argv ->
-            val result: JSValue = argv[0]
-            check(result is JSObject) { "catch() should receive an JSObject parameter not ${result.javaClass.simpleName}(${result.typeOf()})}: ${result.toJson()}" }
-            callback.invoke(result)
-            return@JSFunction null
-        }
-        nativeCatch(then)
-        return this
-    }
-
-    private external fun nativeNew()
-    private external fun nativeReject(error: JSError)
-    private external fun nativeResolve(value: JSValue)
-
-    private external fun nativeThen(callback: JSFunction)
-    private external fun nativeCatch(callback: JSFunction)
+  private external fun nativeThen(callback: JSFunction)
+  private external fun nativeCatch(callback: JSFunction)
 }

@@ -5,12 +5,12 @@ package com.linroid.knode.js
  * @since 2019-10-20
  */
 open class JSNumber : JSValue {
-    @NativeConstructor
-    private constructor(context: JSContext, reference: Long) : super(context, reference)
+  @NativeConstructor
+  private constructor(context: JSContext, reference: Long) : super(context, reference)
 
-    constructor(context: JSContext, number: Number) : super(context, 0) {
-        nativeNew(number.toDouble())
-    }
+  constructor(context: JSContext, number: Number) : super(context, 0) {
+    nativeNew(number.toDouble())
+  }
 
-    private external fun nativeNew(data: Double)
+  private external fun nativeNew(data: Double)
 }

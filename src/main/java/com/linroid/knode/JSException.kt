@@ -9,7 +9,7 @@ import com.linroid.knode.js.JSValue
  */
 class JSException(val error: JSObject) : RuntimeException(error.toString()) {
 
-    fun stack(): String {
-        return error.get<JSValue>("stack").toString()
-    }
+  fun stack(): String {
+    return error.get<JSValue>("stack").toString()
+  }
 }

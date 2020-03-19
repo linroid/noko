@@ -6,7 +6,7 @@ package com.linroid.knode.js
  */
 class JSUndefined @NativeConstructor private constructor(context: JSContext, reference: Long) : JSPrimitive(context, reference) {
 
-    override fun toJson(): String {
-        return ""
-    }
+  override fun toJson(): String {
+    return ""
+  }
 }

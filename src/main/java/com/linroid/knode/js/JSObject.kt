@@ -22,7 +22,7 @@ open class JSObject : JSValue {
     addBinds()
 
     if (BuildConfig.DEBUG) {
-      check(Thread.currentThread() == context.thread) {
+      check(Thread.currentThread() == context.node.thread) {
         "Couldn't operate node object non origin thread: ${Thread.currentThread()}"
       }
     }
@@ -85,7 +85,7 @@ open class JSObject : JSValue {
 
   fun <T> get(key: String, clazz: Class<T>): T? {
     if (BuildConfig.DEBUG) {
-      check(Thread.currentThread() == context.thread) {
+      check(Thread.currentThread() == context.node.thread) {
         "Couldn't operate node object non origin thread: ${Thread.currentThread()}"
       }
     }

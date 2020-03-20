@@ -17,7 +17,6 @@ class JSContext @NativeConstructor private constructor(
   internal lateinit var sharedUndefined: JSUndefined
   internal lateinit var sharedTrue: JSBoolean
   internal lateinit var sharedFalse: JSBoolean
-  internal lateinit var thread: Thread
   lateinit var node: KNode
 
   init {

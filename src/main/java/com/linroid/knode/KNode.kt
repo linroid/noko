@@ -25,11 +25,12 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
 
   private lateinit var file: File
   private lateinit var argv: Array<out String>
+  var thread: Thread? = null
 
   fun start(file: File, vararg argv: String) {
     this.file = file
     this.argv = argv
-    thread(isDaemon = true, name = "knode-${seq.incrementAndGet()}") {
+    thread = thread(isDaemon = true, name = "knode-${seq.incrementAndGet()}") {
       val exitCode = nativeStart()
       dispose(exitCode)
     }
@@ -102,6 +103,10 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
       Log.e(TAG, "Submit but not active: active=$active, isInitialized=${isInitialized}, ptr=$ptr", Exception())
       return false
     }
+    if (Thread.currentThread() == thread) {
+      action.run()
+      return true
+    }
     return nativeSubmit(action)
   }
 
@@ -110,7 +115,6 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
     Log.i(TAG, "onBeforeStart")
     this.context = context
     active = true
-    context.thread = Thread.currentThread()
     context.node = this
     check(isActive()) { "isActive is not match the current state" }
     attachStdOutput(context)

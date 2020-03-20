@@ -240,13 +240,14 @@ bool NodeRuntime::Await(std::function<void()> runnable) {
         std::unique_lock<std::mutex> lock(asyncMutex);
         if (!running) {
             LOGE("Instance has been destroyed, ignore await");
-            return;
+            return false;
         }
         callbacks.push_back(callback);
         this->TryLoop();
 
         cv.wait(lock, [&] { return signaled; });
         lock.unlock();
+        return true;
 #endif
     }
 }

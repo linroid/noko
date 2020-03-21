@@ -23,12 +23,12 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
   private var active = false
   private lateinit var context: JSContext
 
-  private lateinit var file: File
+  private lateinit var path: String
   private lateinit var argv: Array<out String>
   var thread: Thread? = null
 
-  fun start(file: File, vararg argv: String) {
-    this.file = file
+  fun start(path: String, vararg argv: String) {
+    this.path = path
     this.argv = argv
     thread = thread(isDaemon = true, name = "knode-${seq.incrementAndGet()}") {
       val exitCode = nativeStart()
@@ -132,7 +132,7 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
       env.set("COLORTERM", "truecolor")
     }
     process.set("argv0", "node")
-    process.set("argv", arrayOf("node", file.absolutePath, *argv))
+    process.set("argv", arrayOf("node", path, *argv))
     customVersions.forEach {
       versions.set(it.key, it.value)
     }
@@ -159,11 +159,11 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
     //     { filename: '${file.name}'} )).runInThisContext();
     //     })()
     //      """
-    setupCode.append("require('${file.absolutePath}');")
+    setupCode.append("require('${path}');")
     try {
-      context.eval(setupCode.toString(), file.absolutePath, 0)
+      context.eval(setupCode.toString(), path, 0)
     } catch (error: JSException) {
-      Log.e(TAG, "Execute failed: file=${file.absolutePath}, stack=${error.stack()}", error)
+      Log.e(TAG, "Execute failed: file=${path}, stack=${error.stack()}", error)
       eventOnError(error)
     }
   }

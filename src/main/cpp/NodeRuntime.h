@@ -90,6 +90,8 @@ public:
 
     JSType GetType(v8::Local<v8::Value> &value);
 
+    v8::Local<v8::Object> Require(const char * path);
+
     static inline NodeRuntime *GetCurrent(const v8::FunctionCallbackInfo<v8::Value> &info);
 };
 

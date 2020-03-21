@@ -93,8 +93,13 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
     }
   }
 
-  fun mountFs(obj: JSObject) {
-    nativeMountFs(obj)
+  fun mountFileSystem(fs: VirtualFileSystem) {
+    nativeMountFileSystem(fs.thiz)
+  }
+
+  fun newFileSystem(): VirtualFileSystem {
+    val thiz = nativeNewFileSystem()
+    return VirtualFileSystem(thiz)
   }
 
   fun submit(action: Runnable): Boolean {
@@ -219,7 +224,9 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
 
   private external fun nativeDispose()
 
-  private external fun nativeMountFs(fs: JSObject)
+  private external fun nativeNewFileSystem(): JSObject
+
+  private external fun nativeMountFileSystem(obj: JSObject)
 
   private external fun nativeSubmit(action: Runnable): Boolean
 

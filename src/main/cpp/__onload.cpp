@@ -142,11 +142,25 @@ JNICALL void mountFs(JNIEnv *env, jobject _, jobject jfs) {
         auto global = runtime->global->Get(isolate);
         auto privateKey = v8::Private::ForApi(isolate, v8::String::NewFromUtf8(isolate, "__fs"));
         global->SetPrivate(context, privateKey, that).FromJust();
-        // v8::Local<v8::Object> console = context->Global()->Get(v8::String::NewFromUtf8(isolate, "console"))->ToObject(context).ToLocalChecked();
-        // v8::Local<v8::Value> log = console->Get(v8::String::NewFromUtf8(isolate, "log"));
-        // v8::Local<v8::Object> logFunc = log->ToObject(context).ToLocalChecked();
-        // logFunc->CallAsFunction(context, console, 1, &that);
     V8_END()
+}
+
+JNICALL jobject createFs(JNIEnv *env, jobject jThis) {
+    jlong ptr = env->GetLongField(jThis, nodeClass.ptr);
+    auto runtime = reinterpret_cast<NodeRuntime *>(ptr);
+    auto isolate = runtime->isolate;
+    v8::Persistent<v8::Value> *result = nullptr;
+    auto _runnable = [&]() {
+        v8::Locker _locker(isolate);
+        v8::HandleScope _handleScope(isolate);
+        auto fs = runtime->Require("__fs");
+        result = new v8::Persistent<v8::Value>(isolate, fs);
+    V8_END()
+    return JSObject::Wrap(env, runtime, result);
+    // v8::Local<v8::Object> console = context->Global()->Get(v8::String::NewFromUtf8(isolate, "console"))->ToObject(context).ToLocalChecked();
+    // v8::Local<v8::Value> log = console->Get(v8::String::NewFromUtf8(isolate, "log"));
+    // v8::Local<v8::Object> logFunc = log->ToObject(context).ToLocalChecked();
+    // logFunc->CallAsFunction(context, console, 1, &that);
 }
 
 JNICALL void dispose(JNIEnv *env, jobject jThis) {
@@ -182,11 +196,12 @@ JNICALL jlong nativeNew(JNIEnv *env, jobject jThis) {
 }
 
 static JNINativeMethod nodeMethods[] = {
-        {"nativeNew",     "()J",                                (void *) nativeNew},
-        {"nativeStart",   "()I",                                (void *) start},
-        {"nativeMountFs", "(Lcom/linroid/knode/js/JSObject;)V", (void *) mountFs},
-        {"nativeDispose", "()V",                                (void *) dispose},
-        {"nativeSubmit",  "(Ljava/lang/Runnable;)Z",            (void *) submit},
+        {"nativeNew",             "()J",                                (void *) nativeNew},
+        {"nativeStart",           "()I",                                (void *) start},
+        {"nativeMountFileSystem", "(Lcom/linroid/knode/js/JSObject;)V", (void *) mountFs},
+        {"nativeNewFileSystem",   "()Lcom/linroid/knode/js/JSObject;",  (void *) createFs},
+        {"nativeDispose",         "()V",                                (void *) dispose},
+        {"nativeSubmit",          "(Ljava/lang/Runnable;)Z",            (void *) submit},
 };
 
 

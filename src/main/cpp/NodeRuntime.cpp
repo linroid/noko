@@ -309,3 +309,17 @@ JSType NodeRuntime::GetType(v8::Local<v8::Value> &value) {
     }
     return JSType::Value;
 }
+
+v8::Local<v8::Object> NodeRuntime::Require(const char *path) {
+    v8::EscapableHandleScope handleScope(isolate);
+    auto _context = context.Get(isolate);
+    auto _global = global->Get(isolate);
+    v8::Context::Scope contextScope(_context);
+    v8::Local<v8::Object> require;
+    require = _global->Get(v8::String::NewFromUtf8(isolate, "require"))->ToObject(_context).ToLocalChecked();
+    v8::Local<v8::Value> *argv = new v8::Local<v8::Value>[1];
+    argv[0] = V8_UTF_STRING(isolate, path);
+    assert(require->IsFunction());
+    auto result = require->CallAsFunction(_context, _global, 1, argv).ToLocalChecked();
+    return handleScope.Escape(result->ToObject(_context).ToLocalChecked());
+}

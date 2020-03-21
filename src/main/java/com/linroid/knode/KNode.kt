@@ -31,8 +31,12 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
     this.path = path
     this.argv = argv
     thread = thread(isDaemon = true, name = "knode-${seq.incrementAndGet()}") {
-      val exitCode = nativeStart()
-      dispose(exitCode)
+      try {
+        val exitCode = nativeStart()
+        dispose(exitCode)
+      } catch (error: JSException) {
+        eventOnError(error)
+      }
     }
   }
 

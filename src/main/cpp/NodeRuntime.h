@@ -58,9 +58,6 @@ private:
 
     void TryLoop();
 
-    int RunNodeInstance(node::MultiIsolatePlatform *platform,
-                                     const std::vector<std::string> &args,
-                                     const std::vector<std::string> &exec_args);
     void SetUp();
 
 public:

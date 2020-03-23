@@ -171,27 +171,19 @@ int NodeRuntime::Start() {
     threadId_ = std::this_thread::get_id();
 
     // See below for the contents of this function.
-    return RunNodeInstance(platform.get(), args, exec_args);
-}
-
-int NodeRuntime::RunNodeInstance(node::MultiIsolatePlatform* platform,
-                                 const std::vector<std::string>& args,
-                                 const std::vector<std::string>& exec_args) {
     int exit_code = 0;
     // Set up a libuv event loop.
     uv_loop_t* loop = uv_loop_new();
     int ret = uv_loop_init(loop);
     if (ret != 0) {
-        fprintf(stderr, "%s: Failed to initialize loop: %s\n",
-                args[0].c_str(),
-                uv_err_name(ret));
+        fprintf(stderr, "%s: Failed to initialize loop: %s\n", args[0].c_str(), uv_err_name(ret));
         return 1;
     }
 
     std::shared_ptr<node::ArrayBufferAllocator> allocator =
             node::ArrayBufferAllocator::Create();
 
-    v8::Isolate *isolate = node::NewIsolate(allocator, loop, platform);
+    v8::Isolate *isolate = node::NewIsolate(allocator, loop, platform.get());
     if (isolate == nullptr) {
         fprintf(stderr, "%s: Failed to initialize V8 Isolate\n", args[0].c_str());
         return 1;
@@ -204,7 +196,7 @@ int NodeRuntime::RunNodeInstance(node::MultiIsolatePlatform* platform,
         // Create a node::IsolateData instance that will later be released using
         // node::FreeIsolateData().
         std::unique_ptr<node::IsolateData, decltype(&node::FreeIsolateData)> isolate_data(
-                node::CreateIsolateData(isolate, loop, platform, allocator.get()),
+                node::CreateIsolateData(isolate, loop, platform.get(), allocator.get()),
                 node::FreeIsolateData);
 
         // Set up a new v8::Context.
@@ -302,7 +294,7 @@ int NodeRuntime::RunNodeInstance(node::MultiIsolatePlatform* platform,
     while (!platform_finished)
         uv_run(loop, UV_RUN_ONCE);
     int err = uv_loop_close(loop);
-    uv_loop_delete(loop);
+    // uv_loop_delete(loop);
     assert(err == 0);
 
     return exit_code;

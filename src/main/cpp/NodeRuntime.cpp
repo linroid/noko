@@ -28,6 +28,7 @@ int NodeRuntime::seq_ = 0;
 bool nodeInitialized = false;
 std::vector<std::string> args;
 std::vector<std::string> exec_args;
+std::unique_ptr<node::MultiIsolatePlatform> platform;
 
 int initNode() {
     // Make argv memory adjacent
@@ -52,6 +53,15 @@ int initNode() {
     if (exit_code == 0) {
         nodeInitialized = true;
     }
+
+    // Create a v8::Platform instance. `MultiIsolatePlatform::Create()` is a way
+    // to create a v8::Platform instance that Node.js can use when creating
+    // Worker threads. When no `MultiIsolatePlatform` instance is present,
+    // Worker threads are disabled.
+    platform = node::MultiIsolatePlatform::Create(4);
+    v8::V8::InitializePlatform(platform.get());
+    v8::V8::Initialize();
+
     return exit_code;
 }
 
@@ -160,18 +170,8 @@ void NodeRuntime::SetUp() {
 int NodeRuntime::Start() {
     threadId_ = std::this_thread::get_id();
 
-    // Create a v8::Platform instance. `MultiIsolatePlatform::Create()` is a way
-    // to create a v8::Platform instance that Node.js can use when creating
-    // Worker threads. When no `MultiIsolatePlatform` instance is present,
-    // Worker threads are disabled.
-    std::unique_ptr<node::MultiIsolatePlatform> platform =node::MultiIsolatePlatform::Create(4);
-    v8::V8::InitializePlatform(platform.get());
-    v8::V8::Initialize();
-
     // See below for the contents of this function.
-    int ret = RunNodeInstance(platform.get(), args, exec_args);
-
-    return ret;
+    return RunNodeInstance(platform.get(), args, exec_args);
 }
 
 int NodeRuntime::RunNodeInstance(node::MultiIsolatePlatform* platform,

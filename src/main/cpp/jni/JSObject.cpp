@@ -26,7 +26,7 @@ JNICALL void JSObject::Set(JNIEnv *env, jobject jThis, jstring jKey, jobject jva
 
 JNICALL jobject JSObject::Get(JNIEnv *env, jobject jThis, jstring jKey) {
     v8::Persistent<v8::Value> *result = nullptr;
-    JSType type = None;
+    JSType type = kNone;
     const uint16_t *key = env->GetStringChars(jKey, nullptr);
     const jint keyLen = env->GetStringLength(jKey);
     V8_CONTEXT(env, jThis, v8::Object)

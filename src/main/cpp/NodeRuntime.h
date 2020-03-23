@@ -14,18 +14,18 @@
 #include "macros.h"
 
 enum JSType {
-    None,
-    Undefined,
-    Null,
-    Value,
-    Array,
-    Object,
-    String,
-    Number,
-    Boolean,
-    Function,
-    Promise,
-    Error,
+    kNone,
+    kUndefined,
+    kNull,
+    kValue,
+    kArray,
+    kObject,
+    kString,
+    kNumber,
+    kBoolean,
+    kFunction,
+    kPromise,
+    kError,
 };
 
 class NodeRuntime {

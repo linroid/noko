@@ -83,7 +83,7 @@ jint JSArray::OnLoad(JNIEnv *env) {
 jobject JSArray::Get(JNIEnv *env, jobject jThis, jint jindex) {
     v8::Persistent<v8::Value> *error = nullptr;
     v8::Persistent<v8::Value> *result = nullptr;
-    JSType type = None;
+    JSType type = kNone;
     V8_CONTEXT(env, jThis, v8::Array)
         v8::TryCatch tryCatch(runtime->_isolate);
         auto value = that->Get(context, jindex).ToLocalChecked();

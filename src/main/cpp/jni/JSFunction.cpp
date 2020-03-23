@@ -40,7 +40,7 @@ void JSFunction::New(JNIEnv *env, jobject jThis, jstring jName) {
 jobject JSFunction::Call(JNIEnv *env, jobject jThis, jobject jReceiver, jobjectArray jParameters) {
     v8::Persistent<v8::Value> *result = nullptr;
     v8::Persistent<v8::Value> *error = nullptr;
-    JSType type = None;
+    JSType type = kNone;
 
     auto receiver = JSValue::Unwrap(env, jReceiver);
 

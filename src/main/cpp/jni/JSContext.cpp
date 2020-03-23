@@ -46,7 +46,7 @@ jint JSContext::OnLoad(JNIEnv *env) {
 
 jobject JSContext::Eval(JNIEnv *env, jstring jThis, jstring jCode, jstring jSource, jint jLine) {
     v8::Persistent<v8::Value> *result = nullptr;
-    JSType type = None;
+    JSType type = kNone;
     v8::Persistent<v8::Value> *error = nullptr;
 
     jint codeLen = env->GetStringLength(jCode);
@@ -85,7 +85,7 @@ jobject JSContext::Eval(JNIEnv *env, jstring jThis, jstring jCode, jstring jSour
 
 jobject JSContext::ParseJson(JNIEnv *env, jstring jThis, jstring jJson) {
     v8::Persistent<v8::Value> *result = nullptr;
-    JSType type = None;
+    JSType type = kNone;
     v8::Persistent<v8::Value> *error = nullptr;
     const uint16_t *json = env->GetStringChars(jJson, nullptr);
     const jint jsonLen = env->GetStringLength(jJson);
@@ -119,7 +119,7 @@ jobject JSContext::ThrowError(JNIEnv *env, jstring jThis, jstring jMessage) {
         result = new v8::Persistent<v8::Value>(isolate, error);
     V8_END()
     env->ReleaseStringChars(jMessage, message);
-    return runtime->Wrap(env, result, JSType::Error);
+    return runtime->Wrap(env, result, JSType::kError);
 }
 
 void JSContext::SetShared(JNIEnv *env, NodeRuntime *runtime) {

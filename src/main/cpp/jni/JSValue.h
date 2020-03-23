@@ -26,7 +26,7 @@ public:
     }
 
     inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
-        return env->NewObject(jClazz, jConstructor, runtime->jContext, (jlong) value);
+        return env->NewObject(jClazz, jConstructor, runtime->jContext_, (jlong) value);
     }
 
     inline static v8::Persistent<v8::Value> *Unwrap(JNIEnv *env, jobject jObj) {

@@ -19,7 +19,7 @@ private:
 
 public:
     inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime) {
-        return env->NewObject(jClazz, jConstructor, (jlong) runtime, (jlong) runtime->_global);
+        return env->NewObject(jClazz, jConstructor, (jlong) runtime, (jlong) runtime->global_);
     }
 
     static JNICALL jobject ParseJson(JNIEnv *env, jstring jThis, jstring jJson);

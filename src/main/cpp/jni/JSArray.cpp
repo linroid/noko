@@ -22,8 +22,8 @@ jint JSArray::Size(JNIEnv *env, jobject jThis) {
 void JSArray::New(JNIEnv *env, jobject jThis) {
     v8::Persistent<v8::Value> *result;
     V8_SCOPE(env, jThis)
-        auto value = v8::Array::New(runtime->_isolate);
-        result = new v8::Persistent<v8::Value>(runtime->_isolate, value);
+        auto value = v8::Array::New(runtime->isolate_);
+        result = new v8::Persistent<v8::Value>(runtime->isolate_, value);
     V8_END()
     JSValue::SetReference(env, jThis, (jlong) result);
 }
@@ -38,7 +38,7 @@ jboolean JSArray::AddAll(JNIEnv *env, jobject jThis, jobjectArray jElements) {
         elements[i] = JSValue::Unwrap(env, jElement);
     }
     V8_CONTEXT(env, jThis, v8::Array)
-        v8::TryCatch tryCatch(runtime->_isolate);
+        v8::TryCatch tryCatch(runtime->isolate_);
         auto index = that->Length();
         for (int i = 0; i < size; ++i) {
             auto element = elements[i]->Get(isolate);
@@ -85,7 +85,7 @@ jobject JSArray::Get(JNIEnv *env, jobject jThis, jint jindex) {
     v8::Persistent<v8::Value> *result = nullptr;
     JSType type = kNone;
     V8_CONTEXT(env, jThis, v8::Array)
-        v8::TryCatch tryCatch(runtime->_isolate);
+        v8::TryCatch tryCatch(runtime->isolate_);
         auto value = that->Get(context, jindex).ToLocalChecked();
         if (tryCatch.HasCaught()) {
             error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
@@ -106,7 +106,7 @@ jboolean JSArray::Add(JNIEnv *env, jobject jThis, jobject jElement) {
     auto element = JSValue::Unwrap(env, jElement);
     bool success = false;
     V8_CONTEXT(env, jThis, v8::TypedArray)
-        v8::TryCatch tryCatch(runtime->_isolate);
+        v8::TryCatch tryCatch(runtime->isolate_);
         success = that->Set(context, that->Length(), element->Get(isolate)).ToChecked();
         if (tryCatch.HasCaught()) {
             error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());

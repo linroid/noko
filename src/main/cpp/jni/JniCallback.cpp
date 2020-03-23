@@ -10,16 +10,16 @@ JniCallback::JniCallback(JNIEnv *env, jobject that, jclass clazz, jmethodID meth
 }
 
 void JniCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
-    ENTER_JNI(runtime->_vm);
+    ENTER_JNI(runtime->vm_);
         auto parameters = env->NewObjectArray(info.kArgsLength, clazz, nullptr);
         for (int i = 0; i < info.kArgsLength; ++i) {
             v8::Local<v8::Value> element = info[i];
-            auto value = new v8::Persistent<v8::Value>(runtime->_isolate, element);
+            auto value = new v8::Persistent<v8::Value>(runtime->isolate_, element);
             auto type = runtime->GetType(element);
             env->SetObjectArrayElement(parameters, i, runtime->Wrap(env, value, type));
         }
         auto caller = (v8::Local<v8::Value>) info.This();
-        auto value = new v8::Persistent<v8::Value>(runtime->_isolate, caller);
+        auto value = new v8::Persistent<v8::Value>(runtime->isolate_, caller);
         auto type = runtime->GetType(caller);
         auto jRet = env->CallObjectMethod(that, methodId, runtime->Wrap(env, value, type), parameters);
         if (env->ExceptionCheck()) {
@@ -34,10 +34,10 @@ void JniCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
         if (jRet != 0) {
             auto result = JSValue::Unwrap(env, jRet);
             if (result != nullptr) {
-                info.GetReturnValue().Set(result->Get(runtime->_isolate));
+                info.GetReturnValue().Set(result->Get(runtime->isolate_));
             }
         }
-    EXIT_JNI(runtime->_vm);
+    EXIT_JNI(runtime->vm_);
 }
 
 JniCallback::~JniCallback() {

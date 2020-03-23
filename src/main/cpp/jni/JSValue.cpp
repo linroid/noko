@@ -45,12 +45,12 @@ jstring JSValue::ToString(JNIEnv *env, jobject jThis) {
     uint16_t *unicodeChars = nullptr;
     jsize length = 0;
     auto runtime = JSValue::GetRuntime(env, jThis);
-    auto isolate = runtime->_isolate;
+    auto isolate = runtime->isolate_;
     auto value = JSValue::Unwrap(env, jThis);
     auto _runnable = [&]() {
-        v8::Locker _locker(runtime->_isolate);
-        v8::HandleScope _handleScope(runtime->_isolate);
-        auto context = runtime->_context.Get(isolate);
+        v8::Locker _locker(runtime->isolate_);
+        v8::HandleScope _handleScope(runtime->isolate_);
+        auto context = runtime->context_.Get(isolate);
         auto str = value->Get(isolate)->ToString(context);
         if (str.IsEmpty()) {
             unicodeChars = new uint16_t[0];
@@ -97,10 +97,10 @@ jdouble JSValue::ToNumber(JNIEnv *env, jobject jThis) {
     jdouble result = 0;
     v8::Persistent<v8::Value> *error = nullptr;
     V8_CONTEXT(env, jThis, v8::Value)
-        v8::TryCatch tryCatch(runtime->_isolate);
+        v8::TryCatch tryCatch(runtime->isolate_);
         auto number = that->ToNumber(context);
         if (number.IsEmpty()) {
-            error = new v8::Persistent<v8::Value>(runtime->_isolate, tryCatch.Exception());
+            error = new v8::Persistent<v8::Value>(runtime->isolate_, tryCatch.Exception());
             result = 0.0;
             return;
         }

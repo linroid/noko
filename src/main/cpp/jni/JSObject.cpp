@@ -52,8 +52,8 @@ jboolean JSObject::Has(JNIEnv *env, jobject jThis, jstring jKey) {
 void JSObject::New(JNIEnv *env, jobject jThis) {
     v8::Persistent<v8::Value> *result = nullptr;
     V8_SCOPE(env, jThis)
-        auto value = v8::Object::New(runtime->_isolate);
-        result = new v8::Persistent<v8::Value>(runtime->_isolate, value);
+        auto value = v8::Object::New(runtime->isolate_);
+        result = new v8::Persistent<v8::Value>(runtime->isolate_, value);
     V8_END()
     JSValue::SetReference(env, jThis, (jlong) result);
 }

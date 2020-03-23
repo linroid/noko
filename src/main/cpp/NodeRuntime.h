@@ -31,21 +31,22 @@ enum JSType {
 class NodeRuntime {
 
 private:
-    jobject jThis = nullptr;
-    jmethodID onBeforeStart = nullptr;
-    jmethodID onBeforeExit = nullptr;
+    jobject jThis_ = nullptr;
+    jmethodID onBeforeStart_ = nullptr;
+    jmethodID onBeforeExit_ = nullptr;
 
-    bool _running = false;
-    std::thread::id _threadId;
-    std::mutex asyncMutex;
-    std::mutex instanceMutex;
-    std::vector<std::function<void()>> callbacks;
-    uv_async_t *asyncHandle = nullptr;
-    int id = -1;
+    bool running_ = false;
+    std::thread::id threadId_;
+    std::mutex asyncMutex_;
+    std::mutex instanceMutex_;
+    std::vector<std::function<void()>> callbacks_;
+    uv_async_t *asyncHandle_ = nullptr;
+    int id_ = -1;
 
-    static std::mutex sharedMutex;
-    static jint instanceCount;
-    static jint seq;
+    static std::mutex sharedMutex_;
+    static jint instanceCount_;
+    static jint seq_;
+    uv_loop_t *eventLoop_;
 
     static void StaticOnPrepared(const v8::FunctionCallbackInfo<v8::Value> &info);
 
@@ -63,17 +64,16 @@ private:
     void SetUp();
 
 public:
-    jobject jContext = nullptr;
-    jobject jNull = nullptr;
-    jobject jUndefined = nullptr;
-    jobject jTrue = nullptr;
-    jobject jFalse = nullptr;
-    JavaVM *_vm = nullptr;
+    jobject jContext_ = nullptr;
+    jobject jNull_ = nullptr;
+    jobject jUndefined_ = nullptr;
+    jobject jTrue_ = nullptr;
+    jobject jFalse_ = nullptr;
+    JavaVM *vm_ = nullptr;
 
-    v8::Isolate *_isolate = nullptr;
-    v8::Persistent<v8::Context> _context;
-    v8::Persistent<v8::Object> *_global = nullptr;
-    uv_loop_t *_eventLoop;
+    v8::Isolate *isolate_ = nullptr;
+    v8::Persistent<v8::Context> context_;
+    v8::Persistent<v8::Object> *global_ = nullptr;
 
     NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, jmethodID onBeforeExit);
 

@@ -56,8 +56,8 @@ jobject JSContext::Eval(JNIEnv *env, jstring jThis, jstring jCode, jstring jSour
     auto source = env->GetStringChars(jSource, nullptr);
 
     V8_CONTEXT(env, jThis, v8::Object)
-        v8::TryCatch tryCatch(runtime->_isolate);
-        v8::ScriptOrigin scriptOrigin(V8_STRING(source, sourceLen), v8::Integer::New(runtime->_isolate, jLine));
+        v8::TryCatch tryCatch(runtime->isolate_);
+        v8::ScriptOrigin scriptOrigin(V8_STRING(source, sourceLen), v8::Integer::New(runtime->isolate_, jLine));
         auto script = v8::Script::Compile(context, V8_STRING(code, codeLen), &scriptOrigin);
         if (script.IsEmpty()) {
             LOGE("Compile script with an exception");
@@ -123,8 +123,8 @@ jobject JSContext::ThrowError(JNIEnv *env, jstring jThis, jstring jMessage) {
 }
 
 void JSContext::SetShared(JNIEnv *env, NodeRuntime *runtime) {
-    env->SetObjectField(runtime->jContext, jNullId, runtime->jNull);
-    env->SetObjectField(runtime->jContext, jUndefinedId, runtime->jUndefined);
-    env->SetObjectField(runtime->jContext, jTrueId, runtime->jTrue);
-    env->SetObjectField(runtime->jContext, jFalseId, runtime->jFalse);
+    env->SetObjectField(runtime->jContext_, jNullId, runtime->jNull_);
+    env->SetObjectField(runtime->jContext_, jUndefinedId, runtime->jUndefined_);
+    env->SetObjectField(runtime->jContext_, jTrueId, runtime->jTrue_);
+    env->SetObjectField(runtime->jContext_, jFalseId, runtime->jFalse_);
 }

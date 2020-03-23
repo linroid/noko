@@ -22,19 +22,19 @@
 
 #define V8_SCOPE(env, jThis) \
     auto runtime = JSValue::GetRuntime(env, jThis); \
-    auto isolate = runtime->_isolate; \
+    auto isolate = runtime->isolate_; \
     auto reference = JSValue::Unwrap(env, jThis); \
     auto runnable = [&]() { \
-        v8::Locker locker(runtime->_isolate); \
-        v8::HandleScope handleScope(runtime->_isolate); \
+        v8::Locker locker(runtime->isolate_); \
+        v8::HandleScope handleScope(runtime->isolate_); \
 
 // CHECK(_reference != 0); \
 
 #define V8_CONTEXT(env, jThis, type) \
         V8_SCOPE(env, jThis) \
-        auto context = runtime->_context.Get(isolate); \
+        auto context = runtime->context_.Get(isolate); \
         auto persistent = reinterpret_cast<v8::Persistent<type> *>(reference); \
-        auto that = v8::Local<type>::New(runtime->_isolate, *persistent);
+        auto that = v8::Local<type>::New(runtime->isolate_, *persistent);
 
 #define V8_END()  \
     }; \

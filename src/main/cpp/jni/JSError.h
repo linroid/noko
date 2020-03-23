@@ -18,7 +18,7 @@ private:
 public:
     inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
         LOGE("Wrap new JSError");
-        return env->NewObject(jClazz, jConstructor, runtime->jContext, (jlong) value);
+        return env->NewObject(jClazz, jConstructor, runtime->jContext_, (jlong) value);
     }
 
     JNICALL static void New(JNIEnv *env, jobject jThis, jstring jMessage);

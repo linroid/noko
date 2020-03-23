@@ -27,11 +27,11 @@ void JSFunction::New(JNIEnv *env, jobject jThis, jstring jName) {
     auto callback = new JniCallback(env, jThis, JSValue::jClazz, jonCall);
     V8_SCOPE(env, jThis)
         callback->runtime = runtime;
-        auto data = v8::External::New(runtime->_isolate, callback);
-        auto context = runtime->_context.Get(runtime->_isolate);
-        auto func = v8::FunctionTemplate::New(runtime->_isolate, staticCallback, data)->GetFunction(context).ToLocalChecked();
+        auto data = v8::External::New(runtime->isolate_, callback);
+        auto context = runtime->context_.Get(runtime->isolate_);
+        auto func = v8::FunctionTemplate::New(runtime->isolate_, staticCallback, data)->GetFunction(context).ToLocalChecked();
         func->SetName(V8_STRING(name, nameLen));
-        result = new v8::Persistent<v8::Value>(runtime->_isolate, func);
+        result = new v8::Persistent<v8::Value>(runtime->isolate_, func);
     V8_END()
     env->ReleaseStringChars(jName, name);
     JSValue::SetReference(env, jThis, (jlong) result);
@@ -56,7 +56,7 @@ jobject JSFunction::Call(JNIEnv *env, jobject jThis, jobject jReceiver, jobjectA
         for (int i = 0; i < argc; ++i) {
             argv[i] = parameters[i]->Get(isolate);
         }
-        v8::TryCatch tryCatch(runtime->_isolate);
+        v8::TryCatch tryCatch(runtime->isolate_);
         auto ret = that->Call(context, receiver->Get(isolate), argc, argv);
         if (ret.IsEmpty()) {
             error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());

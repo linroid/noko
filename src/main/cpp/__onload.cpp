@@ -120,14 +120,14 @@ JNICALL jboolean submit(JNIEnv *env, jobject jThis, jobject jRunnable) {
     data->runnable = env->NewGlobalRef(jRunnable);
     auto success = data->runtime->Post([data] {
         JNIEnv *_env;
-        auto stat = data->runtime->_vm->GetEnv((void **) (&_env), JNI_VERSION_1_6);
+        auto stat = data->runtime->vm_->GetEnv((void **) (&_env), JNI_VERSION_1_6);
         if (stat == JNI_EDETACHED) {
-            data->runtime->_vm->AttachCurrentThread(&_env, nullptr);
+            data->runtime->vm_->AttachCurrentThread(&_env, nullptr);
         }
         _env->CallVoidMethod(data->runnable, jRunMethodId);
         _env->DeleteGlobalRef(data->runnable);
         if (stat == JNI_EDETACHED) {
-            data->runtime->_vm->DetachCurrentThread();
+            data->runtime->vm_->DetachCurrentThread();
         }
         delete data;
     });
@@ -140,7 +140,7 @@ JNICALL jboolean submit(JNIEnv *env, jobject jThis, jobject jRunnable) {
 
 JNICALL void mountFs(JNIEnv *env, jobject _, jobject jfs) {
     V8_CONTEXT(env, jfs, v8::Value)
-        auto global = runtime->_global->Get(isolate);
+        auto global = runtime->global_->Get(isolate);
         auto privateKey = v8::Private::ForApi(isolate, v8::String::NewFromUtf8(isolate, "__fs").ToLocalChecked());
         global->SetPrivate(context, privateKey, that).FromJust();
     V8_END()
@@ -149,7 +149,7 @@ JNICALL void mountFs(JNIEnv *env, jobject _, jobject jfs) {
 JNICALL jobject createFs(JNIEnv *env, jobject jThis) {
     jlong ptr = env->GetLongField(jThis, nodeClass.ptr);
     auto runtime = reinterpret_cast<NodeRuntime *>(ptr);
-    auto isolate = runtime->_isolate;
+    auto isolate = runtime->isolate_;
     v8::Persistent<v8::Value> *result = nullptr;
     auto runnable = [&]() {
         v8::Locker _locker(isolate);

@@ -33,7 +33,7 @@ void JSPromise::New(JNIEnv *env, jobject jThis) {
     v8::Persistent<v8::Value> *promiseResult = nullptr;
     v8::Persistent<v8::Value> *resolverResult = nullptr;
     V8_SCOPE(env, jThis)
-        auto context = runtime->context.Get(isolate);
+        auto context = runtime->_context.Get(isolate);
         auto resolver = v8::Promise::Resolver::New(context).ToLocalChecked();
         auto promise = resolver->GetPromise();
         resolverResult = new v8::Persistent<v8::Value>(isolate, resolver);
@@ -49,7 +49,7 @@ void JSPromise::Reject(JNIEnv *env, jobject jThis, jobject jError) {
     auto resolver = reinterpret_cast<v8::Persistent<v8::Promise::Resolver> *>(resolverPtr);
     v8::Persistent<v8::Value> *error = nullptr;
     V8_CONTEXT(env, jThis, v8::Promise)
-        v8::TryCatch tryCatch(runtime->isolate);
+        v8::TryCatch tryCatch(runtime->_isolate);
         resolver->Get(isolate)->Reject(context, value->Get(isolate));
         if (tryCatch.HasCaught()) {
             error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
@@ -67,7 +67,7 @@ void JSPromise::Resolve(JNIEnv *env, jobject jThis, jobject jValue) {
     auto resolver = reinterpret_cast<v8::Persistent<v8::Promise::Resolver> *>(resolverPtr);
     v8::Persistent<v8::Value> *error = nullptr;
     V8_CONTEXT(env, jThis, v8::Promise)
-        v8::TryCatch tryCatch(runtime->isolate);
+        v8::TryCatch tryCatch(runtime->_isolate);
         resolver->Get(isolate)->Resolve(context, value->Get(isolate));
         if (tryCatch.HasCaught()) {
             error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
@@ -83,7 +83,7 @@ void JSPromise::Then(JNIEnv *env, jobject jThis, jobject jCallback) {
     auto callback = reinterpret_cast<v8::Persistent<v8::Function> *>(JSValue::GetReference(env, jCallback));
     v8::Persistent<v8::Value> *error = nullptr;
     V8_CONTEXT(env, jThis, v8::Promise)
-        v8::TryCatch tryCatch(runtime->isolate);
+        v8::TryCatch tryCatch(runtime->_isolate);
         auto ret = that->Then(context, callback->Get(isolate));
         if (ret.IsEmpty()) {
             error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
@@ -99,7 +99,7 @@ void JSPromise::Catch(JNIEnv *env, jobject jThis, jobject jCallback) {
     auto callback = reinterpret_cast<v8::Persistent<v8::Function> *>(JSValue::GetReference(env, jCallback));
     v8::Persistent<v8::Value> *error = nullptr;
     V8_CONTEXT(env, jThis, v8::Promise)
-        v8::TryCatch tryCatch(runtime->isolate);
+        v8::TryCatch tryCatch(runtime->_isolate);
         auto ret = that->Catch(context, callback->Get(isolate));
         if (ret.IsEmpty()) {
             error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());

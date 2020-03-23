@@ -33,7 +33,7 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
     thread = thread(isDaemon = true, name = "knode-${seq.incrementAndGet()}") {
       try {
         val exitCode = nativeStart()
-        dispose(exitCode)
+        Log.i(TAG, "node exited: $exitCode")
       } catch (error: JSException) {
         eventOnError(error)
       }
@@ -147,8 +147,7 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
     val setupCode = StringBuilder()
     if (output.supportsColor) {
       setupCode.append(
-        """
-            process.stderr.isTTY = true;
+        """process.stderr.isTTY = true;
             process.stderr.isRaw = true;
             process.stdout.isTTY = true;
             process.stdout.isRaw = true;"""

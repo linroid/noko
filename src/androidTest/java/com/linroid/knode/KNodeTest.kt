@@ -14,38 +14,39 @@ import java.util.concurrent.TimeUnit
  */
 abstract class KNodeTest : KNode.EventListener, StdOutput {
 
-    protected lateinit var node: KNode
-    protected lateinit var context: JSContext
-    private lateinit var file: File
-    private val startLatch = CountDownLatch(1)
-    @Before
-    fun setupNode() {
-        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        file = File.createTempFile("knode_test", this.javaClass.name)
-        file.writeText("setInterval(() => { }, 50)")
-        node = KNode(appContext.cacheDir, this)
-        node.start(file.absolutePath)
-        node.addEventListener(this)
-        startLatch.await(3, TimeUnit.SECONDS)
-    }
+  private lateinit var node: KNode
+  protected lateinit var context: JSContext
+  private lateinit var file: File
+  private val startLatch = CountDownLatch(1)
 
-    override fun onNodePrepared(context: JSContext) {
-        super.onNodePrepared(context)
-        this.context = context
-        startLatch.countDown()
-    }
+  @Before
+  fun setupNode() {
+    val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+    file = File.createTempFile("knode_test", this.javaClass.name)
+    file.writeText("setInterval(() => { }, 50)")
+    node = KNode(appContext.cacheDir, this)
+    node.start(file.absolutePath)
+    node.addEventListener(this)
+    startLatch.await(3, TimeUnit.SECONDS)
+  }
 
-    @After
-    fun destroyNode() {
-        file.delete()
-        node.exit(0)
-    }
+  override fun onNodePrepared(context: JSContext) {
+    super.onNodePrepared(context)
+    this.context = context
+    startLatch.countDown()
+  }
 
-    override fun stdout(str: String) {
-        println(str)
-    }
+  @After
+  fun destroyNode() {
+    file.delete()
+    node.exit(0)
+  }
 
-    override fun stderr(str: String) {
-        println(str)
-    }
+  override fun stdout(str: String) {
+    println(str)
+  }
+
+  override fun stderr(str: String) {
+    println(str)
+  }
 }

@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <android/log.h>
+#include <cmath>
 #include "NodeRuntime.h"
 #include "jni/JSContext.h"
 #include "jni/JSValue.h"
@@ -108,25 +109,25 @@ struct SubmitData {
     NodeRuntime *runtime;
 };
 
-JNICALL bool submit(JNIEnv *env, jobject jThis, jobject jRunnable) {
+JNICALL jboolean submit(JNIEnv *env, jobject jThis, jobject jRunnable) {
     jlong ptr = env->GetLongField(jThis, nodeClass.ptr);
     if (ptr == 0) {
         LOGE("submit but ptr is 0");
-        return false;
+        return 0;
     }
     SubmitData *data = new SubmitData();
     data->runtime = reinterpret_cast<NodeRuntime *>(ptr);;
     data->runnable = env->NewGlobalRef(jRunnable);
     auto success = data->runtime->Post([data] {
         JNIEnv *_env;
-        auto stat = data->runtime->vm->GetEnv((void **) (&_env), JNI_VERSION_1_6);
+        auto stat = data->runtime->_vm->GetEnv((void **) (&_env), JNI_VERSION_1_6);
         if (stat == JNI_EDETACHED) {
-            data->runtime->vm->AttachCurrentThread(&_env, nullptr);
+            data->runtime->_vm->AttachCurrentThread(&_env, nullptr);
         }
         _env->CallVoidMethod(data->runnable, jRunMethodId);
         _env->DeleteGlobalRef(data->runnable);
         if (stat == JNI_EDETACHED) {
-            data->runtime->vm->DetachCurrentThread();
+            data->runtime->_vm->DetachCurrentThread();
         }
         delete data;
     });
@@ -134,13 +135,13 @@ JNICALL bool submit(JNIEnv *env, jobject jThis, jobject jRunnable) {
         env->DeleteGlobalRef(data->runnable);
         delete data;
     }
-    return success;
+    return 1;
 }
 
 JNICALL void mountFs(JNIEnv *env, jobject _, jobject jfs) {
     V8_CONTEXT(env, jfs, v8::Value)
-        auto global = runtime->global->Get(isolate);
-        auto privateKey = v8::Private::ForApi(isolate, v8::String::NewFromUtf8(isolate, "__fs"));
+        auto global = runtime->_global->Get(isolate);
+        auto privateKey = v8::Private::ForApi(isolate, v8::String::NewFromUtf8(isolate, "__fs").ToLocalChecked());
         global->SetPrivate(context, privateKey, that).FromJust();
     V8_END()
 }
@@ -148,9 +149,9 @@ JNICALL void mountFs(JNIEnv *env, jobject _, jobject jfs) {
 JNICALL jobject createFs(JNIEnv *env, jobject jThis) {
     jlong ptr = env->GetLongField(jThis, nodeClass.ptr);
     auto runtime = reinterpret_cast<NodeRuntime *>(ptr);
-    auto isolate = runtime->isolate;
+    auto isolate = runtime->_isolate;
     v8::Persistent<v8::Value> *result = nullptr;
-    auto _runnable = [&]() {
+    auto runnable = [&]() {
         v8::Locker _locker(isolate);
         v8::HandleScope _handleScope(isolate);
         auto fs = runtime->Require("__fs");

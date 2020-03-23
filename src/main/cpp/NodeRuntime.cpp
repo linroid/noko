@@ -25,6 +25,42 @@ int NodeRuntime::instanceCount_ = 0;
 std::mutex NodeRuntime::sharedMutex_;
 int NodeRuntime::seq_ = 0;
 
+bool nodeInitialized = false;
+std::vector<std::string> args;
+std::vector<std::string> exec_args;
+
+int initNode() {
+    // Make argv memory adjacent
+    char cmd[128];
+    strcpy(cmd, "node --trace-exit --trace-sigint --trace-sync-io --trace-warnings");
+    int argc = 0;
+    char *argv[128];
+    char *p2 = strtok(cmd, " ");
+    while (p2 && argc < 128 - 1) {
+        argv[argc++] = p2;
+        p2 = strtok(0, " ");
+    }
+    argv[argc] = 0;
+
+    args = std::vector<std::string>(argv, argv + argc);
+    std::vector<std::string> errors;
+    // Parse Node.js CLI options, and print any errors that have occurred while
+    // trying to parse them.
+    int exit_code = node::InitializeNodeWithArgs(&args, &exec_args, &errors);
+    for (const std::string& error : errors)
+        fprintf(stderr, "%s: %s\n", args[0].c_str(), error.c_str());
+    if (exit_code == 0) {
+        nodeInitialized = true;
+    }
+    return exit_code;
+}
+
+void shutdownNode() {
+    nodeInitialized = false;
+    v8::V8::Dispose();
+    v8::V8::ShutdownPlatform();
+}
+
 void NodeRuntime::StaticOnPrepared(const v8::FunctionCallbackInfo<v8::Value> &info) {
     LOGD("StaticOnPrepared");
     NodeRuntime *instance = NodeRuntime::GetCurrent(info);
@@ -54,6 +90,9 @@ NodeRuntime::NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, jm
     ++instanceCount_;
     ++seq_;
     id_ = seq_;
+    if (!nodeInitialized) {
+        initNode();
+    }
     sharedMutex_.unlock();
     LOGD("Construct NodeRuntime: thread_id=%d, id=%d, this=%p", std::this_thread::get_id(), id_, this);
 }
@@ -95,9 +134,7 @@ void NodeRuntime::SetUp() {
     v8::Context::Scope contextScope(context);
     v8::Local<v8::Object> global = context->Global();
     global_ = new v8::Persistent<v8::Object>(isolate_, global);
-
     running_ = true;
-
     ENTER_JNI(vm_);
         auto nullValue = new v8::Persistent<v8::Value>(isolate_, v8::Null(isolate_));
         auto undefinedValue = new v8::Persistent<v8::Value>(isolate_, v8::Undefined(isolate_));
@@ -123,44 +160,17 @@ void NodeRuntime::SetUp() {
 int NodeRuntime::Start() {
     threadId_ = std::this_thread::get_id();
 
-    // Make argv memory adjacent
-    char cmd[40];
-    strcpy(cmd, "node -e __onPrepared();");
-    int argc = 0;
-    char *argv[32];
-    char *p2 = strtok(cmd, " ");
-    while (p2 && argc < 32 - 1) {
-        argv[argc++] = p2;
-        p2 = strtok(0, " ");
-    }
-    argv[argc] = 0;
-
-    std::vector<std::string> args(argv, argv + argc);
-    std::vector<std::string> exec_args;
-    std::vector<std::string> errors;
-    // Parse Node.js CLI options, and print any errors that have occurred while
-    // trying to parse them.
-    int exit_code = node::InitializeNodeWithArgs(&args, &exec_args, &errors);
-    for (const std::string& error : errors)
-        fprintf(stderr, "%s: %s\n", args[0].c_str(), error.c_str());
-    if (exit_code != 0) {
-        return exit_code;
-    }
-
     // Create a v8::Platform instance. `MultiIsolatePlatform::Create()` is a way
     // to create a v8::Platform instance that Node.js can use when creating
     // Worker threads. When no `MultiIsolatePlatform` instance is present,
     // Worker threads are disabled.
-    std::unique_ptr<node::MultiIsolatePlatform> platform =
-            node::MultiIsolatePlatform::Create(4);
+    std::unique_ptr<node::MultiIsolatePlatform> platform =node::MultiIsolatePlatform::Create(4);
     v8::V8::InitializePlatform(platform.get());
     v8::V8::Initialize();
 
     // See below for the contents of this function.
     int ret = RunNodeInstance(platform.get(), args, exec_args);
 
-    v8::V8::Dispose();
-    v8::V8::ShutdownPlatform();
     return ret;
 }
 
@@ -239,7 +249,6 @@ int NodeRuntime::RunNodeInstance(node::MultiIsolatePlatform* platform,
                                         "const publicRequire ="
                                         "  require('module').createRequire(process.cwd() + '/');"
                                         "globalThis.require = publicRequire;"
-                                        "require('vm').runInThisContext(process.argv[1]);"
                                         "__onPrepared();");
         if (loadenv_ret.IsEmpty())  // There has been a JS exception.
             return 1;

@@ -34,6 +34,7 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
       try {
         val exitCode = nativeStart()
         Log.i(TAG, "node exited: $exitCode")
+        eventOnExit(exitCode)
       } catch (error: JSException) {
         eventOnError(error)
       }
@@ -176,6 +177,9 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
     val stdout: JSObject = process.get("stdout")
     stdout.set("write", object : JSFunction(context, "write") {
       override fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
+        if (BuildConfig.DEBUG) {
+          Log.d(TAG, parameters[0].toString())
+        }
         output.stdout(parameters[0].toString())
         return null
       }
@@ -183,6 +187,9 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
     val stderr: JSObject = process.get("stderr")
     stderr.set("write", object : JSFunction(context, "write") {
       override fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
+        if (BuildConfig.DEBUG) {
+          Log.w(TAG, parameters[0].toString())
+        }
         output.stderr(parameters[0].toString())
         return null
       }
@@ -215,7 +222,7 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
       Log.w(TAG, "dispose but not active")
       Thread.dumpStack()
     }
-    eventOnExit(exitCode)
+    // eventOnExit(exitCode)
     nativeDispose()
     Log.i(TAG, "after nativeDispose")
     active = false

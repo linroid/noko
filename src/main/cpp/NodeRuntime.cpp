@@ -238,9 +238,7 @@ int NodeRuntime::Start() {
         //         "require('vm').runInThisContext(process.argv[1]);");
         v8::MaybeLocal<v8::Value> loadenv_ret
                 = node::LoadEnvironment(env.get(),
-                                        "const publicRequire ="
-                                        "  require('module').createRequire(process.cwd() + '/');"
-                                        "globalThis.require = publicRequire;"
+                                        "globalThis.require = require('module').createRequire(process.cwd() + '/');"
                                         "__onPrepared();");
         if (loadenv_ret.IsEmpty())  // There has been a JS exception.
             return 1;

@@ -382,13 +382,13 @@ bool NodeRuntime::Await(std::function<void()> runnable) {
         auto callback = [&]() {
             runnable();
             {
-                std::lock_guard<std::mutex> lock(asyncMutex);
+                std::lock_guard<std::mutex> lock(asyncMutex_);
                 signaled = true;
             }
             cv.notify_one();
         };
 
-        std::lock_guard<std::mutex> instanceLock(instanceMutex);
+        std::lock_guard<std::mutex> instanceLock(instanceMutex_);
         std::unique_lock<std::mutex> lock(asyncMutex);
         if (!_running) {
             LOGE("Instance has been destroyed, ignore await");

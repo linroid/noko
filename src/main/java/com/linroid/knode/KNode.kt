@@ -20,7 +20,8 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
   @Native
   private var ptr: Long = nativeNew()
   private val listeners = HashSet<EventListener>()
-  @Volatile private var active = false
+  @Volatile
+  private var active = false
   private lateinit var context: JSContext
 
   private lateinit var path: String
@@ -96,11 +97,7 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
   // }
 
   override fun close() {
-    if (isActive()) {
-      exit(0)
-    } else {
-      Log.w(TAG, "Close but not active")
-    }
+    exit(0)
   }
 
   fun mountFileSystem(fs: VirtualFileSystem) {

@@ -33,7 +33,6 @@ class NodeRuntime {
 private:
     jobject jThis_ = nullptr;
     jmethodID onBeforeStart_ = nullptr;
-    jmethodID onBeforeExit_ = nullptr;
 
     bool running_ = false;
     std::thread::id threadId_;
@@ -50,8 +49,6 @@ private:
 
     static void StaticOnPrepared(const v8::FunctionCallbackInfo<v8::Value> &info);
 
-    static void StaticBeforeExit(const v8::FunctionCallbackInfo<v8::Value> &info);
-
     static void StaticHandle(uv_async_t *handle);
 
     void Handle(uv_async_t *handle);
@@ -59,6 +56,8 @@ private:
     void TryLoop();
 
     void SetUp();
+
+    void OnPrepared();
 
 public:
     jobject jContext_ = nullptr;
@@ -72,15 +71,11 @@ public:
     v8::Persistent<v8::Context> context_;
     v8::Persistent<v8::Object> *global_ = nullptr;
 
-    NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, jmethodID onBeforeExit);
+    NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart);
 
     ~NodeRuntime();
 
     int Start();
-
-    void Dispose();
-
-    void OnPrepared();
 
     bool Await(std::function<void()> runnable);
 

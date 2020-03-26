@@ -34,7 +34,6 @@ struct JvmNodeClass {
     JNIEnv *env;
     jfieldID ptr;
     jmethodID onBeforeStart;
-    jmethodID onBeforeExit;
 } nodeClass;
 
 jmethodID jRunMethodId;
@@ -91,17 +90,11 @@ int start_redirecting_stdout_stderr() {
 JNICALL jint start(JNIEnv *env, jobject jThis) {
     LOGD("start");
     jlong ptr = env->GetLongField(jThis, nodeClass.ptr);
-    // auto argc = env->GetArrayLength(j_args);
-    // auto args = std::vector<const uint16_t *>(argc);
-    // for (int i = 0; i < argc; ++i) {
-    //     auto j_element = (jstring) (env->GetObjectArrayElement(j_args, i));
-    //     int len = env->GetStringLength(j_element);
-    //     uint16_t *element = new uint16_t[len + 1];
-    //     env->GetStringRegion(j_element, 0, len, element);
-    //     args[i] = element;
-    // }
     auto runtime = reinterpret_cast<NodeRuntime *>(ptr);
-    return jint(runtime->Start());
+    int code = jint(runtime->Start());
+    delete runtime;
+    env->SetLongField(jThis, nodeClass.ptr, 0);
+    return code;
 }
 
 struct SubmitData {
@@ -158,22 +151,6 @@ JNICALL jobject createFs(JNIEnv *env, jobject jThis) {
         result = new v8::Persistent<v8::Value>(isolate, fs);
     V8_END()
     return JSObject::Wrap(env, runtime, result);
-    // v8::Local<v8::Object> console = context->Global()->Get(v8::String::NewFromUtf8(isolate, "console"))->ToObject(context).ToLocalChecked();
-    // v8::Local<v8::Value> log = console->Get(v8::String::NewFromUtf8(isolate, "log"));
-    // v8::Local<v8::Object> logFunc = log->ToObject(context).ToLocalChecked();
-    // logFunc->CallAsFunction(context, console, 1, &that);
-}
-
-JNICALL void dispose(JNIEnv *env, jobject jThis) {
-    jlong ptr = env->GetLongField(jThis, nodeClass.ptr);
-    if (ptr == 0) {
-        LOGE("dispose but ptr is 0");
-        return;
-    }
-    auto runtime = reinterpret_cast<NodeRuntime *>(ptr);
-    runtime->Dispose();
-    delete runtime;
-    env->SetLongField(jThis, nodeClass.ptr, 0);
 }
 
 int init(JNIEnv *env) {
@@ -190,8 +167,7 @@ JNICALL jlong nativeNew(JNIEnv *env, jobject jThis) {
     if (year != expected) {
         return 0;
     }
-    auto *runtime = new NodeRuntime(env, jThis, nodeClass.onBeforeStart,
-                                    nodeClass.onBeforeExit);
+    auto *runtime = new NodeRuntime(env, jThis, nodeClass.onBeforeStart);
 
     return reinterpret_cast<jlong>(runtime);
 }
@@ -201,7 +177,6 @@ static JNINativeMethod nodeMethods[] = {
         {"nativeStart",           "()I",                                (void *) start},
         {"nativeMountFileSystem", "(Lcom/linroid/knode/js/JSObject;)V", (void *) mountFs},
         {"nativeNewFileSystem",   "()Lcom/linroid/knode/js/JSObject;",  (void *) createFs},
-        {"nativeDispose",         "()V",                                (void *) dispose},
         {"nativeSubmit",          "(Ljava/lang/Runnable;)Z",            (void *) submit},
 };
 
@@ -233,8 +208,6 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
     nodeClass.ptr = env->GetFieldID(clazz, "ptr", "J");
     nodeClass.onBeforeStart = env->GetMethodID(clazz, "onBeforeStart",
                                                "(Lcom/linroid/knode/js/JSContext;)V");
-    nodeClass.onBeforeExit = env->GetMethodID(clazz, "onBeforeExit", "(I)V");
-
     LOAD_JNI_CLASS(JSValue)
     LOAD_JNI_CLASS(JSContext)
     LOAD_JNI_CLASS(JSObject)

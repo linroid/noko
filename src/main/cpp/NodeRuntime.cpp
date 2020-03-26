@@ -77,22 +77,12 @@ void NodeRuntime::StaticOnPrepared(const v8::FunctionCallbackInfo<v8::Value> &in
     instance->OnPrepared();
 }
 
-void NodeRuntime::StaticBeforeExit(const v8::FunctionCallbackInfo<v8::Value> &info) {
-    auto context = info.GetIsolate()->GetCurrentContext();
-    int code = info[0]->Int32Value(context).FromMaybe(0);
-    LOGD("StaticBeforeExit: %d", code);
-    // uv_walk(env->event_loop(), [](uv_handle_t *h, void *arg) {
-    //     uv_unref(h);
-    // }, nullptr);
-}
-
 void NodeRuntime::StaticHandle(uv_async_t *handle) {
     NodeRuntime *runtime = reinterpret_cast<NodeRuntime *>(handle->data);
     runtime->Handle(handle);
 }
 
-NodeRuntime::NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, jmethodID onBeforeExit)
-        : onBeforeStart_(onBeforeStart), onBeforeExit_(onBeforeExit) {
+NodeRuntime::NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart): onBeforeStart_(onBeforeStart) {
     env->GetJavaVM(&vm_);
     this->jThis_ = env->NewGlobalRef(jThis);
 
@@ -298,20 +288,6 @@ int NodeRuntime::Start() {
     return exit_code;
 }
 
-void NodeRuntime::Dispose() {
-    // v8_platform.StopTracingAgent();
-    // v8_initialized = false;
-    // V8::Dispose();
-
-    // uv_run cannot be called from the time before the beforeExit callback
-    // runs until the program exits unless the event loop has any referenced
-    // handles after beforeExit terminates. This prevents unrefed timers
-    // that happen to terminate during shutdown from being run unsafely.
-    // Since uv_run cannot be called, uv_async handles held by the platform
-    // will never be fully cleaned up.
-    // v8_platform.Dispose();
-}
-
 NodeRuntime *NodeRuntime::GetCurrent(const v8::FunctionCallbackInfo<v8::Value> &info) {
     assert(info.Data()->IsExternal());
     auto external = info.Data().As<v8::External>();
@@ -394,7 +370,7 @@ bool NodeRuntime::Await(std::function<void()> runnable) {
             LOGE("Instance has been destroyed, ignore await");
             return false;
         }
-        callbacks.push_back(callback);
+        callbacks_.push_back(callback);
         this->TryLoop();
 
         cv.wait(lock, [&] { return signaled; });
@@ -429,9 +405,12 @@ void NodeRuntime::Handle(uv_async_t *handle) {
         asyncMutex_.lock();
         callbacks_.erase(callbacks_.begin());
     }
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCDFAInspection"
     uv_close((uv_handle_t *) handle, [](uv_handle_t *h) {
         delete (uv_async_t *) h;
     });
+#pragma clang diagnostic pop
     asyncHandle_ = nullptr;
     asyncMutex_.unlock();
 }

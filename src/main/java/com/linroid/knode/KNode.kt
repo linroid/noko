@@ -20,7 +20,7 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
   @Native
   private var ptr: Long = nativeNew()
   private val listeners = HashSet<EventListener>()
-  private var active = false
+  @Volatile private var active = false
   private lateinit var context: JSContext
 
   private lateinit var path: String
@@ -68,12 +68,17 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
    * @param exitCode The exit code
    */
   fun exit(exitCode: Int) {
-    Log.d(TAG, "exit($exitCode)")
-    if (isActive() && ::context.isInitialized) {
-      submit(Runnable {
-        context.eval("process.exit($exitCode);")
-      })
+    Log.w(TAG, "exit($exitCode)")
+    if (!isActive()) {
+      Log.w(TAG, "dispose but not active")
+      Thread.dumpStack()
+      return
     }
+    submit(Runnable {
+      Log.d(TAG, "eval process.exit($exitCode)")
+      context.eval("process.exit($exitCode);")
+    })
+    active = false
   }
 
   // /**
@@ -110,7 +115,7 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
   fun submit(action: Runnable): Boolean {
     if (!isActive()) {
       val isInitialized = this::context::isInitialized
-      Log.e(TAG, "Submit but not active: active=$active, isInitialized=${isInitialized}, ptr=$ptr", Exception())
+      Log.w(TAG, "Submit but not active: active=$active, isInitialized=${isInitialized}, ptr=$ptr", Exception())
       return false
     }
     if (Thread.currentThread() == thread) {
@@ -196,12 +201,6 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
     })
   }
 
-  @Suppress("unused")
-  private fun onBeforeExit(exitCode: Int) {
-    Log.w(TAG, "onBeforeExit: exitCode=$exitCode")
-    dispose(exitCode)
-  }
-
   private fun eventOnPrepared(context: JSContext) {
     Log.i(TAG, "eventOnPrepared")
     listeners.forEach { it.onNodePrepared(context) }
@@ -209,6 +208,7 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
 
   private fun eventOnExit(exitCode: Int) {
     Log.w(TAG, "eventOnExit: exitCode=$exitCode")
+    active = false
     listeners.forEach { it.onNodeExited(exitCode) }
   }
 
@@ -217,22 +217,9 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
     listeners.forEach { it.onNodeError(error) }
   }
 
-  fun dispose(exitCode: Int = 0) {
-    if (!isActive()) {
-      Log.w(TAG, "dispose but not active")
-      Thread.dumpStack()
-    }
-    // eventOnExit(exitCode)
-    nativeDispose()
-    Log.i(TAG, "after nativeDispose")
-    active = false
-  }
-
   private external fun nativeNew(): Long
 
   private external fun nativeStart(): Int
-
-  private external fun nativeDispose()
 
   private external fun nativeNewFileSystem(): JSObject
 

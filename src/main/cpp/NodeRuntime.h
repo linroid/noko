@@ -49,15 +49,11 @@ private:
     static jint seq_;
     uv_loop_t *eventLoop_;
 
-    static void StaticOnPrepared(const v8::FunctionCallbackInfo<v8::Value> &info);
-
     static void StaticHandle(uv_async_t *handle);
 
     void Handle(uv_async_t *handle);
 
     void TryLoop();
-
-    void SetUp();
 
     void OnPrepared();
 

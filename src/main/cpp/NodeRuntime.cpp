@@ -70,12 +70,6 @@ int init_node() {
 //     v8::V8::ShutdownPlatform();
 // }
 
-void NodeRuntime::StaticOnPrepared(const v8::FunctionCallbackInfo<v8::Value> &info) {
-    LOGD("StaticOnPrepared");
-    NodeRuntime *instance = NodeRuntime::GetCurrent(info);
-    instance->OnPrepared();
-}
-
 void NodeRuntime::StaticHandle(uv_async_t *handle) {
     NodeRuntime *runtime = reinterpret_cast<NodeRuntime *>(handle->data);
     runtime->Handle(handle);
@@ -116,18 +110,6 @@ NodeRuntime::~NodeRuntime() {
 
 void NodeRuntime::OnPrepared() {
     LOGI("OnPrepared");
-    auto localGlobal = global_->Get(isolate_);
-    auto localContext = context_.Get(isolate_);
-    localGlobal->Delete(localContext, v8::String::NewFromUtf8(isolate_, "__onPrepared").ToLocalChecked());
-
-    ENTER_JNI(vm_);
-        env->CallVoidMethod(jThis_, onBeforeStart_, jContext_);
-    EXIT_JNI(vm_);
-}
-
-void NodeRuntime::SetUp() {
-    LOGI("SetUp");
-
     v8::Local<v8::Context> context = context_.Get(isolate_);
     v8::HandleScope handleScope(isolate_);
     v8::Context::Scope contextScope(context);
@@ -145,15 +127,9 @@ void NodeRuntime::SetUp() {
         this->jTrue_ = env->NewGlobalRef(JSBoolean::Wrap(env, this, trueValue, true));
         this->jFalse_ = env->NewGlobalRef(JSBoolean::Wrap(env, this, falseValue, false));
         JSContext::SetShared(env, this);
+
+        env->CallVoidMethod(jThis_, onBeforeStart_, jContext_);
     EXIT_JNI(vm_);
-
-    // nodeEnv->SetMethod(process, "reallyExit", StaticBeforeExit);
-    // nodeEnv->SetMethod(process, "abort", StaticBeforeExit);
-    // nodeEnv->SetMethod(process, "_kill", StaticBeforeExit);
-
-    auto data = v8::External::New(isolate_, this);
-    auto value = v8::FunctionTemplate::New(isolate_, StaticOnPrepared, data)->GetFunction(context).ToLocalChecked();
-    global->Set(context, V8_UTF_STRING(isolate_, "__onPrepared"), value);
 }
 
 int NodeRuntime::Start(std::vector<std::string> &args) {
@@ -197,7 +173,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
         eventLoop_ = loop;
         isolate_ = isolate;
         context_.Reset(isolate, context);
-        SetUp();
+        OnPrepared();
 
         // The v8::Context needs to be entered when node::CreateEnvironment() and
         // node::LoadEnvironment() are being called.

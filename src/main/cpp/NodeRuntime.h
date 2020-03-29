@@ -13,6 +13,8 @@
 #include <uv.h>
 #include "macros.h"
 
+int init_node();
+
 enum JSType {
     kNone,
     kUndefined,
@@ -75,7 +77,7 @@ public:
 
     ~NodeRuntime();
 
-    int Start();
+    int Start(std::vector<std::string> &args);
 
     bool Await(std::function<void()> runnable);
 

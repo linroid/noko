@@ -87,13 +87,22 @@ int start_redirecting_stdout_stderr() {
 }
 
 
-JNICALL jint start(JNIEnv *env, jobject jThis) {
+JNICALL jint start(JNIEnv *env, jobject j_this, jobjectArray j_args) {
     LOGD("start");
-    jlong ptr = env->GetLongField(jThis, nodeClass.ptr);
+    jlong ptr = env->GetLongField(j_this, nodeClass.ptr);
     auto runtime = reinterpret_cast<NodeRuntime *>(ptr);
-    int code = jint(runtime->Start());
+    jsize argc = env->GetArrayLength(j_args);
+    std::vector<std::string> args(argc);
+
+    for (int i = 0; i < argc; ++i) {
+        jstring string = (jstring) (env->GetObjectArrayElement(j_args, i));
+        const char *rawString = env->GetStringUTFChars(string, 0);
+        args[i] = std::string(rawString);
+    }
+
+    int code = jint(runtime->Start(args));
     delete runtime;
-    env->SetLongField(jThis, nodeClass.ptr, 0);
+    env->SetLongField(j_this, nodeClass.ptr, 0);
     return code;
 }
 
@@ -174,7 +183,7 @@ JNICALL jlong nativeNew(JNIEnv *env, jobject jThis) {
 
 static JNINativeMethod nodeMethods[] = {
         {"nativeNew",             "()J",                                (void *) nativeNew},
-        {"nativeStart",           "()I",                                (void *) start},
+        {"nativeStart",           "([Ljava/lang/String;)I",             (void *) start},
         {"nativeMountFileSystem", "(Lcom/linroid/knode/js/JSObject;)V", (void *) mountFs},
         {"nativeNewFileSystem",   "()Lcom/linroid/knode/js/JSObject;",  (void *) createFs},
         {"nativeSubmit",          "(Ljava/lang/Runnable;)Z",            (void *) submit},

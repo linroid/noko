@@ -26,14 +26,12 @@ std::mutex NodeRuntime::sharedMutex_;
 int NodeRuntime::seq_ = 0;
 
 bool nodeInitialized = false;
-std::vector<std::string> args;
-std::vector<std::string> exec_args;
 std::unique_ptr<node::MultiIsolatePlatform> platform;
 
-int initNode() {
+int init_node() {
     // Make argv memory adjacent
     char cmd[128];
-    strcpy(cmd, "node --trace-exit --trace-sigint --trace-sync-io --trace-warnings");
+    strcpy(cmd, "node --trace-exit --trace-sigint --trace-sync-io --trace-warnings --title=Dora.js");
     int argc = 0;
     char *argv[128];
     char *p2 = strtok(cmd, " ");
@@ -43,13 +41,14 @@ int initNode() {
     }
     argv[argc] = 0;
 
-    args = std::vector<std::string>(argv, argv + argc);
+    std::vector<std::string> args = std::vector<std::string>(argv, argv + argc);
+    std::vector<std::string> exec_args;
     std::vector<std::string> errors;
     // Parse Node.js CLI options, and print any errors that have occurred while
     // trying to parse them.
     int exit_code = node::InitializeNodeWithArgs(&args, &exec_args, &errors);
     for (const std::string& error : errors)
-        fprintf(stderr, "%s: %s\n", args[0].c_str(), error.c_str());
+        LOGE("%s: %s\n", args[0].c_str(), error.c_str());
     if (exit_code == 0) {
         nodeInitialized = true;
     }
@@ -65,11 +64,11 @@ int initNode() {
     return exit_code;
 }
 
-void shutdownNode() {
-    nodeInitialized = false;
-    v8::V8::Dispose();
-    v8::V8::ShutdownPlatform();
-}
+// void shutdownNode() {
+//     nodeInitialized = false;
+//     v8::V8::Dispose();
+//     v8::V8::ShutdownPlatform();
+// }
 
 void NodeRuntime::StaticOnPrepared(const v8::FunctionCallbackInfo<v8::Value> &info) {
     LOGD("StaticOnPrepared");
@@ -84,14 +83,14 @@ void NodeRuntime::StaticHandle(uv_async_t *handle) {
 
 NodeRuntime::NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart): onBeforeStart_(onBeforeStart) {
     env->GetJavaVM(&vm_);
-    this->jThis_ = env->NewGlobalRef(jThis);
+    jThis_ = env->NewGlobalRef(jThis);
 
     sharedMutex_.lock();
     ++instanceCount_;
     ++seq_;
     id_ = seq_;
     if (!nodeInitialized) {
-        initNode();
+        init_node();
     }
     sharedMutex_.unlock();
     LOGD("Construct NodeRuntime: thread_id=%d, id=%d, this=%p", std::this_thread::get_id(), id_, this);
@@ -157,7 +156,7 @@ void NodeRuntime::SetUp() {
     global->Set(context, V8_UTF_STRING(isolate_, "__onPrepared"), value);
 }
 
-int NodeRuntime::Start() {
+int NodeRuntime::Start(std::vector<std::string> &args) {
     threadId_ = std::this_thread::get_id();
 
     // See below for the contents of this function.
@@ -166,16 +165,15 @@ int NodeRuntime::Start() {
     uv_loop_t* loop = uv_loop_new();
     int ret = uv_loop_init(loop);
     if (ret != 0) {
-        fprintf(stderr, "%s: Failed to initialize loop: %s\n", args[0].c_str(), uv_err_name(ret));
+        LOGE("%s: Failed to initialize loop: %s\n", args[0].c_str(), uv_err_name(ret));
         return 1;
     }
 
-    std::shared_ptr<node::ArrayBufferAllocator> allocator =
-            node::ArrayBufferAllocator::Create();
-
+    std::shared_ptr<node::ArrayBufferAllocator> allocator =node::ArrayBufferAllocator::Create();
     v8::Isolate *isolate = node::NewIsolate(allocator, loop, platform.get());
+
     if (isolate == nullptr) {
-        fprintf(stderr, "%s: Failed to initialize V8 Isolate\n", args[0].c_str());
+        LOGE("%s: Failed to initialize V8 Isolate\n", args[0].c_str());
         return 1;
     }
 
@@ -193,7 +191,7 @@ int NodeRuntime::Start() {
         v8::HandleScope handle_scope(isolate);
         v8::Local<v8::Context> context = node::NewContext(isolate);
         if (context.IsEmpty()) {
-            fprintf(stderr, "%s: Failed to initialize V8 Context\n", args[0].c_str());
+            LOGE("%s: Failed to initialize V8 Context\n", args[0].c_str());
             return 1;
         }
         eventLoop_ = loop;
@@ -205,10 +203,8 @@ int NodeRuntime::Start() {
         // node::LoadEnvironment() are being called.
         v8::Context::Scope context_scope(context);
 
-        // Create a node::Environment instance that will later be released using
-        // node::FreeEnvironment().
         std::unique_ptr<node::Environment, decltype(&node::FreeEnvironment)> env(
-                node::CreateEnvironment(isolate_data.get(), context, args, exec_args),
+                node::CreateEnvironment(isolate_data.get(), context, args, args),
                 node::FreeEnvironment);
 
         // Set up the Node.js instance for execution, and run code inside of it.
@@ -226,12 +222,11 @@ int NodeRuntime::Start() {
         //         "  require('module').createRequire(process.cwd() + '/');"
         //         "globalThis.require = publicRequire;"
         //         "require('vm').runInThisContext(process.argv[1]);");
-        v8::MaybeLocal<v8::Value> loadenv_ret
-                = node::LoadEnvironment(env.get(),
-                                        "globalThis.require = require('module').createRequire(process.cwd() + '/');"
-                                        "__onPrepared();");
-        if (loadenv_ret.IsEmpty())  // There has been a JS exception.
+        node::StartExecutionCallback ptr = nullptr;
+        if (node::LoadEnvironment(env.get(), ptr).IsEmpty()) {
+            LOGE("Failed to LoadEnvironment");
             return 1;
+        }
 
         {
             // SealHandleScope protects against handle leaks from callbacks.
@@ -365,8 +360,8 @@ bool NodeRuntime::Await(std::function<void()> runnable) {
         };
 
         std::lock_guard<std::mutex> instanceLock(instanceMutex_);
-        std::unique_lock<std::mutex> lock(asyncMutex);
-        if (!_running) {
+        std::unique_lock<std::mutex> lock(asyncMutex_);
+        if (!running_) {
             LOGE("Instance has been destroyed, ignore await");
             return false;
         }
@@ -405,12 +400,9 @@ void NodeRuntime::Handle(uv_async_t *handle) {
         asyncMutex_.lock();
         callbacks_.erase(callbacks_.begin());
     }
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "OCDFAInspection"
     uv_close((uv_handle_t *) handle, [](uv_handle_t *h) {
         delete (uv_async_t *) h;
     });
-#pragma clang diagnostic pop
     asyncHandle_ = nullptr;
     asyncMutex_.unlock();
 }

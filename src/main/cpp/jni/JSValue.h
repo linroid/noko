@@ -11,9 +11,8 @@
 class JSValue {
 private:
     static jfieldID jReference;
-    static jfieldID jContext;
     static jmethodID jConstructor;
-    static jmethodID jRuntime;
+    static jmethodID jGetRuntime;
 public:
     static jclass jClazz;
 
@@ -34,7 +33,7 @@ public:
     }
 
     inline static NodeRuntime *GetRuntime(JNIEnv *env, jobject jObj) {
-        auto ptr = env->CallLongMethod(jObj, jRuntime);
+        auto ptr = env->CallLongMethod(jObj, jGetRuntime);
         return reinterpret_cast<NodeRuntime *>(ptr);
     }
 

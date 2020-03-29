@@ -173,7 +173,6 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
         eventLoop_ = loop;
         isolate_ = isolate;
         context_.Reset(isolate, context);
-        OnPrepared();
 
         // The v8::Context needs to be entered when node::CreateEnvironment() and
         // node::LoadEnvironment() are being called.
@@ -183,6 +182,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
                 node::CreateEnvironment(isolate_data.get(), context, args, args),
                 node::FreeEnvironment);
 
+        OnPrepared();
         // Set up the Node.js instance for execution, and run code inside of it.
         // There is also a variant that takes a callback and provides it with
         // the `require` and `process` objects, so that it can manually compile

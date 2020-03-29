@@ -12,8 +12,7 @@
 jmethodID JSValue::jConstructor;
 jclass JSValue::jClazz;
 jfieldID JSValue::jReference;
-jfieldID JSValue::jContext;
-jmethodID JSValue::jRuntime;
+jmethodID JSValue::jGetRuntime;
 
 jint JSValue::OnLoad(JNIEnv *env) {
     jclass clazz = env->FindClass("com/linroid/knode/js/JSValue");
@@ -23,8 +22,7 @@ jint JSValue::OnLoad(JNIEnv *env) {
     jClazz = (jclass) env->NewGlobalRef(clazz);
     jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
     jReference = env->GetFieldID(clazz, "reference", "J");
-    jContext = env->GetFieldID(clazz, "context", "Lcom/linroid/knode/js/JSContext;");
-    jRuntime = env->GetMethodID(clazz, "runtime", "()J");
+    jGetRuntime = env->GetMethodID(clazz, "runtimePtr", "()J");
 
     JNINativeMethod methods[] = {
             {"nativeToString", "()Ljava/lang/String;", (void *) JSValue::ToString},

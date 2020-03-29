@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.4.1)
 #add_definitions()
-set(NODE_BUILD_DIR ${PROJECT_SOURCE_DIR}/../prebuilt/${ANDROID_ABI}/prefix)
+set(NODE_BUILD_DIR ${PROJECT_SOURCE_DIR}/prebuilt/${ANDROID_ABI}/prefix)
 set(LIB_NODE_OUTPUT ${PROJECT_SOURCE_DIR}/../jniLibs/${ANDROID_ABI}/libnode.so)
 
 set(SOURCES
@@ -31,10 +31,10 @@ add_custom_command(
 add_library(knode SHARED ${SOURCES})
 
 get_cmake_property(_variableNames VARIABLES)
-list (SORT _variableNames)
+list(SORT _variableNames)
 foreach (_variableName ${_variableNames})
     message(STATUS "${_variableName}=${${_variableName}}")
-endforeach()
+endforeach ()
 
 include_directories(${NODE_BUILD_DIR}/include/node/)
 

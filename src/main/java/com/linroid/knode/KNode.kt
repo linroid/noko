@@ -3,7 +3,10 @@ package com.linroid.knode
 import android.util.Log
 import androidx.annotation.Keep
 import com.google.gson.Gson
-import com.linroid.knode.js.*
+import com.linroid.knode.js.JSContext
+import com.linroid.knode.js.JSFunction
+import com.linroid.knode.js.JSObject
+import com.linroid.knode.js.JSValue
 import java.io.Closeable
 import java.io.File
 import java.lang.annotation.Native
@@ -15,7 +18,7 @@ import kotlin.concurrent.thread
  * @since 2019-10-16
  */
 @Keep
-class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
+class KNode(private val cwd: File, private val output: StdOutput) : Closeable {
 
   @Native
   private var ptr: Long = nativeNew()
@@ -131,42 +134,43 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
     context.node = this
     check(isActive()) { "isActive is not match the current state" }
     attachStdOutput(context)
-    val process: JSObject = context.get("process")
-    val env: JSObject = process.get("env")
-    val versions: JSObject = process.get("versions")
-    env.set("PWD", pwd.absolutePath)
-    customEnvs.forEach { env.set(it.key, it.value) }
-    if (output.supportsColor) {
-      env.set("COLORTERM", "truecolor")
-    }
+    // val process: JSObject = context.get("process")
+
     // process.set("argv0", "node")
     // process.set("argv", arrayOf("node", path, *argv))
-    customVersions.forEach {
-      versions.set(it.key, it.value)
-    }
     // process.set("execPath", execFile.absolutePath)
-    val chdir: JSFunction = process.get("chdir")
-    chdir.call(process, JSString(context, pwd.absolutePath))
-    eventOnPrepared(context)
     val setupCode = StringBuilder()
     if (output.supportsColor) {
       setupCode.append(
-        """process.stderr.isTTY = true;
-            process.stderr.isRaw = true;
-            process.stdout.isTTY = true;
-            process.stdout.isRaw = true;"""
+        """
+process.stderr.isTTY = true;
+process.stderr.isRaw = true;
+process.stdout.isTTY = true;
+process.stdout.isRaw = true;
+"""
       )
     }
-    // val script = """(() => {
-    //     const fs = require('fs');
-    //     const vm = require('vm');
-    //     $setupTTY
-    //     (new vm.Script(
-    //     fs.readFileSync('${file.absolutePath}'),
-    //     { filename: '${file.name}'} )).runInThisContext();
-    //     })()
-    //      """
-    // setupCode.append("require('${path}');")
+    val setEnv: (key: String, value: String) -> Unit = { key, value ->
+      setupCode.append("process.env['$key'] = '${value}';\n")
+    }
+    val setVersion: (key: String, value: String) -> Unit = { key, value ->
+      setupCode.append("process.versions['$key'] = '${value}';\n")
+    }
+
+    setEnv("PWD", cwd.absolutePath)
+    if (output.supportsColor) {
+      setEnv("PWD", "truecolor")
+    }
+    customEnvs.entries.forEach {
+      setEnv(it.key, it.value)
+    }
+    setupCode.append("process.chdir('${cwd.absolutePath}');\n")
+    customVersions.forEach {
+      setVersion(it.key, it.value)
+    }
+    if (BuildConfig.DEBUG) {
+      Log.d(TAG, "setupCode: \n$setupCode")
+    }
     if (setupCode.isNotEmpty()) {
       try {
         context.eval(setupCode.toString(), "", 0)
@@ -175,6 +179,7 @@ class KNode(private val pwd: File, private val output: StdOutput) : Closeable {
         eventOnError(error)
       }
     }
+    eventOnPrepared(context)
   }
 
   private fun attachStdOutput(context: JSContext) {

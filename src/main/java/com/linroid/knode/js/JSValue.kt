@@ -25,7 +25,7 @@ open class JSValue(context: JSContext? = null, @Native protected val reference: 
   }
 
   /** For native access runtime ptr */
-  private fun runtime(): Long {
+  private fun runtimePtr(): Long {
     return context.runtimePtr
   }
 

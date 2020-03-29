@@ -1,4 +1,4 @@
 /build
 /.cxx
 /src/main/jniLibs/*/libnode.so
-/prebuilt
+/src/main/cpp/prebuilt

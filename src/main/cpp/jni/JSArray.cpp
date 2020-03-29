@@ -36,6 +36,7 @@ jboolean JSArray::AddAll(JNIEnv *env, jobject jThis, jobjectArray jElements) {
     for (int i = 0; i < size; ++i) {
         auto jElement = env->GetObjectArrayElement(jElements, i);
         elements[i] = JSValue::Unwrap(env, jElement);
+        env->DeleteLocalRef(jElement);
     }
     V8_CONTEXT(env, jThis, v8::Array)
         v8::TryCatch tryCatch(runtime->isolate_);

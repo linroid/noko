@@ -16,12 +16,19 @@ void JniCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
             v8::Local<v8::Value> element = info[i];
             auto value = new v8::Persistent<v8::Value>(runtime->isolate_, element);
             auto type = runtime->GetType(element);
-            env->SetObjectArrayElement(parameters, i, runtime->Wrap(env, value, type));
+            auto obj = runtime->Wrap(env, value, type);
+            env->SetObjectArrayElement(parameters, i, obj);
+            if (type >= kValue) {
+                env->DeleteLocalRef(obj);
+            }
         }
         auto caller = (v8::Local<v8::Value>) info.This();
         auto value = new v8::Persistent<v8::Value>(runtime->isolate_, caller);
         auto type = runtime->GetType(caller);
-        auto jRet = env->CallObjectMethod(that, methodId, runtime->Wrap(env, value, type), parameters);
+        auto jCaller = runtime->Wrap(env, value, type);
+        auto jRet = env->CallObjectMethod(that, methodId, jCaller, parameters);
+        env->DeleteLocalRef(jCaller);
+        env->DeleteLocalRef(parameters);
         if (env->ExceptionCheck()) {
             info.GetReturnValue().Set(v8::Undefined(info.GetIsolate()));
             env->Throw(env->ExceptionOccurred());

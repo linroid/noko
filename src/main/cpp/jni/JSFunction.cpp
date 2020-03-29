@@ -49,6 +49,7 @@ jobject JSFunction::Call(JNIEnv *env, jobject jThis, jobject jReceiver, jobjectA
     for (int i = 0; i < argc; ++i) {
         auto jElement = env->GetObjectArrayElement(jParameters, i);
         parameters[i] = JSValue::Unwrap(env, jElement);
+        env->DeleteLocalRef(jElement);
     }
 
     V8_CONTEXT(env, jThis, v8::Function)

@@ -441,6 +441,32 @@ v8::Local<v8::Value> NodeRuntime::Require(const char *path) {
     return scope.Escape(result);
 }
 
+v8::Persistent<v8::Value> *NodeRuntime::CreateFileSystem() {
+    v8::Persistent<v8::Value> *result = nullptr;
+    auto runnable = [&]() {
+        v8::Locker _locker(isolate_);
+        v8::HandleScope _handleScope(isolate_);
+        auto context = context_.Get(isolate_);
+        auto fs = v8::Local<v8::Object>::Cast(Require("__fs"));
+        fs->Set(context, V8_UTF_STRING(isolate_, "require"), require_.Get(isolate_));
+        result = new v8::Persistent<v8::Value>(isolate_, fs);
+    };
+    Await(runnable);
+    return result;
+}
+
+void NodeRuntime::MountFileSystem(v8::Persistent<v8::Value> *fs) {
+    auto runnable = [&]() {
+        v8::Locker _locker(isolate_);
+        v8::HandleScope _handleScope(isolate_);
+        auto context = context_.Get(isolate_);
+        auto global = global_->Get(isolate_);
+        auto privateKey = v8::Private::ForApi(isolate_, v8::String::NewFromUtf8(isolate_, "__fs").ToLocalChecked());
+        global->SetPrivate(context, privateKey, fs->Get(isolate_)).FromJust();
+    };
+    Await(runnable);
+}
+
 int init_node() {
     // Make argv memory adjacent
     char cmd[128];

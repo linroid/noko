@@ -144,25 +144,16 @@ JNICALL jboolean submit(JNIEnv *env, jobject jThis, jobject jRunnable) {
     return 1;
 }
 
-JNICALL void mountFs(JNIEnv *env, jobject _, jobject jfs) {
-    V8_CONTEXT(env, jfs, v8::Value)
-        auto global = runtime->global_->Get(isolate);
-        auto privateKey = v8::Private::ForApi(isolate, v8::String::NewFromUtf8(isolate, "__fs").ToLocalChecked());
-        global->SetPrivate(context, privateKey, that).FromJust();
-    V8_END()
+JNICALL void mountFs(JNIEnv *env, jobject jThis, jobject jfs) {
+    auto runtime = get_runtime(env, jThis);
+    auto reference = JSValue::Unwrap(env, jfs);
+    runtime->MountFileSystem(reference);
 }
 
-JNICALL jobject createFs(JNIEnv *env, jobject jThis) {
+JNICALL jobject newFileSystem(JNIEnv *env, jobject jThis) {
     auto runtime = get_runtime(env, jThis);
-    auto isolate = runtime->isolate_;
-    v8::Persistent<v8::Value> *result = nullptr;
-    auto runnable = [&]() {
-        v8::Locker _locker(isolate);
-        v8::HandleScope _handleScope(isolate);
-        auto fs = runtime->Require("__fs");
-        result = new v8::Persistent<v8::Value>(isolate, fs);
-    V8_END()
-    return JSObject::Wrap(env, runtime, result);
+    auto fs = runtime->CreateFileSystem();
+    return JSObject::Wrap(env, runtime, fs);
 }
 
 int init(JNIEnv *env) {
@@ -194,7 +185,7 @@ static JNINativeMethod nodeMethods[] = {
         {"nativeExit",            "(I)V",                               (void *) nativeExit},
         {"nativeStart",           "([Ljava/lang/String;)I",             (void *) start},
         {"nativeMountFileSystem", "(Lcom/linroid/knode/js/JSObject;)V", (void *) mountFs},
-        {"nativeNewFileSystem",   "()Lcom/linroid/knode/js/JSObject;",  (void *) createFs},
+        {"nativeNewFileSystem",   "()Lcom/linroid/knode/js/JSObject;",  (void *) newFileSystem},
         {"nativeSubmit",          "(Ljava/lang/Runnable;)Z",            (void *) submit},
 };
 

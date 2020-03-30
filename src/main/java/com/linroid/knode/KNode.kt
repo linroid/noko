@@ -1,5 +1,6 @@
 package com.linroid.knode
 
+import android.system.Os
 import android.util.Log
 import androidx.annotation.Keep
 import com.google.gson.Gson
@@ -18,10 +19,14 @@ import kotlin.concurrent.thread
  * @since 2019-10-16
  */
 @Keep
-class KNode(private val cwd: File, private val output: StdOutput) : Closeable {
+class KNode(
+  private val cwd: File,
+  private val output: StdOutput,
+  keepAlive: Boolean = false
+) : Closeable {
 
   @Native
-  private var ptr: Long = nativeNew()
+  private var ptr: Long = nativeNew(keepAlive)
   private val listeners = HashSet<EventListener>()
 
   @Volatile
@@ -79,12 +84,10 @@ class KNode(private val cwd: File, private val output: StdOutput) : Closeable {
       Thread.dumpStack()
       return
     }
-    submit(Runnable {
-      Log.d(TAG, "eval process.exit($exitCode)")
-      context.eval("process.exit($exitCode);")
-    })
+    nativeExit(exitCode)
     active = false
   }
+
 
   // /**
   //  * Instructs the VM not to shutdown the process when no more callbacks are pending.  In effect,
@@ -150,6 +153,8 @@ process.stdout.isRaw = true;
 """
       )
     }
+    // setupCode.append("process.argv0='node';\n")
+    // setupCode.append("process.argv[0]='node';\n")
     val setEnv: (key: String, value: String) -> Unit = { key, value ->
       setupCode.append("process.env['$key'] = '${value}';\n")
     }
@@ -159,21 +164,24 @@ process.stdout.isRaw = true;
 
     setEnv("PWD", cwd.absolutePath)
     if (output.supportsColor) {
-      setEnv("PWD", "truecolor")
+      setEnv("COLORTERM", "truecolor")
     }
     customEnvs.entries.forEach {
       setEnv(it.key, it.value)
     }
+    setupCode.append("process.execPath = '/node'\n")
     setupCode.append("process.chdir('${cwd.absolutePath}');\n")
     customVersions.forEach {
       setVersion(it.key, it.value)
     }
-    if (BuildConfig.DEBUG) {
-      Log.d(TAG, "setupCode: \n$setupCode")
-    }
     if (setupCode.isNotEmpty()) {
       try {
-        context.eval(setupCode.toString(), "", 0)
+        // setupCode.append("const vm = require('vm');\n")
+        // setupCode.append("(new vm.Script(`${setupCode}`)).runInThisContext();\n")
+        if (BuildConfig.DEBUG) {
+          Log.d(TAG, "setupCode: \n$setupCode")
+        }
+        context.eval(setupCode.toString())
       } catch (error: JSException) {
         Log.e(TAG, "Execute failed: stack=${error.stack()}", error)
         eventOnError(error)
@@ -187,9 +195,6 @@ process.stdout.isRaw = true;
     val stdout: JSObject = process.get("stdout")
     stdout.set("write", object : JSFunction(context, "write") {
       override fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
-        if (BuildConfig.DEBUG) {
-          Log.d(TAG, parameters[0].toString())
-        }
         output.stdout(parameters[0].toString())
         return null
       }
@@ -198,7 +203,7 @@ process.stdout.isRaw = true;
     stderr.set("write", object : JSFunction(context, "write") {
       override fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
         if (BuildConfig.DEBUG) {
-          Log.w(TAG, parameters[0].toString())
+          Log.w(TAG, "stderr: " + parameters[0].toString())
         }
         output.stderr(parameters[0].toString())
         return null
@@ -218,11 +223,13 @@ process.stdout.isRaw = true;
   }
 
   private fun eventOnError(error: JSException) {
-    Log.e(TAG, "eventOnError}")
+    Log.e(TAG, "eventOnError")
     listeners.forEach { it.onNodeError(error) }
   }
 
-  private external fun nativeNew(): Long
+  private external fun nativeNew(keepAlive: Boolean): Long
+
+  private external fun nativeExit(exitCode: Int)
 
   private external fun nativeStart(args: Array<out String>): Int
 
@@ -231,7 +238,6 @@ process.stdout.isRaw = true;
   private external fun nativeMountFileSystem(obj: JSObject)
 
   private external fun nativeSubmit(action: Runnable): Boolean
-
   interface EventListener {
 
     fun onNodePrepared(context: JSContext) {}
@@ -248,10 +254,12 @@ process.stdout.isRaw = true;
     private val customVersions = HashMap<String, String>()
     private val customEnvs = HashMap<String, String>()
     var gson: Gson = Gson()
-    var execFile: File = File("/bin/node")
 
     init {
       System.loadLibrary("knode")
+      if (BuildConfig.DEBUG) {
+        Os.setenv("NODE_DEBUG", "*", true)
+      }
     }
 
     fun addEnv(key: String, value: String) {

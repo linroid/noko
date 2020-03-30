@@ -47,7 +47,7 @@ int init_node() {
     // Parse Node.js CLI options, and print any errors that have occurred while
     // trying to parse them.
     int exit_code = node::InitializeNodeWithArgs(&args, &exec_args, &errors);
-    for (const std::string& error : errors)
+    for (const std::string &error : errors)
         LOGE("%s: %s\n", args[0].c_str(), error.c_str());
     if (exit_code == 0) {
         nodeInitialized = true;
@@ -70,12 +70,8 @@ int init_node() {
 //     v8::V8::ShutdownPlatform();
 // }
 
-void NodeRuntime::StaticHandle(uv_async_t *handle) {
-    NodeRuntime *runtime = reinterpret_cast<NodeRuntime *>(handle->data);
-    runtime->Handle(handle);
-}
-
-NodeRuntime::NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart): onBeforeStart_(onBeforeStart) {
+NodeRuntime::NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, bool keepAlive)
+        : onBeforeStart_(onBeforeStart), keepAlive_(keepAlive) {
     env->GetJavaVM(&vm_);
     jThis_ = env->NewGlobalRef(jThis);
 
@@ -96,10 +92,19 @@ NodeRuntime::~NodeRuntime() {
     std::lock_guard<std::mutex> lock(asyncMutex_);
     ENTER_JNI(vm_)
         env->DeleteGlobalRef(jThis_);
+        env->DeleteGlobalRef(jUndefined_);
+        env->DeleteGlobalRef(jNull_);
+        env->DeleteGlobalRef(jTrue_);
+        env->DeleteGlobalRef(jFalse_);
+        env->DeleteGlobalRef(jContext_);
     EXIT_JNI(vm_)
 
     eventLoop_ = nullptr;
-    global_ = nullptr;
+    if (global_ != nullptr) {
+        global_->Reset();
+        global_ = nullptr;
+    }
+    context_.Reset();
     isolate_ = nullptr;
     running_ = false;
     sharedMutex_.lock();
@@ -113,8 +118,9 @@ void NodeRuntime::OnPrepared() {
     v8::Local<v8::Context> context = context_.Get(isolate_);
     v8::HandleScope handleScope(isolate_);
     v8::Context::Scope contextScope(context);
-    v8::Local<v8::Object> global = context->Global();
-    global_ = new v8::Persistent<v8::Object>(isolate_, global);
+    // auto global = global_->Get(isolate_);
+    // auto require = require_.Get(isolate_);
+    // global->Set(context, V8_UTF_STRING(isolate_, ""), require);
     running_ = true;
     ENTER_JNI(vm_);
         auto nullValue = new v8::Persistent<v8::Value>(isolate_, v8::Null(isolate_));
@@ -137,20 +143,16 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
 
     // See below for the contents of this function.
     int exit_code = 0;
-    // Set up a libuv event loop.
-    uv_loop_t* loop = uv_loop_new();
-    int ret = uv_loop_init(loop);
-    if (ret != 0) {
-        LOGE("%s: Failed to initialize loop: %s\n", args[0].c_str(), uv_err_name(ret));
+    if (!InitLoop()) {
         return 1;
     }
 
-    std::shared_ptr<node::ArrayBufferAllocator> allocator =node::ArrayBufferAllocator::Create();
-    v8::Isolate *isolate = node::NewIsolate(allocator, loop, platform.get());
+    std::shared_ptr<node::ArrayBufferAllocator> allocator = node::ArrayBufferAllocator::Create();
+    v8::Isolate *isolate = node::NewIsolate(allocator, eventLoop_, platform.get());
 
     if (isolate == nullptr) {
         LOGE("%s: Failed to initialize V8 Isolate\n", args[0].c_str());
-        return 1;
+        return 2;
     }
 
     {
@@ -160,7 +162,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
         // Create a node::IsolateData instance that will later be released using
         // node::FreeIsolateData().
         std::unique_ptr<node::IsolateData, decltype(&node::FreeIsolateData)> isolate_data(
-                node::CreateIsolateData(isolate, loop, platform.get(), allocator.get()),
+                node::CreateIsolateData(isolate, eventLoop_, platform.get(), allocator.get()),
                 node::FreeIsolateData);
 
         // Set up a new v8::Context.
@@ -168,21 +170,21 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
         v8::Local<v8::Context> context = node::NewContext(isolate);
         if (context.IsEmpty()) {
             LOGE("%s: Failed to initialize V8 Context\n", args[0].c_str());
-            return 1;
+            return 3;
         }
-        eventLoop_ = loop;
-        isolate_ = isolate;
-        context_.Reset(isolate, context);
-
         // The v8::Context needs to be entered when node::CreateEnvironment() and
         // node::LoadEnvironment() are being called.
         v8::Context::Scope context_scope(context);
-
+        LOGD("CreateEnvironment");
         std::unique_ptr<node::Environment, decltype(&node::FreeEnvironment)> env(
                 node::CreateEnvironment(isolate_data.get(), context, args, args),
                 node::FreeEnvironment);
 
+        isolate_ = isolate;
+        context_.Reset(isolate, context);
+        global_ = new v8::Persistent<v8::Object>(isolate, context->Global());
         OnPrepared();
+
         // Set up the Node.js instance for execution, and run code inside of it.
         // There is also a variant that takes a callback and provides it with
         // the `require` and `process` objects, so that it can manually compile
@@ -192,24 +194,35 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
         // `module.createRequire()` is being used to create one that is able to
         // load files from the disk, and uses the standard CommonJS file loader
         // instead of the internal-only `require` function.
-        // v8::MaybeLocal<v8::Value> loadenv_ret = node::LoadEnvironment(
+        // node::LoadEnvironment(
         //         env.get(),
         //         "const publicRequire ="
         //         "  require('module').createRequire(process.cwd() + '/');"
         //         "globalThis.require = publicRequire;"
         //         "require('vm').runInThisContext(process.argv[1]);");
-        node::StartExecutionCallback ptr = nullptr;
-        if (node::LoadEnvironment(env.get(), ptr).IsEmpty()) {
-            LOGE("Failed to LoadEnvironment");
-            return 1;
-        }
+
+        node::LoadEnvironment(env.get(), [&](const node::StartExecutionCallbackInfo &info) -> v8::MaybeLocal<v8::Value> {
+            require_.Reset(isolate_, info.native_require);
+            process_.Reset(isolate_, info.process_object);
+            return v8::MaybeLocal<v8::Value>();
+        });
 
         {
+            if (keepAlive_) {
+                isolate->SetPromiseHook([](v8::PromiseHookType type, v8::Local<v8::Promise> promise,
+                                           v8::Local<v8::Value> parent) {
+                    if (type == v8::PromiseHookType::kInit) {
+                        promise->GetIsolate()->RunMicrotasks();
+                    }
+                });
+            }
+
             // SealHandleScope protects against handle leaks from callbacks.
             v8::SealHandleScope seal(isolate);
+
             int more;
             do {
-                uv_run(loop, UV_RUN_DEFAULT);
+                uv_run(eventLoop_, UV_RUN_DEFAULT);
 
                 // V8 tasks on background threads may end up scheduling new tasks in the
                 // foreground, which in turn can keep the event loop going. For example,
@@ -217,7 +230,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
                 platform->DrainTasks(isolate);
 
                 // If there are new tasks, continue.
-                more = uv_loop_alive(loop);
+                more = uv_loop_alive(eventLoop_);
                 if (more) continue;
 
                 // node::EmitBeforeExit() is used to emit the 'beforeExit' event on
@@ -226,7 +239,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
 
                 // 'beforeExit' can also schedule new work that keeps the event loop
                 // running.
-                more = uv_loop_alive(loop);
+                more = uv_loop_alive(eventLoop_);
             } while (more);
         }
 
@@ -243,20 +256,56 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
     // when the Platform is done cleaning up any state it had associated with
     // the Isolate.
     bool platform_finished = false;
-    platform->AddIsolateFinishedCallback(isolate, [](void* data) {
-        *static_cast<bool*>(data) = true;
+    platform->AddIsolateFinishedCallback(isolate, [](void *data) {
+        *static_cast<bool *>(data) = true;
     }, &platform_finished);
     platform->UnregisterIsolate(isolate);
     isolate->Dispose();
-
     // Wait until the platform has cleaned up all relevant resources.
     while (!platform_finished)
-        uv_run(loop, UV_RUN_ONCE);
-    int err = uv_loop_close(loop);
+        uv_run(eventLoop_, UV_RUN_ONCE);
+    int err = uv_loop_close(eventLoop_);
     // uv_loop_delete(loop);
     assert(err == 0);
-
     return exit_code;
+}
+
+void NodeRuntime::Exit(int code) {
+    if (keepAlive_) {
+        uv_async_send(keepAliveHandle_);
+    }
+    Post([&]{
+        v8::HandleScope handle_scope(isolate_);
+        auto process = process_.Get(isolate_);
+        auto context = context_.Get(isolate_);
+        v8::Local<v8::Value> v8Code = v8::Number::New(isolate_, code);
+        auto exitFunc = process->Get(context, V8_UTF_STRING(isolate_, "exit"));
+        v8::Local<v8::Function>::Cast(exitFunc.ToLocalChecked())
+        ->Call(context, process, 1, &v8Code);
+    });
+}
+
+bool NodeRuntime::InitLoop() {
+    eventLoop_ = uv_loop_new();
+    int ret = uv_loop_init(eventLoop_);
+    if (ret != 0) {
+        LOGE("Failed to initialize loop: %s", uv_err_name(ret));
+        return false;
+    }
+    if (keepAlive_) {
+        keepAliveHandle_ = new uv_async_t();
+        ret = uv_async_init(eventLoop_, keepAliveHandle_, [](uv_async_t *handle) {
+            LOGD("stop keep alive");
+            uv_close((uv_handle_t *) handle, [](uv_handle_t *h) {
+                free(h);
+            });
+        });
+        if (ret != 0) {
+            LOGE("Failed to initialize keep alive handle: %s", uv_err_name(ret));
+            return false;
+        }
+    }
+    return true;
 }
 
 NodeRuntime *NodeRuntime::GetCurrent(const v8::FunctionCallbackInfo<v8::Value> &info) {
@@ -304,11 +353,14 @@ void NodeRuntime::TryLoop() {
         LOGE("TryLoop but eventLoop is NULL");
         return;
     }
-    if (!asyncHandle_) {
-        asyncHandle_ = new uv_async_t();
-        asyncHandle_->data = this;
-        uv_async_init(eventLoop_, asyncHandle_, NodeRuntime::StaticHandle);
-        uv_async_send(asyncHandle_);
+    if (!callbackHandle_) {
+        callbackHandle_ = new uv_async_t();
+        callbackHandle_->data = this;
+        uv_async_init(eventLoop_, callbackHandle_, [](uv_async_t *handle) {
+            NodeRuntime *runtime = reinterpret_cast<NodeRuntime *>(handle->data);
+            runtime->Handle(handle);
+        });
+        uv_async_send(callbackHandle_);
     }
 }
 
@@ -379,7 +431,7 @@ void NodeRuntime::Handle(uv_async_t *handle) {
     uv_close((uv_handle_t *) handle, [](uv_handle_t *h) {
         delete (uv_async_t *) h;
     });
-    asyncHandle_ = nullptr;
+    callbackHandle_ = nullptr;
     asyncMutex_.unlock();
 }
 
@@ -409,16 +461,30 @@ JSType NodeRuntime::GetType(v8::Local<v8::Value> &value) {
     return JSType::kValue;
 }
 
-v8::Local<v8::Object> NodeRuntime::Require(const char *path) {
-    v8::EscapableHandleScope handleScope(isolate_);
+// v8::Local<v8::Value> NodeRuntime::Require(const char *path) {
+//     v8::EscapableHandleScope handleScope(isolate_);
+//     auto context = context_.Get(isolate_);
+//     auto global = global_->Get(isolate_);
+//     v8::Context::Scope contextScope(context);
+//     auto key = v8::String::NewFromUtf8(isolate_, "require").ToLocalChecked();
+//     v8::Local<v8::Object> require = global->Get(context, key).ToLocalChecked()->ToObject(context).ToLocalChecked();
+//     v8::Local<v8::Value> *argv = new v8::Local<v8::Value>[1];
+//     argv[0] = V8_UTF_STRING(isolate_, path);
+//     assert(require->IsFunction());
+//     auto result = require->CallAsFunction(context, global, 1, argv).ToLocalChecked();
+//     return handleScope.Escape(result->ToObject(context).ToLocalChecked());
+// }
+
+v8::Local<v8::Value> NodeRuntime::Require(const char *path) {
+    v8::EscapableHandleScope scope(isolate_);
     auto context = context_.Get(isolate_);
+    auto require = require_.Get(isolate_);
     auto global = global_->Get(isolate_);
     v8::Context::Scope contextScope(context);
-    auto key = v8::String::NewFromUtf8(isolate_, "require").ToLocalChecked();
-    v8::Local<v8::Object> require = global->Get(context, key).ToLocalChecked()->ToObject(context).ToLocalChecked();
+
     v8::Local<v8::Value> *argv = new v8::Local<v8::Value>[1];
     argv[0] = V8_UTF_STRING(isolate_, path);
     assert(require->IsFunction());
-    auto result = require->CallAsFunction(context, global, 1, argv).ToLocalChecked();
-    return handleScope.Escape(result->ToObject(context).ToLocalChecked());
+    auto result = require->Call(context, global, 1, argv).ToLocalChecked();
+    return scope.Escape(result);
 }

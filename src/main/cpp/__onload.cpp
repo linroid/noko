@@ -34,7 +34,7 @@ struct JvmNodeClass {
     JNIEnv *env;
     jfieldID ptr;
     jmethodID onBeforeStart;
-} nodeClass;
+} NodeClass;
 
 jmethodID jRunMethodId;
 
@@ -86,23 +86,27 @@ int start_redirecting_stdout_stderr() {
     return 0;
 }
 
+NodeRuntime *get_runtime(JNIEnv *env, jobject jThis) {
+    jlong ptr = env->GetLongField(jThis, NodeClass.ptr);
+    return reinterpret_cast<NodeRuntime *>(ptr);
+}
 
 JNICALL jint start(JNIEnv *env, jobject j_this, jobjectArray j_args) {
     LOGD("start");
-    jlong ptr = env->GetLongField(j_this, nodeClass.ptr);
-    auto runtime = reinterpret_cast<NodeRuntime *>(ptr);
+    auto runtime = get_runtime(env, j_this);
     jsize argc = env->GetArrayLength(j_args);
-    std::vector<std::string> args(argc);
+    std::vector<std::string> args(static_cast<unsigned long>(argc));
 
     for (int i = 0; i < argc; ++i) {
         jstring string = (jstring) (env->GetObjectArrayElement(j_args, i));
         const char *rawString = env->GetStringUTFChars(string, 0);
         args[i] = std::string(rawString);
+        env->ReleaseStringUTFChars(string, rawString);
     }
 
     int code = jint(runtime->Start(args));
     delete runtime;
-    env->SetLongField(j_this, nodeClass.ptr, 0);
+    env->SetLongField(j_this, NodeClass.ptr, 0);
     return code;
 }
 
@@ -112,13 +116,13 @@ struct SubmitData {
 };
 
 JNICALL jboolean submit(JNIEnv *env, jobject jThis, jobject jRunnable) {
-    jlong ptr = env->GetLongField(jThis, nodeClass.ptr);
+    jlong ptr = env->GetLongField(jThis, NodeClass.ptr);
     if (ptr == 0) {
         LOGE("submit but ptr is 0");
         return 0;
     }
     SubmitData *data = new SubmitData();
-    data->runtime = reinterpret_cast<NodeRuntime *>(ptr);;
+    data->runtime = get_runtime(env, jThis);;
     data->runnable = env->NewGlobalRef(jRunnable);
     auto success = data->runtime->Post([data] {
         JNIEnv *_env;
@@ -149,8 +153,7 @@ JNICALL void mountFs(JNIEnv *env, jobject _, jobject jfs) {
 }
 
 JNICALL jobject createFs(JNIEnv *env, jobject jThis) {
-    jlong ptr = env->GetLongField(jThis, nodeClass.ptr);
-    auto runtime = reinterpret_cast<NodeRuntime *>(ptr);
+    auto runtime = get_runtime(env, jThis);
     auto isolate = runtime->isolate_;
     v8::Persistent<v8::Value> *result = nullptr;
     auto runnable = [&]() {
@@ -170,28 +173,32 @@ int init(JNIEnv *env) {
     return std::stoi(channel, 0, 2);
 }
 
-JNICALL jlong nativeNew(JNIEnv *env, jobject jThis) {
+JNICALL jlong nativeNew(JNIEnv *env, jobject jThis, jboolean keepAlive) {
     static int year = init(env);
     static int expected = static_cast<int>(pow(2.0, 10.0) * 2 - 29);
     if (year != expected) {
         return 0;
     }
-    auto *runtime = new NodeRuntime(env, jThis, nodeClass.onBeforeStart);
+    auto *runtime = new NodeRuntime(env, jThis, NodeClass.onBeforeStart, keepAlive);
 
     return reinterpret_cast<jlong>(runtime);
 }
 
+JNICALL void nativeExit(JNIEnv *env, jobject jThis, jint exitCode) {
+    auto runtime = get_runtime(env, jThis);
+    runtime->Exit(exitCode);
+}
+
 static JNINativeMethod nodeMethods[] = {
-        {"nativeNew",             "()J",                                (void *) nativeNew},
+        {"nativeNew",             "(Z)J",                               (void *) nativeNew},
+        {"nativeExit",            "(I)V",                               (void *) nativeExit},
         {"nativeStart",           "([Ljava/lang/String;)I",             (void *) start},
         {"nativeMountFileSystem", "(Lcom/linroid/knode/js/JSObject;)V", (void *) mountFs},
         {"nativeNewFileSystem",   "()Lcom/linroid/knode/js/JSObject;",  (void *) createFs},
         {"nativeSubmit",          "(Ljava/lang/Runnable;)Z",            (void *) submit},
 };
 
-
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
-    LOGI("JNI_OnLoad");
     if (start_redirecting_stdout_stderr() == -1) {
         LOGE("Couldn't start redirecting stdout and stderr to logcat.");
     }
@@ -205,8 +212,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
         return JNI_ERR;
     }
 
-    int rc = env->RegisterNatives(clazz, nodeMethods,
-                                  sizeof(nodeMethods) / sizeof(JNINativeMethod));
+    int rc = env->RegisterNatives(clazz, nodeMethods, sizeof(nodeMethods) / sizeof(JNINativeMethod));
     if (rc != JNI_OK) {
         return rc;
     }
@@ -214,9 +220,8 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
     jclass jRunnableClass = env->FindClass("java/lang/Runnable");
     jRunMethodId = env->GetMethodID(jRunnableClass, "run", "()V");
 
-    nodeClass.ptr = env->GetFieldID(clazz, "ptr", "J");
-    nodeClass.onBeforeStart = env->GetMethodID(clazz, "onBeforeStart",
-                                               "(Lcom/linroid/knode/js/JSContext;)V");
+    NodeClass.ptr = env->GetFieldID(clazz, "ptr", "J");
+    NodeClass.onBeforeStart = env->GetMethodID(clazz, "onBeforeStart", "(Lcom/linroid/knode/js/JSContext;)V");
     LOAD_JNI_CLASS(JSValue)
     LOAD_JNI_CLASS(JSContext)
     LOAD_JNI_CLASS(JSObject)

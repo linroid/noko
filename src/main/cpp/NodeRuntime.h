@@ -41,19 +41,27 @@ private:
     std::mutex asyncMutex_;
     std::mutex instanceMutex_;
     std::vector<std::function<void()>> callbacks_;
-    uv_async_t *asyncHandle_ = nullptr;
     int id_ = -1;
+    bool keepAlive_ = false;
 
     static std::mutex sharedMutex_;
     static jint instanceCount_;
     static jint seq_;
-    uv_loop_t *eventLoop_;
 
-    static void StaticHandle(uv_async_t *handle);
+    uv_loop_t *eventLoop_;
+    uv_async_t *keepAliveHandle_;
+    uv_async_t *callbackHandle_ = nullptr;
+
+    v8::Persistent<v8::Function> require_;
+    v8::Persistent<v8::Object> process_;
 
     void Handle(uv_async_t *handle);
 
+    bool InitLoop();
+
     void TryLoop();
+
+    void Loop();
 
     void OnPrepared();
 
@@ -66,14 +74,18 @@ public:
     JavaVM *vm_ = nullptr;
 
     v8::Isolate *isolate_ = nullptr;
+    node::Environment *env_ = nullptr;
+    node::IsolateData *isolateData_ = nullptr;
+    v8::Persistent<v8::Object>* global_ = nullptr;
     v8::Persistent<v8::Context> context_;
-    v8::Persistent<v8::Object> *global_ = nullptr;
 
-    NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart);
+    NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, bool keepAlive);
 
     ~NodeRuntime();
 
     int Start(std::vector<std::string> &args);
+
+    void Exit(int code);
 
     bool Await(std::function<void()> runnable);
 
@@ -83,9 +95,11 @@ public:
 
     JSType GetType(v8::Local<v8::Value> &value);
 
-    v8::Local<v8::Object> Require(const char *path);
+    v8::Local<v8::Value> Require(const char *path);
 
     static inline NodeRuntime *GetCurrent(const v8::FunctionCallbackInfo<v8::Value> &info);
+
+    int InitEnv(std::vector<std::string> &args);
 };
 
 #endif //NODE_NODE_RUNTIME_H

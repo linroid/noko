@@ -61,8 +61,6 @@ private:
 
     void TryLoop();
 
-    void Loop();
-
     void OnPrepared();
 
 public:
@@ -74,9 +72,7 @@ public:
     JavaVM *vm_ = nullptr;
 
     v8::Isolate *isolate_ = nullptr;
-    node::Environment *env_ = nullptr;
-    node::IsolateData *isolateData_ = nullptr;
-    v8::Persistent<v8::Object>* global_ = nullptr;
+    v8::Persistent<v8::Object> *global_ = nullptr;
     v8::Persistent<v8::Context> context_;
 
     NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, bool keepAlive);
@@ -96,10 +92,6 @@ public:
     JSType GetType(v8::Local<v8::Value> &value);
 
     v8::Local<v8::Value> Require(const char *path);
-
-    static inline NodeRuntime *GetCurrent(const v8::FunctionCallbackInfo<v8::Value> &info);
-
-    int InitEnv(std::vector<std::string> &args);
 };
 
 #endif //NODE_NODE_RUNTIME_H

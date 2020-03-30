@@ -28,48 +28,6 @@ int NodeRuntime::seq_ = 0;
 bool nodeInitialized = false;
 std::unique_ptr<node::MultiIsolatePlatform> platform;
 
-int init_node() {
-    // Make argv memory adjacent
-    char cmd[128];
-    strcpy(cmd, "node --trace-exit --trace-sigint --trace-sync-io --trace-warnings --title=Dora.js");
-    int argc = 0;
-    char *argv[128];
-    char *p2 = strtok(cmd, " ");
-    while (p2 && argc < 128 - 1) {
-        argv[argc++] = p2;
-        p2 = strtok(0, " ");
-    }
-    argv[argc] = 0;
-
-    std::vector<std::string> args = std::vector<std::string>(argv, argv + argc);
-    std::vector<std::string> exec_args;
-    std::vector<std::string> errors;
-    // Parse Node.js CLI options, and print any errors that have occurred while
-    // trying to parse them.
-    int exit_code = node::InitializeNodeWithArgs(&args, &exec_args, &errors);
-    for (const std::string &error : errors)
-        LOGE("%s: %s\n", args[0].c_str(), error.c_str());
-    if (exit_code == 0) {
-        nodeInitialized = true;
-    }
-
-    // Create a v8::Platform instance. `MultiIsolatePlatform::Create()` is a way
-    // to create a v8::Platform instance that Node.js can use when creating
-    // Worker threads. When no `MultiIsolatePlatform` instance is present,
-    // Worker threads are disabled.
-    platform = node::MultiIsolatePlatform::Create(4);
-    v8::V8::InitializePlatform(platform.get());
-    v8::V8::Initialize();
-
-    return exit_code;
-}
-
-// void shutdownNode() {
-//     nodeInitialized = false;
-//     v8::V8::Dispose();
-//     v8::V8::ShutdownPlatform();
-// }
-
 NodeRuntime::NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, bool keepAlive)
         : onBeforeStart_(onBeforeStart), keepAlive_(keepAlive) {
     env->GetJavaVM(&vm_);
@@ -274,14 +232,14 @@ void NodeRuntime::Exit(int code) {
     if (keepAlive_) {
         uv_async_send(keepAliveHandle_);
     }
-    Post([&]{
+    Post([&] {
         v8::HandleScope handle_scope(isolate_);
         auto process = process_.Get(isolate_);
         auto context = context_.Get(isolate_);
         v8::Local<v8::Value> v8Code = v8::Number::New(isolate_, code);
         auto exitFunc = process->Get(context, V8_UTF_STRING(isolate_, "exit"));
         v8::Local<v8::Function>::Cast(exitFunc.ToLocalChecked())
-        ->Call(context, process, 1, &v8Code);
+                ->Call(context, process, 1, &v8Code);
     });
 }
 
@@ -306,12 +264,6 @@ bool NodeRuntime::InitLoop() {
         }
     }
     return true;
-}
-
-NodeRuntime *NodeRuntime::GetCurrent(const v8::FunctionCallbackInfo<v8::Value> &info) {
-    assert(info.Data()->IsExternal());
-    auto external = info.Data().As<v8::External>();
-    return reinterpret_cast<NodeRuntime *>(external->Value());
 }
 
 jobject NodeRuntime::Wrap(JNIEnv *env, v8::Persistent<v8::Value> *value, JSType type) {
@@ -488,3 +440,45 @@ v8::Local<v8::Value> NodeRuntime::Require(const char *path) {
     auto result = require->Call(context, global, 1, argv).ToLocalChecked();
     return scope.Escape(result);
 }
+
+int init_node() {
+    // Make argv memory adjacent
+    char cmd[128];
+    strcpy(cmd, "node --trace-exit --trace-sigint --trace-sync-io --trace-warnings --title=Dora.js");
+    int argc = 0;
+    char *argv[128];
+    char *p2 = strtok(cmd, " ");
+    while (p2 && argc < 128 - 1) {
+        argv[argc++] = p2;
+        p2 = strtok(0, " ");
+    }
+    argv[argc] = 0;
+
+    std::vector<std::string> args = std::vector<std::string>(argv, argv + argc);
+    std::vector<std::string> exec_args;
+    std::vector<std::string> errors;
+    // Parse Node.js CLI options, and print any errors that have occurred while
+    // trying to parse them.
+    int exit_code = node::InitializeNodeWithArgs(&args, &exec_args, &errors);
+    for (const std::string &error : errors)
+        LOGE("%s: %s\n", args[0].c_str(), error.c_str());
+    if (exit_code == 0) {
+        nodeInitialized = true;
+    }
+
+    // Create a v8::Platform instance. `MultiIsolatePlatform::Create()` is a way
+    // to create a v8::Platform instance that Node.js can use when creating
+    // Worker threads. When no `MultiIsolatePlatform` instance is present,
+    // Worker threads are disabled.
+    platform = node::MultiIsolatePlatform::Create(4);
+    v8::V8::InitializePlatform(platform.get());
+    v8::V8::Initialize();
+
+    return exit_code;
+}
+
+// void shutdownNode() {
+//     nodeInitialized = false;
+//     v8::V8::Dispose();
+//     v8::V8::ShutdownPlatform();
+// }

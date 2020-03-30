@@ -20,7 +20,7 @@ import kotlin.concurrent.thread
  */
 @Keep
 class KNode(
-  private val cwd: File,
+  private val cwd: File? = null,
   private val output: StdOutput,
   keepAlive: Boolean = false
 ) : Closeable {
@@ -162,7 +162,10 @@ process.stdout.isRaw = true;
       setupCode.append("process.versions['$key'] = '${value}';\n")
     }
 
-    setEnv("PWD", cwd.absolutePath)
+    cwd?.let {
+      setEnv("PWD", cwd.absolutePath)
+      setupCode.append("process.chdir('${cwd.absolutePath}');\n")
+    }
     if (output.supportsColor) {
       setEnv("COLORTERM", "truecolor")
     }
@@ -170,7 +173,6 @@ process.stdout.isRaw = true;
       setEnv(it.key, it.value)
     }
     setupCode.append("process.execPath = '/node'\n")
-    setupCode.append("process.chdir('${cwd.absolutePath}');\n")
     customVersions.forEach {
       setVersion(it.key, it.value)
     }
@@ -268,6 +270,22 @@ process.stdout.isRaw = true;
 
     fun addVersion(name: String, version: String) {
       customVersions[name] = version
+    }
+
+    fun versions(callback: (String) -> Unit) {
+      val node = KNode(null, object : StdOutput {
+        override fun stdout(str: String) {
+          val trimmed = str.trim()
+          if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+            callback(str)
+          }
+        }
+
+        override fun stderr(str: String) {
+          Log.e(TAG, str)
+        }
+      })
+      node.start("-e", "console.log(process.versions)")
     }
   }
 }

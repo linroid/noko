@@ -16,15 +16,18 @@
 int init_node();
 
 enum JSType {
+    /** cached types */
     kNone,
     kUndefined,
     kNull,
+    kBoolean,
+
+    /** non cached types */
     kValue,
     kArray,
     kObject,
     kString,
     kNumber,
-    kBoolean,
     kFunction,
     kPromise,
     kError,

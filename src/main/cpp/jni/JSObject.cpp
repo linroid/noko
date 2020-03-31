@@ -14,14 +14,15 @@ jclass JSObject::jClazz;
 jmethodID JSObject::jConstructor;
 
 JNICALL void JSObject::Set(JNIEnv *env, jobject jThis, jstring jKey, jobject jvalue) {
-    const char *key = env->GetStringUTFChars(jKey, nullptr);
+    const jchar *key = env->GetStringChars(jKey, nullptr);
+    const jint keyLen = env->GetStringLength(jKey);
+
     auto value = JSValue::Unwrap(env, jvalue);
-    // const jint keyLen = env->GetStringLength(jKey);
     V8_CONTEXT(env, jThis, v8::Object)
         // CHECK_NOT_NULL(*that);
-        that->Set(context, V8_UTF_STRING(isolate, key), value->Get(isolate));
+        that->Set(context, V8_STRING(key, keyLen), value->Get(isolate));
     V8_END()
-    env->ReleaseStringUTFChars(jKey, key);
+    env->ReleaseStringChars(jKey, key);
 }
 
 JNICALL jobject JSObject::Get(JNIEnv *env, jobject jThis, jstring jKey) {

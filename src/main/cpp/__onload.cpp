@@ -91,22 +91,22 @@ NodeRuntime *get_runtime(JNIEnv *env, jobject jThis) {
     return reinterpret_cast<NodeRuntime *>(ptr);
 }
 
-JNICALL jint start(JNIEnv *env, jobject j_this, jobjectArray j_args) {
+JNICALL jint start(JNIEnv *env, jobject jThis, jobjectArray jArgs) {
     LOGD("start");
-    auto runtime = get_runtime(env, j_this);
-    jsize argc = env->GetArrayLength(j_args);
+    auto runtime = get_runtime(env, jThis);
+    jsize argc = env->GetArrayLength(jArgs);
     std::vector<std::string> args(static_cast<unsigned long>(argc));
 
     for (int i = 0; i < argc; ++i) {
-        jstring string = (jstring) (env->GetObjectArrayElement(j_args, i));
-        const char *rawString = env->GetStringUTFChars(string, 0);
+        jstring string = (jstring) (env->GetObjectArrayElement(jArgs, i));
+        const char *rawString = env->GetStringUTFChars(string, nullptr);
         args[i] = std::string(rawString);
         env->ReleaseStringUTFChars(string, rawString);
     }
 
     int code = jint(runtime->Start(args));
     delete runtime;
-    env->SetLongField(j_this, NodeClass.ptr, 0);
+    env->SetLongField(jThis, NodeClass.ptr, 0);
     return code;
 }
 
@@ -161,7 +161,9 @@ int init(JNIEnv *env) {
     auto method = env->GetStaticMethodID(clazz, "o", "()Ljava/lang/String;");
     auto ret = (jstring) (env->CallStaticObjectMethod(clazz, method));
     const char *channel = env->GetStringUTFChars(ret, nullptr);
-    return std::stoi(channel, 0, 2);
+    int value = std::stoi(channel, 0, 2);
+    env->ReleaseStringUTFChars(ret, channel);
+    return value;
 }
 
 JNICALL jlong nativeNew(JNIEnv *env, jobject jThis, jboolean keepAlive) {

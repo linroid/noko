@@ -90,6 +90,7 @@ jobject JSContext::ParseJson(JNIEnv *env, jstring jThis, jstring jJson) {
     const uint16_t *json = env->GetStringChars(jJson, nullptr);
     const jint jsonLen = env->GetStringLength(jJson);
     V8_CONTEXT(env, jThis, v8::Object)
+        v8::Context::Scope contextScope(context);
         v8::TryCatch tryCatch(isolate);
         auto returned = v8::JSON::Parse(context, V8_STRING(json, jsonLen));
         if (returned.IsEmpty()) {

@@ -35,7 +35,7 @@ void JSString::New(JNIEnv *env, jobject jThis, jstring jcontent) {
     const uint16_t *content = env->GetStringChars(jcontent, nullptr);
     const jint contentLen = env->GetStringLength(jcontent);
     V8_SCOPE(env, jThis)
-        result = new v8::Persistent<v8::Value>(isolate, V8_STRING(content, contentLen));
+        result = new v8::Persistent<v8::Value>(isolate, V8_STRING(isolate, content, contentLen));
     V8_END()
     env->ReleaseStringChars(jcontent, content);
     JSValue::SetReference(env, jThis, (jlong) result);

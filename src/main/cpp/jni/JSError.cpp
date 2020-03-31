@@ -45,7 +45,7 @@ void JSError::New(JNIEnv *env, jobject jThis, jstring jMessage) {
     v8::Persistent<v8::Value> *result = nullptr;
 
     V8_SCOPE(env, jThis)
-        auto message = V8_STRING(messageChars, messageLen);
+        auto message = V8_STRING(isolate, messageChars, messageLen);
         auto value = v8::Exception::Error(message);
         result = new v8::Persistent<v8::Value>(runtime->isolate_, value);
     V8_END()

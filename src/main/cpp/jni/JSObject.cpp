@@ -20,7 +20,7 @@ JNICALL void JSObject::Set(JNIEnv *env, jobject jThis, jstring jKey, jobject jva
     auto value = JSValue::Unwrap(env, jvalue);
     V8_CONTEXT(env, jThis, v8::Object)
         // CHECK_NOT_NULL(*that);
-        that->Set(context, V8_STRING(key, keyLen), value->Get(isolate));
+        that->Set(context, V8_STRING(isolate, key, keyLen), value->Get(isolate));
     V8_END()
     env->ReleaseStringChars(jKey, key);
 }
@@ -31,7 +31,7 @@ JNICALL jobject JSObject::Get(JNIEnv *env, jobject jThis, jstring jKey) {
     const uint16_t *key = env->GetStringChars(jKey, nullptr);
     const jint keyLen = env->GetStringLength(jKey);
     V8_CONTEXT(env, jThis, v8::Object)
-        auto value = that->Get(context, V8_STRING(key, keyLen)).ToLocalChecked();
+        auto value = that->Get(context, V8_STRING(isolate, key, keyLen)).ToLocalChecked();
         type = runtime->GetType(value);
         result = new v8::Persistent<v8::Value>(isolate, value);
     V8_END()
@@ -44,7 +44,7 @@ jboolean JSObject::Has(JNIEnv *env, jobject jThis, jstring jKey) {
     const uint16_t *key = env->GetStringChars(jKey, nullptr);
     const jint keyLen = env->GetStringLength(jKey);
     V8_CONTEXT(env, jThis, v8::Object)
-        result = that->Has(context, V8_STRING(key, keyLen)).ToChecked();
+        result = that->Has(context, V8_STRING(isolate, key, keyLen)).ToChecked();
     V8_END()
     env->ReleaseStringChars(jKey, key);
     return static_cast<jboolean>(result);
@@ -63,7 +63,7 @@ void JSObject::Delete(JNIEnv *env, jobject jThis, jstring jKey) {
     const uint16_t *key = env->GetStringChars(jKey, nullptr);
     const jint keyLen = env->GetStringLength(jKey);
     V8_CONTEXT(env, jThis, v8::Object)
-        that->Delete(context, V8_STRING(key, keyLen));
+        that->Delete(context, V8_STRING(isolate, key, keyLen));
     V8_END()
     env->ReleaseStringChars(jKey, key);
 }

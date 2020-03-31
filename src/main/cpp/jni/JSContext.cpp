@@ -57,8 +57,8 @@ jobject JSContext::Eval(JNIEnv *env, jstring jThis, jstring jCode, jstring jSour
 
     V8_CONTEXT(env, jThis, v8::Object)
         v8::TryCatch tryCatch(runtime->isolate_);
-        v8::ScriptOrigin scriptOrigin(V8_STRING(source, sourceLen), v8::Integer::New(runtime->isolate_, jLine));
-        auto script = v8::Script::Compile(context, V8_STRING(code, codeLen), &scriptOrigin);
+        v8::ScriptOrigin scriptOrigin(V8_STRING(isolate, source, sourceLen), v8::Integer::New(runtime->isolate_, jLine));
+        auto script = v8::Script::Compile(context, V8_STRING(isolate, code, codeLen), &scriptOrigin);
         if (script.IsEmpty()) {
             LOGE("Compile script with an exception");
             error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
@@ -92,7 +92,7 @@ jobject JSContext::ParseJson(JNIEnv *env, jstring jThis, jstring jJson) {
     V8_CONTEXT(env, jThis, v8::Object)
         v8::Context::Scope contextScope(context);
         v8::TryCatch tryCatch(isolate);
-        auto returned = v8::JSON::Parse(context, V8_STRING(json, jsonLen));
+        auto returned = v8::JSON::Parse(context, V8_STRING(isolate, json, jsonLen));
         if (returned.IsEmpty()) {
             error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
             return;
@@ -115,7 +115,7 @@ jobject JSContext::ThrowError(JNIEnv *env, jstring jThis, jstring jMessage) {
     const jint messageLen = env->GetStringLength(jMessage);
     v8::Persistent<v8::Value> *result = nullptr;
     V8_CONTEXT(env, jThis, v8::Object)
-        auto error = v8::Exception::Error(V8_STRING(message, messageLen));
+        auto error = v8::Exception::Error(V8_STRING(isolate, message, messageLen));
         isolate->ThrowException(error);
         result = new v8::Persistent<v8::Value>(isolate, error);
     V8_END()

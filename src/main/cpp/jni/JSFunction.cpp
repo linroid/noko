@@ -30,7 +30,7 @@ void JSFunction::New(JNIEnv *env, jobject jThis, jstring jName) {
         auto data = v8::External::New(runtime->isolate_, callback);
         auto context = runtime->context_.Get(runtime->isolate_);
         auto func = v8::FunctionTemplate::New(runtime->isolate_, staticCallback, data)->GetFunction(context).ToLocalChecked();
-        func->SetName(V8_STRING(name, nameLen));
+        func->SetName(V8_STRING(isolate, name, nameLen));
         result = new v8::Persistent<v8::Value>(runtime->isolate_, func);
     V8_END()
     env->ReleaseStringChars(jName, name);

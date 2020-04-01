@@ -42,6 +42,8 @@ class KNode(
         execArgs.add("node")
         execArgs.addAll(args)
 
+        Log.d(TAG, execArgs.joinToString(" "))
+
         val exitCode = nativeStart(execArgs.toTypedArray())
         Log.i(TAG, "node exited: $exitCode")
         eventOnExit(exitCode)
@@ -259,9 +261,9 @@ process.stdout.isRaw = true;
 
     init {
       System.loadLibrary("knode")
-      if (BuildConfig.DEBUG) {
-        Os.setenv("NODE_DEBUG", "*", true)
-      }
+      // if (BuildConfig.DEBUG) {
+      //   Os.setenv("NODE_DEBUG", "*", true)
+      // }
     }
 
     fun addEnv(key: String, value: String) {
@@ -285,7 +287,7 @@ process.stdout.isRaw = true;
           Log.e(TAG, str)
         }
       })
-      node.start("-e", "console.log(process.versions)")
+      node.start("-p", "process.versions")
     }
   }
 }

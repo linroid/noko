@@ -23,8 +23,6 @@ class JSContext @NativeConstructor private constructor(
     context = this
   }
 
-  private val references = HashSet<JSValue>()
-
   @Throws(JSException::class)
   fun eval(code: String, source: String = "", line: Int = 0): JSValue {
     return nativeEval(code, source, line)
@@ -33,10 +31,6 @@ class JSContext @NativeConstructor private constructor(
   @Throws(JSException::class)
   fun parseJson(json: String): JSValue {
     return nativeParseJson(json)
-  }
-
-  fun hold(obj: JSValue) {
-    references.add(obj)
   }
 
   fun throwError(message: String): JSError {

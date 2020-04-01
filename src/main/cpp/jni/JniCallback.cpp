@@ -28,7 +28,9 @@ void JniCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
         auto jCaller = runtime->Wrap(env, value, type);
         auto jRet = env->CallObjectMethod(that, methodId, jCaller, parameters);
         env->DeleteLocalRef(jCaller);
+
         env->DeleteLocalRef(parameters);
+
         if (env->ExceptionCheck()) {
             info.GetReturnValue().Set(v8::Undefined(info.GetIsolate()));
             env->Throw(env->ExceptionOccurred());

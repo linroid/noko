@@ -11,7 +11,7 @@
 
 jclass JSFunction::jClazz;
 jmethodID JSFunction::jConstructor;
-jmethodID JSFunction::jonCall;
+jmethodID JSFunction::jCall;
 
 void staticCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
     // CHECK(info.Data()->IsExternal());
@@ -24,7 +24,7 @@ void JSFunction::New(JNIEnv *env, jobject jThis, jstring jName) {
     v8::Persistent<v8::Value> *result = nullptr;
     const uint16_t *name = env->GetStringChars(jName, nullptr);
     const jint nameLen = env->GetStringLength(jName);
-    auto callback = new JniCallback(env, jThis, JSValue::jClazz, jonCall);
+    auto callback = new JniCallback(env, jThis, JSValue::jClazz, jCall);
     V8_SCOPE(env, jThis)
         callback->runtime = runtime;
         auto data = v8::External::New(runtime->isolate_, callback);
@@ -86,8 +86,8 @@ jint JSFunction::OnLoad(JNIEnv *env) {
     };
     jClazz = (jclass) env->NewGlobalRef(clazz);
     jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
-    jonCall = env->GetMethodID(clazz, "onCall",
-                               "(Lcom/linroid/knode/js/JSValue;[Lcom/linroid/knode/js/JSValue;)Lcom/linroid/knode/js/JSValue;");
+    jCall = env->GetMethodID(clazz, "onCall",
+                             "(Lcom/linroid/knode/js/JSValue;[Lcom/linroid/knode/js/JSValue;)Lcom/linroid/knode/js/JSValue;");
     env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
     return JNI_OK;
 }

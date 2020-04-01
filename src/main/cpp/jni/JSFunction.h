@@ -12,7 +12,7 @@ class JSFunction {
 private:
     static jclass jClazz;
     static jmethodID jConstructor;
-    static jmethodID jonCall;
+    static jmethodID jCall;
 
 public:
     inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {

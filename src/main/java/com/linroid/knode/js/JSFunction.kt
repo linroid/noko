@@ -20,7 +20,6 @@ open class JSFunction : JSObject {
   constructor(context: JSContext, name: String, callable: Callable? = null) : super(context, 0) {
     this.callable = callable
     nativeNew(name)
-    context.hold(this)
   }
 
   protected open fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {

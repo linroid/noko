@@ -73,6 +73,7 @@ void JSPromise::Resolve(JNIEnv *env, jobject jThis, jobject jValue) {
             error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
             return;
         }
+        // runtime->isolate_->RunMicrotasks();
     V8_END()
     if (error) {
         JSError::Throw(env, runtime, error);

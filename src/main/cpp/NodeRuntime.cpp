@@ -156,6 +156,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
         //         "globalThis.require = publicRequire;"
         //         "require('vm').runInThisContext(process.argv[1]);");
 
+        isolate_->SetMicrotasksPolicy(v8::MicrotasksPolicy::kAuto);
         node::LoadEnvironment(env.get(), [&](const node::StartExecutionCallbackInfo &info) -> v8::MaybeLocal<v8::Value> {
             require_.Reset(isolate_, info.native_require);
             process_.Reset(isolate_, info.process_object);
@@ -163,14 +164,14 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
         });
 
         {
-            if (keepAlive_) {
-                isolate->SetPromiseHook([](v8::PromiseHookType type, v8::Local<v8::Promise> promise,
-                                           v8::Local<v8::Value> parent) {
-                    if (type == v8::PromiseHookType::kInit) {
-                        promise->GetIsolate()->RunMicrotasks();
-                    }
-                });
-            }
+            // if (keepAlive_) {
+            //     isolate->SetPromiseHook([](v8::PromiseHookType type, v8::Local<v8::Promise> promise,
+            //                                v8::Local<v8::Value> parent) {
+            //         if (type == v8::PromiseHookType::kInit) {
+            //             promise->GetIsolate()->RunMicrotasks();
+            //         }
+            //     });
+            // }
 
             // SealHandleScope protects against handle leaks from callbacks.
             v8::SealHandleScope seal(isolate);

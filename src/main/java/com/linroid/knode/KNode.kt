@@ -1,6 +1,5 @@
 package com.linroid.knode
 
-import android.system.Os
 import android.util.Log
 import androidx.annotation.Keep
 import com.google.gson.Gson
@@ -72,7 +71,7 @@ class KNode(
    * @return true if active, false otherwise
    */
   private fun isActive(): Boolean {
-    return active && ::context.isInitialized && ptr != 0L
+    return active && ptr != 0L
   }
 
   /**
@@ -120,8 +119,7 @@ class KNode(
 
   fun submit(action: Runnable): Boolean {
     if (!isActive()) {
-      val isInitialized = this::context::isInitialized
-      Log.w(TAG, "Submit but not active: active=$active, isInitialized=${isInitialized}, ptr=$ptr", Exception())
+      Log.w(TAG, "Submit but not active: active=$active, ptr=$ptr", Exception())
       return false
     }
     if (Thread.currentThread() == thread) {

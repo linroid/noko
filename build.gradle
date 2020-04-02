@@ -41,6 +41,11 @@ android {
             path "src/main/cpp/CMakeLists.txt"
         }
     }
+    packagingOptions{
+        if (!isRelease) {
+            doNotStrip "*/*/*.so"
+        }
+    }
 }
 
 dependencies {

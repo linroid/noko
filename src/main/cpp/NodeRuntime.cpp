@@ -76,9 +76,6 @@ void NodeRuntime::OnPrepared() {
     v8::Local<v8::Context> context = context_.Get(isolate_);
     v8::HandleScope handleScope(isolate_);
     v8::Context::Scope contextScope(context);
-    // auto global = global_->Get(isolate_);
-    // auto require = require_.Get(isolate_);
-    // global->Set(context, V8_UTF_STRING(isolate_, ""), require);
     running_ = true;
     ENTER_JNI(vm_);
         auto nullValue = new v8::Persistent<v8::Value>(isolate_, v8::Null(isolate_));
@@ -109,7 +106,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
     v8::Isolate *isolate = node::NewIsolate(allocator, eventLoop_, platform.get());
 
     if (isolate == nullptr) {
-        LOGE("%s: Failed to initialize V8 Isolate\n", args[0].c_str());
+        LOGE("%s: Failed to initialize V8 Isolate", args[0].c_str());
         return 2;
     }
 
@@ -508,3 +505,10 @@ int init_node() {
 //     v8::V8::Dispose();
 //     v8::V8::ShutdownPlatform();
 // }
+
+class Test {
+public:
+    void solution() {
+        std::string s;
+    }
+};

@@ -164,14 +164,14 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
         });
 
         {
-            // if (keepAlive_) {
-            //     isolate->SetPromiseHook([](v8::PromiseHookType type, v8::Local<v8::Promise> promise,
-            //                                v8::Local<v8::Value> parent) {
-            //         if (type == v8::PromiseHookType::kInit) {
-            //             promise->GetIsolate()->RunMicrotasks();
-            //         }
-            //     });
-            // }
+            if (keepAlive_) {
+                isolate->SetPromiseHook([](v8::PromiseHookType type, v8::Local<v8::Promise> promise,
+                                           v8::Local<v8::Value> parent) {
+                    if (type == v8::PromiseHookType::kInit) {
+                        promise->GetIsolate()->RunMicrotasks();
+                    }
+                });
+            }
 
             // SealHandleScope protects against handle leaks from callbacks.
             v8::SealHandleScope seal(isolate);

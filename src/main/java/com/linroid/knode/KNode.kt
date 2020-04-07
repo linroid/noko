@@ -31,11 +31,13 @@ class KNode(
   @Volatile
   private var active = false
   private lateinit var context: JSContext
+  private var seq = 0
 
   var thread: Thread? = null
 
   fun start(vararg args: String) {
-    thread = thread(isDaemon = true, name = "knode-${seq.incrementAndGet()}") {
+    seq = counter.incrementAndGet()
+    thread = thread(isDaemon = true, name = "knode-${seq}") {
       try {
         val execArgs = ArrayList<String>()
         execArgs.add("node")
@@ -119,7 +121,7 @@ class KNode(
 
   fun submit(action: Runnable): Boolean {
     if (!isActive()) {
-      Log.w(TAG, "Submit but not active: active=$active, ptr=$ptr", Exception())
+      Log.w(TAG, "Submit but not active: active=$active, ptr=$ptr, seq=$seq", Exception())
       return false
     }
     if (Thread.currentThread() == thread) {
@@ -251,7 +253,7 @@ process.stdout.isRaw = true;
 
   companion object {
     private const val TAG = "KNode"
-    private val seq = AtomicInteger(0)
+    private val counter = AtomicInteger(0)
 
     private val customVersions = HashMap<String, String>()
     private val customEnvs = HashMap<String, String>()

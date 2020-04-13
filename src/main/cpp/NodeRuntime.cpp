@@ -41,11 +41,17 @@ NodeRuntime::NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, bo
         init_node();
     }
     sharedMutex_.unlock();
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat"
     LOGD("Construct NodeRuntime: thread_id=%d, id=%d, this=%p", std::this_thread::get_id(), id_, this);
+#pragma clang diagnostic pop
 }
 
 NodeRuntime::~NodeRuntime() {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat"
     LOGE("~NodeRuntime(): thread_id=%d, id=%d, this=%p", std::this_thread::get_id(), id_, this);
+#pragma clang diagnostic pop
     std::lock_guard<std::mutex> instanceLock(instanceMutex_);
     std::lock_guard<std::mutex> lock(asyncMutex_);
     ENTER_JNI(vm_)
@@ -77,7 +83,7 @@ void NodeRuntime::OnPrepared() {
     v8::HandleScope handleScope(isolate_);
     v8::Context::Scope contextScope(context);
     running_ = true;
-    ENTER_JNI(vm_);
+    ENTER_JNI(vm_)
         auto nullValue = new v8::Persistent<v8::Value>(isolate_, v8::Null(isolate_));
         auto undefinedValue = new v8::Persistent<v8::Value>(isolate_, v8::Undefined(isolate_));
         auto trueValue = new v8::Persistent<v8::Value>(isolate_, v8::True(isolate_));
@@ -90,7 +96,7 @@ void NodeRuntime::OnPrepared() {
         JSContext::SetShared(env, this);
 
         env->CallVoidMethod(jThis_, onBeforeStart_, jContext_);
-    EXIT_JNI(vm_);
+    EXIT_JNI(vm_)
 }
 
 int NodeRuntime::Start(std::vector<std::string> &args) {
@@ -160,7 +166,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
         node::LoadEnvironment(env.get(), [&](const node::StartExecutionCallbackInfo &info) -> v8::MaybeLocal<v8::Value> {
             require_.Reset(isolate_, info.native_require);
             process_.Reset(isolate_, info.process_object);
-            return v8::MaybeLocal<v8::Value>();
+            return v8::Null(isolate_);
         });
 
         {
@@ -236,8 +242,7 @@ void NodeRuntime::Exit(int code) {
         auto context = context_.Get(isolate_);
         v8::Local<v8::Value> v8Code = v8::Number::New(isolate_, code);
         auto exitFunc = process->Get(context, V8_UTF_STRING(isolate_, "exit"));
-        v8::Local<v8::Function>::Cast(exitFunc.ToLocalChecked())
-                ->Call(context, process, 1, &v8Code);
+        UNUSED(v8::Local<v8::Function>::Cast(exitFunc.ToLocalChecked())->Call(context, process, 1, &v8Code));
     });
 }
 
@@ -252,9 +257,12 @@ bool NodeRuntime::InitLoop() {
         keepAliveHandle_ = new uv_async_t();
         ret = uv_async_init(eventLoop_, keepAliveHandle_, [](uv_async_t *handle) {
             LOGD("stop keep alive");
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCDFAInspection"
             uv_close((uv_handle_t *) handle, [](uv_handle_t *h) {
                 free(h);
             });
+#pragma clang diagnostic pop
         });
         if (ret != 0) {
             LOGE("Failed to initialize keep alive handle: %s", uv_err_name(ret));
@@ -307,14 +315,14 @@ void NodeRuntime::TryLoop() {
         callbackHandle_ = new uv_async_t();
         callbackHandle_->data = this;
         uv_async_init(eventLoop_, callbackHandle_, [](uv_async_t *handle) {
-            NodeRuntime *runtime = reinterpret_cast<NodeRuntime *>(handle->data);
+            auto *runtime = reinterpret_cast<NodeRuntime *>(handle->data);
             runtime->Handle(handle);
         });
         uv_async_send(callbackHandle_);
     }
 }
 
-bool NodeRuntime::Await(std::function<void()> runnable) {
+bool NodeRuntime::Await(const std::function<void()> &runnable) {
     assert(isolate_ != nullptr);
     if (std::this_thread::get_id() == threadId_) {
         runnable();
@@ -353,7 +361,7 @@ bool NodeRuntime::Await(std::function<void()> runnable) {
     }
 }
 
-bool NodeRuntime::Post(std::function<void()> runnable) {
+bool NodeRuntime::Post(const std::function<void()> &runnable) {
     if (std::this_thread::get_id() == threadId_) {
         runnable();
         return true;
@@ -378,9 +386,12 @@ void NodeRuntime::Handle(uv_async_t *handle) {
         asyncMutex_.lock();
         callbacks_.erase(callbacks_.begin());
     }
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCDFAInspection"
     uv_close((uv_handle_t *) handle, [](uv_handle_t *h) {
         delete (uv_async_t *) h;
     });
+#pragma clang diagnostic pop
     callbackHandle_ = nullptr;
     asyncMutex_.unlock();
 }
@@ -432,7 +443,7 @@ v8::Local<v8::Value> NodeRuntime::Require(const char *path) {
     auto global = global_->Get(isolate_);
     v8::Context::Scope contextScope(context);
 
-    v8::Local<v8::Value> *argv = new v8::Local<v8::Value>[1];
+    auto *argv = new v8::Local<v8::Value>[1];
     argv[0] = V8_UTF_STRING(isolate_, path);
     assert(require->IsFunction());
     auto result = require->Call(context, global, 1, argv).ToLocalChecked();
@@ -446,7 +457,7 @@ v8::Persistent<v8::Value> *NodeRuntime::CreateFileSystem() {
         v8::HandleScope _handleScope(isolate_);
         auto context = context_.Get(isolate_);
         auto fs = v8::Local<v8::Object>::Cast(Require("__fs"));
-        fs->Set(context, V8_UTF_STRING(isolate_, "require"), require_.Get(isolate_));
+        UNUSED(fs->Set(context, V8_UTF_STRING(isolate_, "require"), require_.Get(isolate_)));
         result = new v8::Persistent<v8::Value>(isolate_, fs);
     };
     Await(runnable);
@@ -474,9 +485,9 @@ int init_node() {
     char *p2 = strtok(cmd, " ");
     while (p2 && argc < 128 - 1) {
         argv[argc++] = p2;
-        p2 = strtok(0, " ");
+        p2 = strtok(nullptr, " ");
     }
-    argv[argc] = 0;
+    argv[argc] = nullptr;
 
     std::vector<std::string> args = std::vector<std::string>(argv, argv + argc);
     std::vector<std::string> exec_args;
@@ -506,10 +517,3 @@ int init_node() {
 //     v8::V8::Dispose();
 //     v8::V8::ShutdownPlatform();
 // }
-
-class Test {
-public:
-    void solution() {
-        std::string s;
-    }
-};

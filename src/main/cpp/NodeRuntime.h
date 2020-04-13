@@ -51,8 +51,8 @@ private:
     static jint instanceCount_;
     static jint seq_;
 
-    uv_loop_t *eventLoop_;
-    uv_async_t *keepAliveHandle_;
+    uv_loop_t *eventLoop_ = nullptr;
+    uv_async_t *keepAliveHandle_ = nullptr;
     uv_async_t *callbackHandle_ = nullptr;
 
     v8::Persistent<v8::Function> require_;
@@ -86,19 +86,19 @@ public:
 
     void Exit(int code);
 
-    bool Await(std::function<void()> runnable);
+    bool Await(const std::function<void()> &runnable);
 
-    bool Post(std::function<void()> runnable);
+    bool Post(const std::function<void()> &runnable);
 
     jobject Wrap(JNIEnv *env, v8::Persistent<v8::Value> *value, JSType type);
 
-    JSType GetType(v8::Local<v8::Value> &value);
-
     v8::Local<v8::Value> Require(const char *path);
 
-    v8::Persistent<v8::Value> * CreateFileSystem();
+    v8::Persistent<v8::Value> *CreateFileSystem();
 
     void MountFileSystem(v8::Persistent<v8::Value> *fs);
+
+    static JSType GetType(v8::Local<v8::Value> &value);
 };
 
 #endif //NODE_NODE_RUNTIME_H

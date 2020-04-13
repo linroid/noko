@@ -52,13 +52,13 @@
             vm->AttachCurrentThread(&env, nullptr);                             \
         }                                                                       \
         if (env->ExceptionCheck()) {                                            \
-            LOGE("Enter jni env, but with pending Exception", __FILE__);        \
+            LOGE("Enter jni env  with pending Exception, %s: %d", __FILE__, __LINE__);        \
             env->Throw(env->ExceptionOccurred());                               \
         }
 
 #define EXIT_JNI(vm)                                                            \
         if (env->ExceptionCheck()) {                                            \
-            LOGE("Exit jni env, but with pending Exception, %s:%d", __FILE__, __LINE__); \
+            LOGE("Exit jni env with pending Exception, %s: %d", __FILE__, __LINE__); \
             env->Throw(env->ExceptionOccurred());                               \
         }                                                                       \
         if (stat == JNI_EDETACHED) {                                            \
@@ -66,3 +66,7 @@
         }                                                                       \
     }
 #endif //NODE_MACROS_H
+
+
+// #define UNUSED __attribute__((unused))
+#define UNUSED(expr) do { (void)(expr); } while (0)

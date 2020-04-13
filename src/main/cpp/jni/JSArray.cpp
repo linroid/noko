@@ -14,7 +14,7 @@ jint JSArray::Size(JNIEnv *env, jobject jThis) {
     int result = 0;
     V8_CONTEXT(env, jThis, v8::Array)
         result = that->Length();
-    V8_END();
+    V8_END()
     return result;
 }
 
@@ -52,7 +52,7 @@ jboolean JSArray::AddAll(JNIEnv *env, jobject jThis, jobjectArray jElements) {
                 break;
             }
         }
-    V8_END();
+    V8_END()
     if (error) {
         JSError::Throw(env, runtime, error);
         return 0;
@@ -67,13 +67,13 @@ jint JSArray::OnLoad(JNIEnv *env) {
     }
 
     JNINativeMethod methods[] = {
-            {"nativeSize",     "()I",                                                             (void *) (Size)},
-            {"nativeNew",      "()V",                                                             (void *) (New)},
-            {"nativeAddAll",   "([Lcom/linroid/knode/js/JSValue;)Z",                              (void *) (AddAll)},
-            {"nativeAddAllAt", "(I[Lcom/linroid/knode/js/JSValue;)Z",                             (void *) (AddAllAt)},
-            {"nativeGet",      "(I)Lcom/linroid/knode/js/JSValue;",                               (void *) (Get)},
-            {"nativeAdd",      "(Lcom/linroid/knode/js/JSValue;)Z",                               (void *) (Add)},
-            {"nativeAddAt",    "(ILcom/linroid/knode/js/JSValue;)Lcom/linroid/knode/js/JSValue;", (void *) (AddAllAt)},
+            {"nativeSize",   "()I",                                (void *) (Size)},
+            {"nativeNew",    "()V",                                (void *) (New)},
+            {"nativeAddAll", "([Lcom/linroid/knode/js/JSValue;)Z", (void *) (AddAll)},
+            {"nativeGet",    "(I)Lcom/linroid/knode/js/JSValue;",  (void *) (Get)},
+            {"nativeAdd",    "(Lcom/linroid/knode/js/JSValue;)Z",  (void *) (Add)},
+            // {"nativeAddAllAt", "(I[Lcom/linroid/knode/js/JSValue;)Z",                             (void *) (AddAllAt)},
+            // {"nativeAddAt",    "(ILcom/linroid/knode/js/JSValue;)Lcom/linroid/knode/js/JSValue;", (void *) (AddAllAt)},
     };
     jClazz = (jclass) env->NewGlobalRef(clazz);
     jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");
@@ -92,9 +92,9 @@ jobject JSArray::Get(JNIEnv *env, jobject jThis, jint jindex) {
             error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
             return;
         }
-        type = runtime->GetType(value);
+        type = NodeRuntime::GetType(value);
         result = new v8::Persistent<v8::Value>(isolate, value);
-    V8_END();
+    V8_END()
     if (error) {
         JSError::Throw(env, runtime, error);
         return nullptr;
@@ -113,17 +113,9 @@ jboolean JSArray::Add(JNIEnv *env, jobject jThis, jobject jElement) {
             error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
             return;
         }
-    V8_END();
+    V8_END()
     if (error) {
         JSError::Throw(env, runtime, error);
     }
     return static_cast<jboolean>(success);
-}
-
-jboolean JSArray::AddAt(JNIEnv *env, jobject jThis, jint jindex, jobject jElement) {
-    return 0;
-}
-
-jboolean JSArray::AddAllAt(JNIEnv *env, jobject jThis, jint jindex, jobjectArray jElements) {
-    return 0;
 }

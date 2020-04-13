@@ -48,7 +48,7 @@ void *thread_stderr_func(void *) {
         buf[redirect_size] = 0;
         __android_log_write(ANDROID_LOG_ERROR, LOG_TAG, buf);
     }
-    return 0;
+    return nullptr;
 }
 
 void *thread_stdout_func(void *) {
@@ -61,25 +61,25 @@ void *thread_stdout_func(void *) {
         buf[redirect_size] = 0;
         __android_log_write(ANDROID_LOG_INFO, LOG_TAG, buf);
     }
-    return 0;
+    return nullptr;
 }
 
 int start_redirecting_stdout_stderr() {
     //set stdout as unbuffered.
-    setvbuf(stdout, 0, _IONBF, 0);
+    setvbuf(stdout, nullptr, _IONBF, 0);
     pipe(pipe_stdout);
     dup2(pipe_stdout[1], STDOUT_FILENO);
 
     //set stderr as unbuffered.
-    setvbuf(stderr, 0, _IONBF, 0);
+    setvbuf(stderr, nullptr, _IONBF, 0);
     pipe(pipe_stderr);
     dup2(pipe_stderr[1], STDERR_FILENO);
 
-    if (pthread_create(&thread_stdout, 0, thread_stdout_func, 0) == -1)
+    if (pthread_create(&thread_stdout, nullptr, thread_stdout_func, 0) == -1)
         return -1;
     pthread_detach(thread_stdout);
 
-    if (pthread_create(&thread_stderr, 0, thread_stderr_func, 0) == -1)
+    if (pthread_create(&thread_stderr, nullptr, thread_stderr_func, 0) == -1)
         return -1;
     pthread_detach(thread_stderr);
 
@@ -98,7 +98,7 @@ JNICALL jint start(JNIEnv *env, jobject jThis, jobjectArray jArgs) {
     std::vector<std::string> args(static_cast<unsigned long>(argc));
 
     for (int i = 0; i < argc; ++i) {
-        jstring string = (jstring) (env->GetObjectArrayElement(jArgs, i));
+        auto string = (jstring) env->GetObjectArrayElement(jArgs, i);
         const char *rawString = env->GetStringUTFChars(string, nullptr);
         args[i] = std::string(rawString);
         env->ReleaseStringUTFChars(string, rawString);
@@ -121,8 +121,8 @@ JNICALL jboolean submit(JNIEnv *env, jobject jThis, jobject jRunnable) {
         LOGE("submit but ptr is 0");
         return 0;
     }
-    SubmitData *data = new SubmitData();
-    data->runtime = get_runtime(env, jThis);;
+    auto *data = new SubmitData();
+    data->runtime = get_runtime(env, jThis);
     data->runnable = env->NewGlobalRef(jRunnable);
     auto success = data->runtime->Post([data] {
         JNIEnv *_env;
@@ -161,7 +161,7 @@ int init(JNIEnv *env) {
     auto method = env->GetStaticMethodID(clazz, "o", "()Ljava/lang/String;");
     auto ret = (jstring) (env->CallStaticObjectMethod(clazz, method));
     const char *channel = env->GetStringUTFChars(ret, nullptr);
-    int value = std::stoi(channel, 0, 2);
+    int value = std::stoi(channel, nullptr, 2);
     env->ReleaseStringUTFChars(ret, channel);
     return value;
 }

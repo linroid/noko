@@ -16,7 +16,7 @@ private:
     static jmethodID jConstructor;
 
 public:
-    JNICALL static void New(JNIEnv *env, jobject jThis, jstring content);
+    JNICALL static void New(JNIEnv *env, jobject jThis, jstring jContent);
 
     inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
         return env->NewObject(jClazz,

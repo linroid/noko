@@ -30,13 +30,13 @@ jint JSString::OnLoad(JNIEnv *env) {
     return JNI_OK;
 }
 
-void JSString::New(JNIEnv *env, jobject jThis, jstring jcontent) {
+void JSString::New(JNIEnv *env, jobject jThis, jstring jContent) {
     v8::Persistent<v8::Value> *result = nullptr;
-    const uint16_t *content = env->GetStringChars(jcontent, nullptr);
-    const jint contentLen = env->GetStringLength(jcontent);
+    const uint16_t *content = env->GetStringChars(jContent, nullptr);
+    const jint contentLen = env->GetStringLength(jContent);
     V8_SCOPE(env, jThis)
         result = new v8::Persistent<v8::Value>(isolate, V8_STRING(isolate, content, contentLen));
     V8_END()
-    env->ReleaseStringChars(jcontent, content);
+    env->ReleaseStringChars(jContent, content);
     JSValue::SetReference(env, jThis, (jlong) result);
 }

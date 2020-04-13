@@ -50,7 +50,7 @@ void JSPromise::Reject(JNIEnv *env, jobject jThis, jobject jError) {
     v8::Persistent<v8::Value> *error = nullptr;
     V8_CONTEXT(env, jThis, v8::Promise)
         v8::TryCatch tryCatch(runtime->isolate_);
-        resolver->Get(isolate)->Reject(context, value->Get(isolate));
+        UNUSED(resolver->Get(isolate)->Reject(context, value->Get(isolate)));
         if (tryCatch.HasCaught()) {
             error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
             return;
@@ -68,7 +68,7 @@ void JSPromise::Resolve(JNIEnv *env, jobject jThis, jobject jValue) {
     v8::Persistent<v8::Value> *error = nullptr;
     V8_CONTEXT(env, jThis, v8::Promise)
         v8::TryCatch tryCatch(runtime->isolate_);
-        resolver->Get(isolate)->Resolve(context, value->Get(isolate));
+        UNUSED(resolver->Get(isolate)->Resolve(context, value->Get(isolate)));
         if (tryCatch.HasCaught()) {
             error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
             return;

@@ -64,11 +64,6 @@ NodeRuntime::~NodeRuntime() {
     EXIT_JNI(vm_)
 
     eventLoop_ = nullptr;
-    if (global_ != nullptr) {
-        global_->Reset();
-        global_ = nullptr;
-    }
-    context_.Reset();
     isolate_ = nullptr;
     running_ = false;
     sharedMutex_.lock();
@@ -218,6 +213,13 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
     // when the Platform is done cleaning up any state it had associated with
     // the Isolate.
     bool platform_finished = false;
+    context_.Reset();
+    if (global_ != nullptr) {
+        global_->Reset();
+        delete global_;
+        global_ = nullptr;
+    }
+    running_ = false;
     platform->AddIsolateFinishedCallback(isolate, [](void *data) {
         *static_cast<bool *>(data) = true;
     }, &platform_finished);

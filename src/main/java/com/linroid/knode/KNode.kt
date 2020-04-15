@@ -32,6 +32,8 @@ class KNode(
   private var active = false
   private lateinit var context: JSContext
   private var seq = 0
+  private val envs = HashMap(customEnvs)
+  private val versions = HashMap(customVersions)
 
   var thread: Thread? = null
 
@@ -76,6 +78,14 @@ class KNode(
     return active && ptr != 0L
   }
 
+  fun addEnv(key: String, value: String) {
+    envs[key] = value
+  }
+
+  fun addVersion(key: String, value: String) {
+    versions[key] = value
+  }
+
   /**
    * Instructs the VM to halt execution as quickly as possible
    * @param exitCode The exit code
@@ -90,21 +100,6 @@ class KNode(
     nativeExit(exitCode)
     active = false
   }
-
-
-  // /**
-  //  * Instructs the VM not to shutdown the process when no more callbacks are pending.  In effect,
-  //  * this method indefinitely leaves a callback pending until the resulting
-  //  * #org.liquidplayer.javascript.JSContextGroup.LoopPreserver is released.  The loop preserver
-  //  * must eventually be released or the process will remain active indefinitely.
-  //  * @return A preserver object
-  //  */
-  // fun keepAlive(): JSContextGroup.LoopPreserver? {
-  //     val ctx = context.get()
-  //     return if (isActive() && ctx != null) {
-  //         ctx.group!!.keepAlive()
-  //     } else null
-  // }
 
   override fun close() {
     exit(0)
@@ -171,11 +166,11 @@ process.stdout.isRaw = true;
     if (output.supportsColor) {
       setEnv("COLORTERM", "truecolor")
     }
-    customEnvs.entries.forEach {
+    envs.entries.forEach {
       setEnv(it.key, it.value)
     }
     setupCode.append("process.execPath = '/node'\n")
-    customVersions.forEach {
+    versions.forEach {
       setVersion(it.key, it.value)
     }
     if (setupCode.isNotEmpty()) {

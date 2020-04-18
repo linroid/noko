@@ -75,11 +75,11 @@ int start_redirecting_stdout_stderr() {
     pipe(pipe_stderr);
     dup2(pipe_stderr[1], STDERR_FILENO);
 
-    if (pthread_create(&thread_stdout, nullptr, thread_stdout_func, 0) == -1)
+    if (pthread_create(&thread_stdout, nullptr, thread_stdout_func, nullptr) == -1)
         return -1;
     pthread_detach(thread_stdout);
 
-    if (pthread_create(&thread_stderr, nullptr, thread_stderr_func, 0) == -1)
+    if (pthread_create(&thread_stderr, nullptr, thread_stderr_func, nullptr) == -1)
         return -1;
     pthread_detach(thread_stderr);
 
@@ -166,14 +166,15 @@ int init(JNIEnv *env) {
     return value;
 }
 
-JNICALL jlong nativeNew(JNIEnv *env, jobject jThis, jboolean keepAlive) {
+JNICALL jlong nativeNew(JNIEnv *env, jobject jThis, jboolean keepAlive, jboolean strict) {
+#ifndef NODE_DEBUG
     static int year = init(env);
     static int expected = static_cast<int>(pow(2.0, 10.0) * 2 - 29);
     if (year != expected) {
         return 0;
     }
-    auto *runtime = new NodeRuntime(env, jThis, NodeClass.onBeforeStart, keepAlive);
-
+#endif
+    auto *runtime = new NodeRuntime(env, jThis, NodeClass.onBeforeStart, keepAlive, strict);
     return reinterpret_cast<jlong>(runtime);
 }
 
@@ -183,7 +184,7 @@ JNICALL void nativeExit(JNIEnv *env, jobject jThis, jint exitCode) {
 }
 
 static JNINativeMethod nodeMethods[] = {
-        {"nativeNew",             "(Z)J",                               (void *) nativeNew},
+        {"nativeNew",             "(ZZ)J",                              (void *) nativeNew},
         {"nativeExit",            "(I)V",                               (void *) nativeExit},
         {"nativeStart",           "([Ljava/lang/String;)I",             (void *) start},
         {"nativeMountFileSystem", "(Lcom/linroid/knode/js/JSObject;)V", (void *) mountFs},
@@ -215,6 +216,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
 
     NodeClass.ptr = env->GetFieldID(clazz, "ptr", "J");
     NodeClass.onBeforeStart = env->GetMethodID(clazz, "onBeforeStart", "(Lcom/linroid/knode/js/JSContext;)V");
+
     LOAD_JNI_CLASS(JSValue)
     LOAD_JNI_CLASS(JSContext)
     LOAD_JNI_CLASS(JSObject)

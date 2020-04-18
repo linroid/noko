@@ -46,6 +46,7 @@ private:
     std::vector<std::function<void()>> callbacks_;
     int id_ = -1;
     bool keepAlive_ = false;
+    bool strict_ = false;
 
     static std::mutex sharedMutex_;
     static jint instanceCount_;
@@ -78,7 +79,7 @@ public:
     v8::Persistent<v8::Object> *global_ = nullptr;
     v8::Persistent<v8::Context> context_;
 
-    NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, bool keepAlive);
+    NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, bool keepAlive, bool strict);
 
     ~NodeRuntime();
 

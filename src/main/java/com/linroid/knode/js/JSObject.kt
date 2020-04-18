@@ -2,7 +2,6 @@ package com.linroid.knode.js
 
 import android.util.Log
 import com.google.gson.JsonObject
-import com.linroid.knode.BuildConfig
 import java.lang.reflect.InvocationTargetException
 
 /**
@@ -21,11 +20,7 @@ open class JSObject : JSValue {
     }
     addBinds()
 
-    if (BuildConfig.DEBUG) {
-      check(Thread.currentThread() == context.node.thread) {
-        "Couldn't operate node object non origin thread: ${Thread.currentThread()}"
-      }
-    }
+    context.node.checkThread()
   }
 
   private fun addBinds() {
@@ -84,11 +79,7 @@ open class JSObject : JSValue {
   }
 
   fun <T> get(key: String, clazz: Class<T>): T? {
-    if (BuildConfig.DEBUG) {
-      check(Thread.currentThread() == context.node.thread) {
-        "Couldn't operate node object non origin thread: ${Thread.currentThread()}"
-      }
-    }
+    context.node.checkThread()
     val value = nativeGet(key)
     return value.toType(clazz)
   }

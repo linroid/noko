@@ -28,8 +28,8 @@ int NodeRuntime::seq_ = 0;
 bool nodeInitialized = false;
 std::unique_ptr<node::MultiIsolatePlatform> platform;
 
-NodeRuntime::NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, bool keepAlive)
-        : onBeforeStart_(onBeforeStart), keepAlive_(keepAlive) {
+NodeRuntime::NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, bool keepAlive, bool strict)
+        : onBeforeStart_(onBeforeStart), keepAlive_(keepAlive), strict_(strict) {
     env->GetJavaVM(&vm_);
     jThis_ = env->NewGlobalRef(jThis);
 
@@ -329,13 +329,12 @@ bool NodeRuntime::Await(const std::function<void()> &runnable) {
     if (std::this_thread::get_id() == threadId_) {
         runnable();
         return true;
-    } else {
-#ifdef NODE_DEBUG
+    } else if (strict_) {
         ENTER_JNI(vm_)
             env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), "Illegal thread access");
         EXIT_JNI(vm_)
         return true;
-#else
+    } else {
         std::condition_variable cv;
         bool signaled = false;
         auto callback = [&]() {
@@ -353,13 +352,12 @@ bool NodeRuntime::Await(const std::function<void()> &runnable) {
             LOGE("Instance has been destroyed, ignore await");
             return false;
         }
-        callbacks_.push_back(callback);
+        callbacks_.emplace_back(callback);
         this->TryLoop();
 
         cv.wait(lock, [&] { return signaled; });
         lock.unlock();
         return true;
-#endif
     }
 }
 

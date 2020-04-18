@@ -1,5 +1,6 @@
 package com.linroid.knode
 
+import android.content.Context
 import android.util.Log
 import androidx.annotation.Keep
 import com.google.gson.Gson
@@ -21,11 +22,12 @@ import kotlin.concurrent.thread
 class KNode(
   private val cwd: File? = null,
   private val output: StdOutput,
-  keepAlive: Boolean = false
+  keepAlive: Boolean = false,
+  val strict: Boolean = false
 ) : Closeable {
 
   @Native
-  private var ptr: Long = nativeNew(keepAlive)
+  private var ptr: Long = nativeNew(keepAlive, strict)
   private val listeners = HashSet<EventListener>()
 
   @Volatile
@@ -189,6 +191,12 @@ process.stdout.isRaw = true;
     eventOnPrepared(context)
   }
 
+  internal fun checkThread() {
+    if (strict) {
+      check(Thread.currentThread() == context.node.thread) { "Couldn't operate node object non origin thread: ${Thread.currentThread()}" }
+    }
+  }
+
   private fun attachStdOutput(context: JSContext) {
     val process: JSObject = context.get("process")
     val stdout: JSObject = process.get("stdout")
@@ -226,7 +234,7 @@ process.stdout.isRaw = true;
     listeners.forEach { it.onNodeError(error) }
   }
 
-  private external fun nativeNew(keepAlive: Boolean): Long
+  private external fun nativeNew(keepAlive: Boolean, strict: Boolean): Long
 
   private external fun nativeExit(exitCode: Int)
 
@@ -237,6 +245,7 @@ process.stdout.isRaw = true;
   private external fun nativeMountFileSystem(obj: JSObject)
 
   private external fun nativeSubmit(action: Runnable): Boolean
+
   interface EventListener {
 
     fun onNodePrepared(context: JSContext) {}
@@ -283,6 +292,15 @@ process.stdout.isRaw = true;
         }
       })
       node.start("-p", "process.versions")
+    }
+
+    fun extractExecutable(context: Context, dir: File): File {
+      val file = File(context.applicationInfo.nativeLibraryDir, "node.so")
+      check(file.exists()) { "Couldn't find node.so file" }
+      val target = File(dir, "node")
+      file.renameTo(target)
+      target.setExecutable(true, false)
+      return file
     }
   }
 }

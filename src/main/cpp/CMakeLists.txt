@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.4.1)
 #add_definitions()
 set(NODE_BUILD_DIR ${PROJECT_SOURCE_DIR}/prebuilt/${ANDROID_ABI}/prefix)
 set(LIB_NODE_OUTPUT ${PROJECT_SOURCE_DIR}/../jniLibs/${ANDROID_ABI}/libnode.so)
+#set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../assets/${ANDROID_ABI}")
 
 set(SOURCES
         __onload.cpp
@@ -38,9 +39,7 @@ endforeach ()
 
 include_directories(${NODE_BUILD_DIR}/include/node/)
 
-add_library(libnode
-        SHARED
-        IMPORTED)
+add_library(libnode SHARED IMPORTED)
 set_target_properties( # Specifies the target library.
         libnode
         # Specifies the parameter you want to define.
@@ -52,3 +51,6 @@ find_library(log-lib log)
 find_library(z-lib z)
 
 target_link_libraries(knode libnode ${log-lib} ${z-lib})
+
+add_executable(node.so ./main.cpp)
+target_link_libraries(node.so libnode ${log-lib} ${z-lib})

@@ -303,6 +303,8 @@ process.stdout.isRaw = true;
 
       val libraryPath = Os.getenv("LD_LIBRARY_PATH").orEmpty()
       Os.setenv("LD_LIBRARY_PATH", "$libraryPath:${libraryDir}", true)
+
+      Os.setenv("LD_PRELOAD", "${libraryDir}/libexec.so", true)
     }
   }
 }

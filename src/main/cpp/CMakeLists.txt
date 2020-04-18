@@ -53,4 +53,8 @@ find_library(z-lib z)
 target_link_libraries(knode libnode ${log-lib} ${z-lib})
 
 add_executable(node ./main.cpp)
-target_link_libraries(node libnode ${log-lib} ${z-lib})
+target_link_libraries(node libnode ${log-lib})
+
+add_library(exec SHARED ./exec.c)
+target_link_libraries(exec ${log-lib})
+

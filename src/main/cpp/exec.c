@@ -34,8 +34,8 @@ static const char *rewrite_executable(const char *filename, char *buffer, int bu
 }
 
 int execve(const char *filename, char *const *argv, char *const envp[]) {
-    LOGD("execve: %s", filename);
-    bool android_10_debug = getenv("TERMUX_ANDROID10_DEBUG") != NULL;
+    LOGI("execve: %s", filename);
+    bool android_10_debug = getenv("ANDROID10_DEBUG") != NULL;
     if (android_10_debug) {
         printf("execve(%s):\n", filename);
         int tmp_argv_count = 0;
@@ -106,8 +106,10 @@ int execve(const char *filename, char *const *argv, char *const envp[]) {
     new_argv[current_argc++] = basename(interpreter);
     if (arg) new_argv[current_argc++] = arg;
     new_argv[current_argc++] = filename;
-    int i = 1;
-    while (orig_argv_count-- > 1) new_argv[current_argc++] = argv[i++];
+    {
+        int i = 1;
+        while (orig_argv_count-- > 1) new_argv[current_argc++] = argv[i++];
+    }
     new_argv[current_argc] = NULL;
 
     filename = new_interpreter;
@@ -117,21 +119,21 @@ int execve(const char *filename, char *const *argv, char *const envp[]) {
     if (fd != -1) close(fd);
     int (*real_execve)(const char *, char *const[], char *const[]) = dlsym(RTLD_NEXT, "execve");
 
-    bool android_10_wrapping = getenv("TERMUX_ANDROID10") != NULL;
+    bool android_10_wrapping = getenv("ANDROID10") != NULL;
     if (android_10_wrapping) {
         char realpath_buffer[PATH_MAX];
         bool realpath_ok = realpath(filename, realpath_buffer) != NULL;
         if (realpath_ok) {
-            bool wrap_in_proot = (strstr(realpath_buffer, "/data/data/com.termux/files") != NULL);
+            bool wrap_in_proot = (strstr(realpath_buffer, "/data/data/com.linroid.dora/files") != NULL);
             if (android_10_debug) {
-                printf("termux-exec: realpath(\"%s\") = \"%s\", wrapping=%s\n", filename, realpath_buffer, wrap_in_proot ? "yes" : "no");
+                printf("exec: realpath(\"%s\") = \"%s\", wrapping=%s\n", filename, realpath_buffer, wrap_in_proot ? "yes" : "no");
             }
             if (wrap_in_proot) {
                 orig_argv_count = 0;
                 while (argv[orig_argv_count] != NULL) orig_argv_count++;
 
                 new_argv = malloc(sizeof(char *) * (2 + orig_argv_count));
-                filename = "/data/data/com.termux/files/usr/bin/proot";
+                filename = "/data/data/com.linroid.dora/files/usr/bin/proot";
                 new_argv[0] = "proot";
                 for (int i = 0; i < orig_argv_count; i++) {
                     new_argv[i + 1] = argv[i];

@@ -1,7 +1,6 @@
 package com.linroid.knode
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.linroid.knode.js.JSArray
 import com.linroid.knode.js.JSObject
 import com.linroid.knode.js.JSUndefined
@@ -37,7 +36,6 @@ class JSContextTest : KNodeTest() {
 
   @Test
   fun versions() {
-    val appContext = InstrumentationRegistry.getInstrumentation().targetContext
     val versions = context.get<JSObject>("process").get<JSObject>("versions")
     assertTrue(versions.toJson().isNotEmpty())
   }

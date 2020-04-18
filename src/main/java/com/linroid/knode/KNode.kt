@@ -1,6 +1,7 @@
 package com.linroid.knode
 
 import android.content.Context
+import android.system.Os
 import android.util.Log
 import androidx.annotation.Keep
 import com.google.gson.Gson
@@ -294,13 +295,14 @@ process.stdout.isRaw = true;
       node.start("-p", "process.versions")
     }
 
-    fun extractExecutable(context: Context, dir: File): File {
-      val file = File(context.applicationInfo.nativeLibraryDir, "node.so")
-      check(file.exists()) { "Couldn't find node.so file" }
-      val target = File(dir, "node")
-      file.renameTo(target)
-      target.setExecutable(true, false)
-      return file
+    fun mountExecutable(context: Context) {
+      val libraryDir = context.applicationInfo.nativeLibraryDir
+
+      val path = Os.getenv("PATH").orEmpty()
+      Os.setenv("PATH", "$path:${libraryDir}", true)
+
+      val libraryPath = Os.getenv("LD_LIBRARY_PATH").orEmpty()
+      Os.setenv("LD_LIBRARY_PATH", "$libraryPath:${libraryDir}", true)
     }
   }
 }

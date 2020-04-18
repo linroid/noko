@@ -23,8 +23,7 @@ abstract class KNodeTest : KNode.EventListener, StdOutput {
   fun setupNode() {
     val appContext = InstrumentationRegistry.getInstrumentation().targetContext
     file = File.createTempFile("knode_test", this.javaClass.name)
-    file.writeText("setInterval(() => { }, 50)")
-    node = KNode(appContext.cacheDir, this)
+    node = KNode(appContext.cacheDir, this, true)
     node.start(file.absolutePath)
     node.addEventListener(this)
     startLatch.await(3, TimeUnit.SECONDS)

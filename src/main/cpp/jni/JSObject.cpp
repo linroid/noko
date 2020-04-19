@@ -32,7 +32,7 @@ JNICALL jobject JSObject::Get(JNIEnv *env, jobject jThis, jstring jKey) {
     const jint keyLen = env->GetStringLength(jKey);
     V8_CONTEXT(env, jThis, v8::Object)
         auto value = that->Get(context, V8_STRING(isolate, key, keyLen)).ToLocalChecked();
-        type = runtime->GetType(value);
+        type = NodeRuntime::GetType(value);
         result = new v8::Persistent<v8::Value>(isolate, value);
     V8_END()
     env->ReleaseStringChars(jKey, key);

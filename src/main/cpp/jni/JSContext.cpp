@@ -71,7 +71,7 @@ jobject JSContext::Eval(JNIEnv *env, jstring jThis, jstring jCode, jstring jSour
             return;
         }
         auto checkedResult = returned.ToLocalChecked();
-        type = runtime->GetType(checkedResult);
+        type = NodeRuntime::GetType(checkedResult);
         result = new v8::Persistent<v8::Value>(isolate, checkedResult);
     V8_END()
     if (error) {
@@ -98,7 +98,7 @@ jobject JSContext::ParseJson(JNIEnv *env, jstring jThis, jstring jJson) {
             return;
         }
         auto checkedResult = returned.ToLocalChecked();
-        type = runtime->GetType(checkedResult);
+        type = NodeRuntime::GetType(checkedResult);
         result = new v8::Persistent<v8::Value>(isolate, checkedResult);
     V8_END()
     if (error) {

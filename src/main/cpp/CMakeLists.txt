@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.4.1)
 #add_definitions()
-set(NODE_BUILD_DIR ${PROJECT_SOURCE_DIR}/prebuilt/${ANDROID_ABI}/prefix)
-set(LIB_NODE_OUTPUT ${PROJECT_SOURCE_DIR}/../jniLibs/${ANDROID_ABI}/libnode.so)
-set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../resources/lib/${ANDROID_ABI}")
+set(NODE_LIB_DIR ${PROJECT_SOURCE_DIR}/../jniLibs/${ANDROID_ABI}/)
+#set(NODE_BUILD_DIR ${PROJECT_SOURCE_DIR}/prebuilt/${ANDROID_ABI}/prefix)
+#set(LIB_NODE_OUTPUT ${PROJECT_SOURCE_DIR}/../jniLibs/${ANDROID_ABI}/libnode.so)
+#set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../resources/lib/${ANDROID_ABI}")
 
 set(SOURCES
         __onload.cpp
@@ -22,12 +23,12 @@ set(SOURCES
         jni/JSError.cpp
         jni/JSPromise.cpp)
 
-add_custom_command(
-        OUTPUT ${LIB_NODE_OUTPUT}
-        DEPENDS ${NODE_BUILD_DIR}/lib/libnode.so
-        WORKING_DIRECTORY ${NODE_BUILD_DIR}
-        COMMAND cp ${NODE_BUILD_DIR}/lib/libnode.so ${LIB_NODE_OUTPUT}
-)
+#add_custom_command(
+#        OUTPUT ${LIB_NODE_OUTPUT}
+#        DEPENDS ${NODE_BUILD_DIR}/lib/libnode.so
+#        WORKING_DIRECTORY ${NODE_BUILD_DIR}
+#        COMMAND cp ${NODE_BUILD_DIR}/lib/libnode.so ${LIB_NODE_OUTPUT}
+#)
 
 add_library(knode SHARED ${SOURCES})
 
@@ -37,7 +38,7 @@ foreach (_variableName ${_variableNames})
     message(STATUS "${_variableName}=${${_variableName}}")
 endforeach ()
 
-include_directories(${NODE_BUILD_DIR}/include/node/)
+include_directories(${NODE_LIB_DIR}/include/node/)
 
 add_library(libnode SHARED IMPORTED)
 set_target_properties( # Specifies the target library.
@@ -45,7 +46,7 @@ set_target_properties( # Specifies the target library.
         # Specifies the parameter you want to define.
         PROPERTIES IMPORTED_LOCATION
         # Provides the path to the library you want to import.
-        ${NODE_BUILD_DIR}/lib/libnode.so)
+        ${NODE_LIB_DIR}/libnode.so)
 
 find_library(log-lib log)
 find_library(z-lib z)

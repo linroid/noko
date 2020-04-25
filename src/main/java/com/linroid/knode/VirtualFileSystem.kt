@@ -1,7 +1,6 @@
 package com.linroid.knode
 
 import android.util.Log
-import androidx.annotation.Keep
 import com.linroid.knode.js.JSFunction
 import com.linroid.knode.js.JSObject
 import java.io.File
@@ -14,6 +13,12 @@ class VirtualFileSystem(override val thiz: JSObject) : JSRef {
 
   private val mountFunc: JSFunction = thiz.get("mount")
   private val symlink: JSFunction = thiz.get("symlink")
+  var cwd: String
+    get() = thiz.get("cwd")
+    set(value) {
+      thiz.set("cwd", value)
+    }
+
 
   fun symlink(file: File, target: String) {
     val exists = File(target).exists()

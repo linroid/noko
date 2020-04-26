@@ -13,17 +13,18 @@ class VirtualFileSystem(override val thiz: JSObject) : JSRef {
 
   private val mountFunc: JSFunction = thiz.get("mount")
   private val symlink: JSFunction = thiz.get("symlink")
+
   var cwd: String
     get() = thiz.get("cwd")
     set(value) {
       thiz.set("cwd", value)
     }
 
-  var require: JSFunction
-    get() = thiz.get("require")
-    set(value) {
-      thiz.set("require", value)
-    }
+  // var require: JSFunction
+  //   get() = thiz.get("require")
+  //   set(value) {
+  //     thiz.set("require", value)
+  //   }
 
 
   fun symlink(file: File, target: String) {

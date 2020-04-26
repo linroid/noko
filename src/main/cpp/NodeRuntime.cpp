@@ -470,8 +470,16 @@ void NodeRuntime::MountFileSystem(v8::Persistent<v8::Value> *fs) {
         v8::HandleScope _handleScope(isolate_);
         auto context = context_.Get(isolate_);
         auto global = global_->Get(isolate_);
-        auto privateKey = v8::Private::ForApi(isolate_, v8::String::NewFromUtf8(isolate_, "__fs").ToLocalChecked());
-        global->SetPrivate(context, privateKey, fs->Get(isolate_)).FromJust();
+        auto that = fs->Get(isolate_)->ToObject(context).ToLocalChecked();
+
+        auto privateKey = v8::Private::ForApi(isolate_, V8_UTF_STRING(isolate_, "__fs"));
+        global->SetPrivate(context, privateKey, that);
+
+        auto process = process_.Get(isolate_);
+        auto chdir = process->Get(context, V8_UTF_STRING(isolate_, "chdir")).ToLocalChecked()->ToObject(context).ToLocalChecked();
+
+        auto cwd = that->Get(context, V8_UTF_STRING(isolate_, "cwd")).ToLocalChecked();
+        UNUSED(chdir->CallAsFunction(context, global, 1, &cwd));
     };
     Await(runnable);
 }

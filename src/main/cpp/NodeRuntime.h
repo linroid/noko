@@ -56,7 +56,6 @@ private:
     uv_async_t *keepAliveHandle_ = nullptr;
     uv_async_t *callbackHandle_ = nullptr;
 
-    v8::Persistent<v8::Function> require_;
     v8::Persistent<v8::Object> process_;
 
     void Handle(uv_async_t *handle);
@@ -78,6 +77,7 @@ public:
     v8::Isolate *isolate_ = nullptr;
     v8::Persistent<v8::Object> *global_ = nullptr;
     v8::Persistent<v8::Context> context_;
+    v8::Persistent<v8::Function> require_;
 
     NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, bool keepAlive, bool strict);
 

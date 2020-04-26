@@ -19,6 +19,12 @@ class VirtualFileSystem(override val thiz: JSObject) : JSRef {
       thiz.set("cwd", value)
     }
 
+  var require: JSFunction
+    get() = thiz.get("require")
+    set(value) {
+      thiz.set("require", value)
+    }
+
 
   fun symlink(file: File, target: String) {
     val exists = File(target).exists()

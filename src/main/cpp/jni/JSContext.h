@@ -22,11 +22,13 @@ public:
         return env->NewObject(jClazz, jConstructor, (jlong) runtime, (jlong) runtime->global_);
     }
 
-    static JNICALL jobject ParseJson(JNIEnv *env, jstring jThis, jstring jJson);
+    static JNICALL jobject ParseJson(JNIEnv *env, jobject jThis, jstring jJson);
 
-    static JNICALL jobject Eval(JNIEnv *env, jstring jThis, jstring jCode, jstring jSource, jint jLine);
+    static JNICALL jobject Eval(JNIEnv *env, jobject jThis, jstring jCode, jstring jSource, jint jLine);
 
-    static JNICALL jobject ThrowError(JNIEnv *env, jstring jThis, jstring jMessage);
+    static JNICALL jobject ThrowError(JNIEnv *env, jobject jThis, jstring jMessage);
+
+    static JNICALL jobject Require(JNIEnv *env, jobject jThis, jstring jPath);
 
     static jint OnLoad(JNIEnv *env);
 

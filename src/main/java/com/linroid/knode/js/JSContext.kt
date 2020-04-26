@@ -1,5 +1,6 @@
 package com.linroid.knode.js
 
+import android.util.Log
 import com.linroid.knode.JSException
 import com.linroid.knode.KNode
 import java.lang.annotation.Native
@@ -37,7 +38,14 @@ class JSContext @NativeConstructor private constructor(
     return nativeThrowError(message)
   }
 
+  @Throws(JSException::class)
+  @Deprecated("Not working")
+  fun require(path: String): JSValue {
+    return nativeRequire(path)
+  }
+
   private external fun nativeEval(code: String, source: String, line: Int): JSValue
   private external fun nativeParseJson(json: String): JSValue
   private external fun nativeThrowError(message: String): JSError
+  private external fun nativeRequire(path: String): JSObject
 }

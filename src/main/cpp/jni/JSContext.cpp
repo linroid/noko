@@ -35,6 +35,7 @@ jint JSContext::OnLoad(JNIEnv *env) {
             {"nativeEval",       "(Ljava/lang/String;Ljava/lang/String;I)Lcom/linroid/knode/js/JSValue;", (void *) Eval},
             {"nativeParseJson",  "(Ljava/lang/String;)Lcom/linroid/knode/js/JSValue;",                    (void *) ParseJson},
             {"nativeThrowError", "(Ljava/lang/String;)Lcom/linroid/knode/js/JSError;",                    (void *) ThrowError},
+            {"nativeRequire",    "(Ljava/lang/String;)Lcom/linroid/knode/js/JSObject;",                   (void *) Require},
     };
 
     int rc = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
@@ -44,7 +45,7 @@ jint JSContext::OnLoad(JNIEnv *env) {
     return JNI_OK;
 }
 
-jobject JSContext::Eval(JNIEnv *env, jstring jThis, jstring jCode, jstring jSource, jint jLine) {
+jobject JSContext::Eval(JNIEnv *env, jobject jThis, jstring jCode, jstring jSource, jint jLine) {
     v8::Persistent<v8::Value> *result = nullptr;
     JSType type = kNone;
     v8::Persistent<v8::Value> *error = nullptr;
@@ -83,7 +84,7 @@ jobject JSContext::Eval(JNIEnv *env, jstring jThis, jstring jCode, jstring jSour
     return runtime->Wrap(env, result, type);
 }
 
-jobject JSContext::ParseJson(JNIEnv *env, jstring jThis, jstring jJson) {
+jobject JSContext::ParseJson(JNIEnv *env, jobject jThis, jstring jJson) {
     v8::Persistent<v8::Value> *result = nullptr;
     JSType type = kNone;
     v8::Persistent<v8::Value> *error = nullptr;
@@ -110,7 +111,7 @@ jobject JSContext::ParseJson(JNIEnv *env, jstring jThis, jstring jJson) {
 }
 
 
-jobject JSContext::ThrowError(JNIEnv *env, jstring jThis, jstring jMessage) {
+jobject JSContext::ThrowError(JNIEnv *env, jobject jThis, jstring jMessage) {
     const uint16_t *message = env->GetStringChars(jMessage, nullptr);
     const jint messageLen = env->GetStringLength(jMessage);
     v8::Persistent<v8::Value> *result = nullptr;
@@ -121,6 +122,35 @@ jobject JSContext::ThrowError(JNIEnv *env, jstring jThis, jstring jMessage) {
     V8_END()
     env->ReleaseStringChars(jMessage, message);
     return runtime->Wrap(env, result, JSType::kError);
+}
+
+// TODO: Not working, illegal context
+jobject JSContext::Require(JNIEnv *env, jobject jThis, jstring jPath) {
+    v8::Persistent<v8::Value> *result = nullptr;
+    JSType type = kUndefined;
+
+    jint pathLen = env->GetStringLength(jPath);
+    auto path = env->GetStringChars(jPath, nullptr);
+
+    V8_CONTEXT(env, jThis, v8::Object)
+        auto *argv = new v8::Local<v8::Value>[1];
+        argv[0] = V8_STRING(isolate, path, pathLen);
+
+        auto global = runtime->global_->Get(isolate);
+
+        auto require = global->Get(context, V8_UTF_STRING(isolate, "require")).ToLocalChecked()->ToObject(context).ToLocalChecked();
+        assert(require->IsFunction());
+
+        auto returned = require->CallAsFunction(context, global, 1, argv);
+        if (!returned.IsEmpty()) {
+            auto checkedResult = returned.ToLocalChecked();
+            type = NodeRuntime::GetType(checkedResult);
+            result = new v8::Persistent<v8::Value>(isolate, checkedResult);
+        }
+    V8_END()
+
+    env->ReleaseStringChars(jPath, path);
+    return runtime->Wrap(env, result, type);
 }
 
 void JSContext::SetShared(JNIEnv *env, NodeRuntime *runtime) {

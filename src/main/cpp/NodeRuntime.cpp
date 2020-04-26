@@ -229,8 +229,9 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
     while (!platform_finished)
         uv_run(eventLoop_, UV_RUN_ONCE);
     int err = uv_loop_close(eventLoop_);
+    LOGI("close loop result: %d", err);
     // uv_loop_delete(loop);
-    assert(err == 0);
+    // assert(err == 0);
     return exit_code;
 }
 

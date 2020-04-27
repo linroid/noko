@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.4.1)
 set(NODE_LIB_DIR ${PROJECT_SOURCE_DIR}/../jniLibs/${ANDROID_ABI}/)
 #set(NODE_BUILD_DIR ${PROJECT_SOURCE_DIR}/prebuilt/${ANDROID_ABI}/prefix)
 #set(LIB_NODE_OUTPUT ${PROJECT_SOURCE_DIR}/../jniLibs/${ANDROID_ABI}/libnode.so)
-#set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../resources/lib/${ANDROID_ABI}")
+set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../resources/lib/${ANDROID_ABI}")
 
 set(SOURCES
         __onload.cpp

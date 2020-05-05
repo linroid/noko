@@ -214,9 +214,6 @@ process.stdout.isRaw = true;
     val stderr: JSObject = process.get("stderr")
     stderr.set("write", object : JSFunction(context, "write") {
       override fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
-        if (BuildConfig.DEBUG) {
-          Log.w(TAG, "stderr: " + parameters[0].toString())
-        }
         output.stderr(parameters[0].toString())
         return null
       }

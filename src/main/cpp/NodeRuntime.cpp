@@ -133,7 +133,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
         v8::Context::Scope context_scope(context);
         LOGD("CreateEnvironment");
         std::unique_ptr<node::Environment, decltype(&node::FreeEnvironment)> env(
-                node::CreateEnvironment(isolate_data.get(), context, args, args),
+                node::CreateEnvironment(isolate_data.get(), context, args, args, node::EnvironmentFlags::kOwnsProcessState),
                 node::FreeEnvironment);
 
         isolate_ = isolate;

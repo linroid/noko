@@ -131,9 +131,11 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
         // The v8::Context needs to be entered when node::CreateEnvironment() and
         // node::LoadEnvironment() are being called.
         v8::Context::Scope context_scope(context);
-        LOGD("CreateEnvironment");
+        auto flags = static_cast<node::EnvironmentFlags::Flags>(node::EnvironmentFlags::kOwnsProcessState |
+                                                                node::EnvironmentFlags::kOwnsEmbedded);
+        LOGD("CreateEnvironment: flags=%ld", flags);
         std::unique_ptr<node::Environment, decltype(&node::FreeEnvironment)> env(
-                node::CreateEnvironment(isolate_data.get(), context, args, args, node::EnvironmentFlags::kOwnsProcessState),
+                node::CreateEnvironment(isolate_data.get(), context, args, args, flags),
                 node::FreeEnvironment);
 
         isolate_ = isolate;
@@ -164,6 +166,10 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
             return v8::Null(isolate_);
         });
 
+        node::SetProcessExitHandler(env.get(), [](node::Environment *environment, int code) {
+            LOGW("exit node process");
+            node::Stop(environment);
+        });
         {
             if (keepAlive_) {
                 isolate->SetPromiseHook([](v8::PromiseHookType type, v8::Local<v8::Promise> promise,

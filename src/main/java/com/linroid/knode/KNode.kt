@@ -1,6 +1,10 @@
 package com.linroid.knode
 
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.system.Os
 import android.util.Log
 import androidx.annotation.Keep
@@ -271,6 +275,37 @@ process.stdout.isRaw = true;
       // }
     }
 
+    private fun setDnsEnv(connectionManager: ConnectivityManager) {
+      val network = connectionManager.activeNetwork
+
+      val properties = connectionManager.getLinkProperties(network) ?: return
+      if (properties.dnsServers.isNotEmpty()) {
+        Os.setenv("DNS_SERVERS", properties.dnsServers.joinToString(",") { it.hostAddress }, true)
+      } else {
+        Os.unsetenv("DNS_SERVERS")
+      }
+
+      val domains = properties.domains
+      Os.setenv("DNS_DOMAINS", domains ?: "", true)
+    }
+
+    fun setup(context: Context) {
+      Log.i(TAG, "setup")
+      val connectionManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+      setDnsEnv(connectionManager)
+
+      val request = NetworkRequest.Builder()
+        .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+        .build()
+      connectionManager.registerNetworkCallback(request, object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+          Log.d(TAG, "network onAvailable: $network")
+          setDnsEnv(connectionManager)
+        }
+      })
+      nativeSetup(connectionManager)
+    }
+
     fun addEnv(key: String, value: String) {
       customEnvs[key] = value
     }
@@ -306,5 +341,8 @@ process.stdout.isRaw = true;
 
       Os.setenv("LD_PRELOAD", "${libraryDir}/libexec.so", true)
     }
+
+    @JvmStatic
+    private external fun nativeSetup(connectionManager: ConnectivityManager)
   }
 }

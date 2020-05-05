@@ -48,4 +48,11 @@ abstract class KNodeTest : KNode.EventListener, StdOutput {
   override fun stderr(str: String) {
     println(str)
   }
+
+  companion object {
+    init {
+      val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+      KNode.setup(appContext)
+    }
+  }
 }

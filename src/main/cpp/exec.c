@@ -78,6 +78,7 @@ int execve(const char *filename, char *const *argv, char *const envp[]) {
     while (*interpreter == ' ') interpreter++;
     if (interpreter == newline_location) goto final;
 
+
     char *arg = NULL;
     char *whitespace_pos = strchr(interpreter, ' ');
     if (whitespace_pos != NULL) {
@@ -90,6 +91,9 @@ int execve(const char *filename, char *const *argv, char *const envp[]) {
         if (arg == newline_location) {
             // Only whitespace after interpreter.
             arg = NULL;
+        }
+        if (strcmp(arg, "node") == 0) {
+            arg = "node.so";
         }
     }
 

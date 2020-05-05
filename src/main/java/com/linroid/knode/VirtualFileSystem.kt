@@ -12,6 +12,7 @@ class VirtualFileSystem(override val thiz: JSObject) : JSRef {
 
   private val mountFunc: JSFunction = thiz.get("mount")
   private val symlink: JSFunction = thiz.get("symlink")
+  private val addWhiteList: JSFunction = thiz.get("addWhiteList")
 
   var cwd: String
     get() = thiz.get("cwd")
@@ -38,8 +39,11 @@ class VirtualFileSystem(override val thiz: JSObject) : JSRef {
     mountFunc.call(thiz, file.absolutePath, target, mask)
   }
 
+  fun addWhiteList(file: File) {
+    addWhiteList.call(thiz, file.absolutePath)
+  }
+
   companion object {
-    const val TAG = "VirtualFileSystem"
     const val ACCESS_NONE = 0
     const val ACCESS_READ = 1
     const val ACCESS_WRITE = 2

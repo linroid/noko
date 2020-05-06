@@ -49,7 +49,7 @@ class KNode(
     thread = thread(isDaemon = true, name = "knode-${seq}") {
       try {
         val execArgs = ArrayList<String>()
-        execArgs.add("node")
+        execArgs.add(exec.absolutePath)
         execArgs.addAll(args)
 
         Log.d(TAG, execArgs.joinToString(" "))
@@ -263,6 +263,7 @@ process.stdout.isRaw = true;
 
     private val customVersions = HashMap<String, String>()
     private val customEnvs = HashMap<String, String>()
+    private var exec = File("node")
     var gson: Gson = Gson()
 
     init {
@@ -327,7 +328,9 @@ process.stdout.isRaw = true;
       node.start("-p", "process.versions")
     }
 
-    fun mountExecutable(context: Context) {
+    fun mountExecutable(context: Context, exec: File) {
+      this.exec = exec
+
       val libraryDir = context.applicationInfo.nativeLibraryDir
 
       val path = Os.getenv("PATH").orEmpty()
@@ -337,6 +340,10 @@ process.stdout.isRaw = true;
       Os.setenv("LD_LIBRARY_PATH", "$libraryPath:${libraryDir}", true)
 
       Os.setenv("LD_PRELOAD", "${libraryDir}/libexec.so", true)
+
+      // Create symlink to execute node cmd
+      exec.delete()
+      Os.symlink("$libraryDir/node.so", exec.absolutePath)
     }
 
     @JvmStatic

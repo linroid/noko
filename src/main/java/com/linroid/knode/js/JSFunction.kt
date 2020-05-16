@@ -36,7 +36,7 @@ open class JSFunction : JSObject {
     return null
   }
 
-  fun call(receiver: JSValue, vararg parameters: Any): JSValue {
+  fun call(receiver: JSValue, vararg parameters: Any?): JSValue {
     val v8Parameters = Array(parameters.size) { from(context, parameters[it]) }
     return nativeCall(receiver, v8Parameters)
   }

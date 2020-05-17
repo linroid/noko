@@ -133,7 +133,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
         v8::Context::Scope context_scope(context);
         auto flags = static_cast<node::EnvironmentFlags::Flags>(node::EnvironmentFlags::kOwnsProcessState |
                                                                 node::EnvironmentFlags::kOwnsEmbedded);
-        LOGD("CreateEnvironment: flags=%ld", flags);
+        LOGD("CreateEnvironment: flags=%lld", flags);
         std::unique_ptr<node::Environment, decltype(&node::FreeEnvironment)> env(
                 node::CreateEnvironment(isolate_data.get(), context, args, args, flags),
                 node::FreeEnvironment);
@@ -457,36 +457,13 @@ v8::Local<v8::Value> NodeRuntime::Require(const char *path) {
     return scope.Escape(result);
 }
 
-v8::Persistent<v8::Value> *NodeRuntime::CreateFileSystem() {
-    v8::Persistent<v8::Value> *result = nullptr;
+void NodeRuntime::MountFile(const char *path, const int mask) {
+    v8::Locker _locker(isolate_);
+    v8::HandleScope _handleScope(isolate_);
+    auto context = context_.Get(isolate_);
+    auto env = node::GetCurrentEnvironment(context);
+    node::MountFile(env, path, mask);
     auto runnable = [&]() {
-        v8::Locker _locker(isolate_);
-        v8::HandleScope _handleScope(isolate_);
-        auto context = context_.Get(isolate_);
-        auto fs = v8::Local<v8::Object>::Cast(Require("__fs"));
-        UNUSED(fs->Set(context, V8_UTF_STRING(isolate_, "require"), require_.Get(isolate_)));
-        result = new v8::Persistent<v8::Value>(isolate_, fs);
-    };
-    Await(runnable);
-    return result;
-}
-
-void NodeRuntime::MountFileSystem(v8::Persistent<v8::Value> *fs) {
-    auto runnable = [&]() {
-        v8::Locker _locker(isolate_);
-        v8::HandleScope _handleScope(isolate_);
-        auto context = context_.Get(isolate_);
-        auto global = global_->Get(isolate_);
-        auto that = fs->Get(isolate_)->ToObject(context).ToLocalChecked();
-
-        auto privateKey = v8::Private::ForApi(isolate_, V8_UTF_STRING(isolate_, "__fs"));
-        global->SetPrivate(context, privateKey, that);
-
-        auto process = process_.Get(isolate_);
-        auto chdir = process->Get(context, V8_UTF_STRING(isolate_, "chdir")).ToLocalChecked()->ToObject(context).ToLocalChecked();
-
-        auto cwd = that->Get(context, V8_UTF_STRING(isolate_, "cwd")).ToLocalChecked();
-        UNUSED(chdir->CallAsFunction(context, global, 1, &cwd));
     };
     Await(runnable);
 }

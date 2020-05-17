@@ -145,16 +145,13 @@ JNICALL jboolean submit(JNIEnv *env, jobject jThis, jobject jRunnable) {
     return 1;
 }
 
-JNICALL void mountFs(JNIEnv *env, jobject jThis, jobject jfs) {
-    auto runtime = get_runtime(env, jThis);
-    auto reference = JSValue::Unwrap(env, jfs);
-    runtime->MountFileSystem(reference);
-}
+JNICALL void mountFile(JNIEnv *env, jobject jThis, jstring jPath, jint mask) {
+    const char *path = env->GetStringUTFChars(jPath, nullptr);
 
-JNICALL jobject newFileSystem(JNIEnv *env, jobject jThis) {
     auto runtime = get_runtime(env, jThis);
-    auto fs = runtime->CreateFileSystem();
-    return JSObject::Wrap(env, runtime, fs);
+    runtime->MountFile(path, mask);
+
+    env->ReleaseStringUTFChars(jPath, path);
 }
 
 int init(JNIEnv *env) {
@@ -183,65 +180,66 @@ JNICALL void nativeExit(JNIEnv *env, jobject jThis, jint exitCode) {
     auto runtime = get_runtime(env, jThis);
     runtime->Exit(exitCode);
 }
-
-char **ares_get_server_list_from_env(size_t max_servers,
-                                     size_t *num_servers) {
-    char *str = getenv("DNS_SERVERS");
-
-    if (str == NULL || strlen(str) == 0) {
-        return NULL;
-    }
-
-    int count = 1;
-    for (char *p = str; p[count]; p[count] == ',' ? count++ : *p++);
-    LOGI("count=%d", count);
-
-    if (!count) {
-        return NULL;
-    }
-    if (count > max_servers) {
-        count = max_servers;
-    }
-    *num_servers = count;
-
-    char **servers;
-    servers = static_cast<char **>(malloc(sizeof(*servers) * count));
-
-    char *token;
-    int n = 0;
-    for (token = strsep(&str, ","); token != NULL && n < count; token = strsep(&str, ","), n++) {
-        servers[n] = static_cast<char *>(malloc(sizeof(char) * 64));
-        strcpy(servers[n], token);
-    }
-
-    for (int i = 0; i < count; ++i) {
-        LOGI("dns: %s", servers[i]);
-    }
-    return servers;
-}
+//
+// char **ares_get_server_list_from_env(size_t max_servers,
+//                                      size_t *num_servers) {
+//     char *str = getenv("DNS_SERVERS");
+//
+//     if (str == nullptr || strlen(str) == 0) {
+//         return nullptr;
+//     }
+//
+//     int count = 1;
+//     for (char *p = str; p[count]; p[count] == ',' ? count++ : *p++);
+//     LOGI("count=%d", count);
+//
+//     if (!count) {
+//         return nullptr;
+//     }
+//     if (count > max_servers) {
+//         count = max_servers;
+//     }
+//     *num_servers = count;
+//
+//     char **servers;
+//     servers = static_cast<char **>(malloc(sizeof(*servers) * count));
+//
+//     char *token;
+//     int n = 0;
+//     for (token = strsep(&str, ","); token != nullptr && n < count; token = strsep(&str, ","), n++) {
+//         servers[n] = static_cast<char *>(malloc(sizeof(char) * 64));
+//         strcpy(servers[n], token);
+//     }
+//
+//     for (int i = 0; i < count; ++i) {
+//         LOGI("dns: %s", servers[i]);
+//     }
+//     return servers;
+// }
 
 JNICALL void nativeSetup(JNIEnv *env, jclass jThis, jobject connectivity_manager) {
     ares_library_init_android(connectivity_manager);
     LOGI("ares_library_android_initialized: %d", ares_library_android_initialized());
-    int max = 5;
-    size_t num = 0;
-    ares_get_server_list_from_env(max, &num);
+    // int max = 5;
+    // size_t num = 0;
+    // ares_get_server_list_from_env(max, &num);
 }
 
 static JNINativeMethod nodeMethods[] = {
-        {"nativeSetup",           "(Landroid/net/ConnectivityManager;)V", (void *) nativeSetup},
-        {"nativeNew",             "(ZZ)J",                                (void *) nativeNew},
-        {"nativeExit",            "(I)V",                                 (void *) nativeExit},
-        {"nativeStart",           "([Ljava/lang/String;)I",               (void *) start},
-        {"nativeMountFileSystem", "(Lcom/linroid/knode/js/JSObject;)V",   (void *) mountFs},
-        {"nativeNewFileSystem",   "()Lcom/linroid/knode/js/JSObject;",    (void *) newFileSystem},
-        {"nativeSubmit",          "(Ljava/lang/Runnable;)Z",              (void *) submit},
+        {"nativeSetup",     "(Landroid/net/ConnectivityManager;)V", (void *) nativeSetup},
+        {"nativeNew",       "(ZZ)J",                                (void *) nativeNew},
+        {"nativeExit",      "(I)V",                                 (void *) nativeExit},
+        {"nativeStart",     "([Ljava/lang/String;)I",               (void *) start},
+        {"nativeMountFile", "(Ljava/lang/String;I)V",               (void *) mountFile},
+        {"nativeSubmit",    "(Ljava/lang/Runnable;)Z",              (void *) submit},
 };
 
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
     if (start_redirecting_stdout_stderr() == -1) {
         LOGE("Couldn't start redirecting stdout and stderr to logcat.");
     }
+    LOGI("found=%d", std::string("/data/data").find_first_of("/"));
+    LOGI("not found = %d", std::string("/data/data").find_first_of("/hahah"));
     JNIEnv *env;
     ares_library_init_jvm(vm);
     if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {

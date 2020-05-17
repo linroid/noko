@@ -9,7 +9,6 @@ import java.io.File
  * @since 2019-09-28
  */
 class VirtualFileSystem(override val thiz: JSObject) : JSRef {
-
   private val mountFunc: JSFunction = thiz.get("mount")
   private val symlink: JSFunction = thiz.get("symlink")
   private val addWhiteList: JSFunction = thiz.get("addWhiteList")
@@ -41,11 +40,5 @@ class VirtualFileSystem(override val thiz: JSObject) : JSRef {
 
   fun addWhiteList(file: File) {
     addWhiteList.call(thiz, file.absolutePath)
-  }
-
-  companion object {
-    const val ACCESS_NONE = 0
-    const val ACCESS_READ = 1
-    const val ACCESS_WRITE = 2
   }
 }

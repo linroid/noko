@@ -7,6 +7,7 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.system.Os
 import android.util.Log
+import androidx.annotation.IntDef
 import androidx.annotation.Keep
 import com.google.gson.Gson
 import com.linroid.knode.js.JSContext
@@ -43,6 +44,10 @@ class KNode(
   private val versions = HashMap(customVersions)
 
   var thread: Thread? = null
+
+  var onSetupFs: () -> Unit = {
+    mountFile(File("/"), ACCESS_READ_WRITE)
+  }
 
   fun start(vararg args: String) {
     seq = counter.incrementAndGet()
@@ -112,13 +117,8 @@ class KNode(
     exit(0)
   }
 
-  fun mountFileSystem(fs: VirtualFileSystem) {
-    nativeMountFileSystem(fs.thiz)
-  }
-
-  fun newFileSystem(): VirtualFileSystem {
-    val thiz = nativeNewFileSystem()
-    return VirtualFileSystem(thiz)
+  fun mountFile(file: File, mask: Int) {
+    nativeMountFile(file.absolutePath, mask)
   }
 
   fun submit(action: Runnable): Boolean {
@@ -139,6 +139,7 @@ class KNode(
     this.context = context
     active = true
     context.node = this
+    onSetupFs()
     check(isActive()) { "isActive is not match the current state" }
     attachStdOutput(context)
     // val process: JSObject = context.get("process")
@@ -242,9 +243,7 @@ process.stdout.isRaw = true;
 
   private external fun nativeStart(args: Array<out String>): Int
 
-  private external fun nativeNewFileSystem(): JSObject
-
-  private external fun nativeMountFileSystem(obj: JSObject)
+  private external fun nativeMountFile(path: String, @FileAccessMask mask: Int)
 
   private external fun nativeSubmit(action: Runnable): Boolean
 
@@ -259,6 +258,15 @@ process.stdout.isRaw = true;
 
   companion object {
     private const val TAG = "KNode"
+
+    const val ACCESS_NONE = 0
+    const val ACCESS_READ = 1
+    const val ACCESS_WRITE = 2
+    const val ACCESS_READ_WRITE = ACCESS_READ or ACCESS_WRITE
+
+    @IntDef(ACCESS_NONE, ACCESS_READ, ACCESS_WRITE, ACCESS_READ_WRITE)
+    annotation class FileAccessMask
+
     private val counter = AtomicInteger(0)
 
     private val customVersions = HashMap<String, String>()

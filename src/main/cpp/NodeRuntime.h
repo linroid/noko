@@ -95,9 +95,7 @@ public:
 
     v8::Local<v8::Value> Require(const char *path);
 
-    v8::Persistent<v8::Value> *CreateFileSystem();
-
-    void MountFileSystem(v8::Persistent<v8::Value> *fs);
+    void MountFile(const char *path, const int mask);
 
     static JSType GetType(v8::Local<v8::Value> &value);
 };

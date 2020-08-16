@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.4.1)
 #add_definitions()
-set(NODE_LIB_DIR ${PROJECT_SOURCE_DIR}/../jniLibs/${ANDROID_ABI})
+set(NODE_LIB_DIR ${PROJECT_SOURCE_DIR}/../prebuilts/${ANDROID_ABI})
 set(NODE_SOURCE_DIR ${PROJECT_SOURCE_DIR}/../../../../deps/node/deps/cares/include)
 #set(NODE_BUILD_DIR ${PROJECT_SOURCE_DIR}/prebuilt/${ANDROID_ABI}/prefix)
 #set(LIB_NODE_OUTPUT ${PROJECT_SOURCE_DIR}/../jniLibs/${ANDROID_ABI}/libnode.so)

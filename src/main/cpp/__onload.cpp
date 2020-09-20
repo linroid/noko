@@ -238,8 +238,6 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
     if (start_redirecting_stdout_stderr() == -1) {
         LOGE("Couldn't start redirecting stdout and stderr to logcat.");
     }
-    LOGI("found=%d", std::string("/data/data").find_first_of("/"));
-    LOGI("not found = %d", std::string("/data/data").find_first_of("/hahah"));
     JNIEnv *env;
     ares_library_init_jvm(vm);
     if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {

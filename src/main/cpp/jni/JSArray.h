@@ -22,7 +22,7 @@ public:
 
     JNICALL static void New(JNIEnv *env, jobject jThis);
 
-    JNICALL static jobject Get(JNIEnv *env, jobject jThis, jint jindex);
+    JNICALL static jobject Get(JNIEnv *env, jobject jThis, jint jIndex);
 
     JNICALL static jboolean Add(JNIEnv *env, jobject jThis, jobject jElement);
 

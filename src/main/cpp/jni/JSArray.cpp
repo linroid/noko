@@ -81,13 +81,13 @@ jint JSArray::OnLoad(JNIEnv *env) {
     return JNI_OK;
 }
 
-jobject JSArray::Get(JNIEnv *env, jobject jThis, jint jindex) {
+jobject JSArray::Get(JNIEnv *env, jobject jThis, jint jIndex) {
     v8::Persistent<v8::Value> *error = nullptr;
     v8::Persistent<v8::Value> *result = nullptr;
     JSType type = kNone;
     V8_CONTEXT(env, jThis, v8::Array)
         v8::TryCatch tryCatch(runtime->isolate_);
-        auto value = that->Get(context, jindex).ToLocalChecked();
+        auto value = that->Get(context, jIndex).ToLocalChecked();
         if (tryCatch.HasCaught()) {
             error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
             return;

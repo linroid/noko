@@ -30,7 +30,9 @@ class ExecutableTest {
     // file = KNode.extractExecutable(ctx, binDir)
     // assert(file.exists())
     //
-    KNode.mountExecutable(ctx)
+    val cmd = File(binDir, "node")
+
+    KNode.mountExecutable(ctx, cmd)
     assert(Os.getenv("PATH").split(':').contains(binDir.absolutePath))
     assert(Os.getenv("LD_LIBRARY_PATH").split(':').contains(ctx.applicationInfo.nativeLibraryDir))
     file = File(ctx.applicationInfo.nativeLibraryDir, "node.so")

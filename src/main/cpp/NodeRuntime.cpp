@@ -133,7 +133,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
         v8::Context::Scope context_scope(context);
         auto flags = static_cast<node::EnvironmentFlags::Flags>(node::EnvironmentFlags::kOwnsProcessState |
                                                                 node::EnvironmentFlags::kOwnsEmbedded);
-        LOGD("CreateEnvironment: flags=%lld", flags);
+        LOGD("CreateEnvironment: flags=%lud", flags);
         std::unique_ptr<node::Environment, decltype(&node::FreeEnvironment)> env(
                 node::CreateEnvironment(isolate_data.get(), context, args, args, flags),
                 node::FreeEnvironment);

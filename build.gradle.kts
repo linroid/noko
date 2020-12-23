@@ -49,8 +49,10 @@ android {
   }
 
   packagingOptions {
-    if (!Builds.isRelease) {
-      doNotStrip("*/*/*.so")
+    jniLibs {
+      if (!Builds.isRelease) {
+        keepDebugSymbols += "*/*/*.so"
+      }
     }
   }
 }

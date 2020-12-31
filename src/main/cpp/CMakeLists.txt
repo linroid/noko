@@ -1,10 +1,5 @@
 cmake_minimum_required(VERSION 3.4.1)
-#add_definitions()
-set(NODE_LIB_DIR ${PROJECT_SOURCE_DIR}/../prebuilts/${ANDROID_ABI})
-set(NODE_SOURCE_DIR ${PROJECT_SOURCE_DIR}/../../../../deps/node/deps/cares/include)
-#set(NODE_BUILD_DIR ${PROJECT_SOURCE_DIR}/prebuilt/${ANDROID_ABI}/prefix)
-#set(LIB_NODE_OUTPUT ${PROJECT_SOURCE_DIR}/../jniLibs/${ANDROID_ABI}/libnode.so)
-#set(EXECUTABLE_OUTPUT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../resources/lib/${ANDROID_ABI}")
+set(NODE_LIB_DIR ${PROJECT_SOURCE_DIR}/prebuilts/${ANDROID_ABI})
 
 set(SOURCES
         __onload.cpp
@@ -40,15 +35,9 @@ foreach (_variableName ${_variableNames})
 endforeach ()
 
 include_directories(${NODE_LIB_DIR}/include/node/)
-include_directories(${NODE_SOURCE_DIR})
 
 add_library(libnode SHARED IMPORTED)
-set_target_properties( # Specifies the target library.
-        libnode
-        # Specifies the parameter you want to define.
-        PROPERTIES IMPORTED_LOCATION
-        # Provides the path to the library you want to import.
-        ${NODE_LIB_DIR}/libnode.so)
+set_target_properties(libnode PROPERTIES IMPORTED_LOCATION ${NODE_LIB_DIR}/lib/libnode.so)
 
 find_library(log-lib log)
 find_library(z-lib z)

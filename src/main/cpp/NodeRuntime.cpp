@@ -98,7 +98,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
     threadId_ = std::this_thread::get_id();
 
     // See below for the contents of this function.
-    int exit_code = 0;
+    int exitCode = 0;
     if (!InitLoop()) {
         return 1;
     }
@@ -198,7 +198,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
 
                 // node::EmitBeforeExit() is used to emit the 'beforeExit' event on
                 // the `process` object.
-                node::EmitBeforeExit(env.get());
+                node::EmitProcessBeforeExit(env.get());
 
                 // 'beforeExit' can also schedule new work that keeps the event loop
                 // running.
@@ -207,7 +207,10 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
         }
 
         // node::EmitExit() returns the current exit code.
-        exit_code = node::EmitExit(env.get());
+        auto exitCodeMaybe = node::EmitProcessExit(env.get());
+        if (exitCodeMaybe.IsJust()) {
+            exitCode = exitCodeMaybe.ToChecked();
+        }
 
         // node::Stop() can be used to explicitly stop the event loop and keep
         // further JavaScript from running. It can be called from any thread,
@@ -238,7 +241,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
     LOGI("close loop result: %d", err);
     // uv_loop_delete(loop);
     // assert(err == 0);
-    return exit_code;
+    return exitCode;
 }
 
 void NodeRuntime::Exit(int code) {

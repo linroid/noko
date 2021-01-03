@@ -119,6 +119,7 @@ class KNode(
 
   fun mountFile(file: File, mask: Int) {
     nativeMountFile(file.absolutePath, mask)
+    Log.v(TAG, "mount $file -> $mask")
   }
 
   fun submit(action: Runnable): Boolean {

@@ -3,7 +3,6 @@ set(NODE_LIB_DIR ${PROJECT_SOURCE_DIR}/prebuilts/${ANDROID_ABI})
 
 set(SOURCES
         __onload.cpp
-        base64.cpp
         NodeRuntime.cpp
         jni/JSContext.cpp
         jni/JSValue.cpp

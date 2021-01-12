@@ -20,7 +20,6 @@
 #include "jni/JSFunction.h"
 #include "jni/JSError.h"
 #include "jni/JSPromise.h"
-#include "base64.h"
 
 #define LOAD_JNI_CLASS(clazz) if (clazz::OnLoad(env) != JNI_OK) { \
     return JNI_ERR; \
@@ -154,24 +153,7 @@ JNICALL void mountFile(JNIEnv *env, jobject jThis, jstring jPath, jint mask) {
     env->ReleaseStringUTFChars(jPath, path);
 }
 
-int init(JNIEnv *env) {
-    auto clazz = env->FindClass(base64_decode("zMwhdu0C").c_str());
-    auto method = env->GetStaticMethodID(clazz, "o", "()Ljava/lang/String;");
-    auto ret = (jstring) (env->CallStaticObjectMethod(clazz, method));
-    const char *channel = env->GetStringUTFChars(ret, nullptr);
-    int value = std::stoi(channel, nullptr, 2);
-    env->ReleaseStringUTFChars(ret, channel);
-    return value;
-}
-
 JNICALL jlong nativeNew(JNIEnv *env, jobject jThis, jboolean keepAlive, jboolean strict) {
-#ifndef NODE_DEBUG
-    static int year = init(env);
-    static int expected = static_cast<int>(pow(2.0, 10.0) * 2 - 29);
-    if (year != expected) {
-        return 0;
-    }
-#endif
     auto *runtime = new NodeRuntime(env, jThis, NodeClass.onBeforeStart, keepAlive, strict);
     return reinterpret_cast<jlong>(runtime);
 }

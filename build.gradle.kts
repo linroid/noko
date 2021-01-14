@@ -62,10 +62,9 @@ dependencies {
   implementation(Libs.Jetpack.annotation)
   implementation(Libs.gson)
   implementation(Libs.Jetpack.collection)
-  androidTestImplementation(Libs.Kotlin.stdlib)
+  groupImplementation(Libs.Kotlin)
 
   testImplementation(Libs.Test.junit)
   androidTestImplementation(Libs.Jetpack.Test.junit)
   androidTestImplementation(Libs.Jetpack.Test.espressoCore)
-  androidTestImplementation(Libs.Kotlin.reflect)
 }

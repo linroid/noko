@@ -10,26 +10,26 @@
 
 class JSPromise {
 private:
-    static jclass jClazz;
-    static jmethodID jConstructor;
-    static jfieldID jResolver;
+  static jclass jClazz;
+  static jmethodID jConstructor;
+  static jfieldID jResolver;
 
 public:
-    inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
-        return env->NewObject(jClazz, jConstructor, runtime->jContext_, (jlong) value);
-    }
+  inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
+    return env->NewObject(jClazz, jConstructor, runtime->jContext_, (jlong) value);
+  }
 
-    static jint OnLoad(JNIEnv *env);
+  static jint OnLoad(JNIEnv *env);
 
-    static JNICALL void New(JNIEnv *env, jobject jThis);
+  static JNICALL void New(JNIEnv *env, jobject jThis);
 
-    static JNICALL void Reject(JNIEnv *env, jobject jThis, jobject jError);
+  static JNICALL void Reject(JNIEnv *env, jobject jThis, jobject jError);
 
-    static JNICALL void Resolve(JNIEnv *env, jobject jThis, jobject jValue);
+  static JNICALL void Resolve(JNIEnv *env, jobject jThis, jobject jValue);
 
-    static JNICALL void Then(JNIEnv *env, jobject jThis, jobject jCallback);
+  static JNICALL void Then(JNIEnv *env, jobject jThis, jobject jCallback);
 
-    static JNICALL void Catch(JNIEnv *env, jobject jThis, jobject jCallback);
+  static JNICALL void Catch(JNIEnv *env, jobject jThis, jobject jCallback);
 };
 
 

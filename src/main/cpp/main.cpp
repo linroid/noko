@@ -7,6 +7,6 @@
 #include <node.h>
 
 int main(int argc, char *argv[]) {
-    node::Start(argc, argv);
-    return EXIT_SUCCESS;
+  node::Start(argc, argv);
+  return EXIT_SUCCESS;
 }

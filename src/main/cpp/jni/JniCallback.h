@@ -11,18 +11,18 @@
 
 class JniCallback {
 private:
-    JavaVM *vm = nullptr;
-    jobject that;
-    jclass clazz;
-    jmethodID methodId;
+  JavaVM *vm = nullptr;
+  jobject that;
+  jclass clazz;
+  jmethodID methodId;
 public:
-    NodeRuntime *runtime = nullptr;
+  NodeRuntime *runtime = nullptr;
 
-    JniCallback(JNIEnv *env, jobject that, jclass clazz, jmethodID methodId);
+  JniCallback(JNIEnv *env, jobject that, jclass clazz, jmethodID methodId);
 
-    ~JniCallback();
+  ~JniCallback();
 
-    void Call(const v8::FunctionCallbackInfo<v8::Value> &info);
+  void Call(const v8::FunctionCallbackInfo<v8::Value> &info);
 };
 
 #endif //DORA_JNICALLBACK_H

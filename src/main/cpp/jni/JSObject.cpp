@@ -13,58 +13,47 @@
 jclass JSObject::jClazz;
 jmethodID JSObject::jConstructor;
 
-JNICALL void JSObject::Set(JNIEnv *env, jobject jThis, jstring jKey, jobject jvalue) {
+JNICALL void JSObject::Set(JNIEnv *env, jobject jThis, jstring jKey, jobject jValue) {
   const jchar *key = env->GetStringChars(jKey, nullptr);
   const jint keyLen = env->GetStringLength(jKey);
 
-  auto value = JSValue::Unwrap(env, jvalue);
-  V8_CONTEXT(env, jThis, v8::Object)
-    // CHECK_NOT_NULL(*that);
-    UNUSED(that->Set(context, V8_STRING(isolate, key, keyLen), value->Get(isolate)));
-  V8_END()
+  auto value = JSValue::Unwrap(env, jValue);
+  SETUP(env, jThis, v8::Object)
+  // CHECK_NOT_NULL(*that);
+  UNUSED(that->Set(context, V8_STRING(isolate, key, keyLen), value->Get(isolate)));
   env->ReleaseStringChars(jKey, key);
 }
 
 JNICALL jobject JSObject::Get(JNIEnv *env, jobject jThis, jstring jKey) {
-  v8::Persistent<v8::Value> *result = nullptr;
-  JSType type = kNone;
   const uint16_t *key = env->GetStringChars(jKey, nullptr);
   const jint keyLen = env->GetStringLength(jKey);
-  V8_CONTEXT(env, jThis, v8::Object)
-    auto value = that->Get(context, V8_STRING(isolate, key, keyLen)).ToLocalChecked();
-    type = NodeRuntime::GetType(value);
-    result = new v8::Persistent<v8::Value>(isolate, value);
-  V8_END()
+  SETUP(env, jThis, v8::Object)
+  auto value = that->Get(context, V8_STRING(isolate, key, keyLen)).ToLocalChecked();
   env->ReleaseStringChars(jKey, key);
-  return runtime->Wrap(env, result, type);
+  return runtime->ToJava(env, value);
 }
 
 jboolean JSObject::Has(JNIEnv *env, jobject jThis, jstring jKey) {
-  bool result = false;
   const uint16_t *key = env->GetStringChars(jKey, nullptr);
   const jint keyLen = env->GetStringLength(jKey);
-  V8_CONTEXT(env, jThis, v8::Object)
-    result = that->Has(context, V8_STRING(isolate, key, keyLen)).ToChecked();
-  V8_END()
+  SETUP(env, jThis, v8::Object)
+  bool result = that->Has(context, V8_STRING(isolate, key, keyLen)).ToChecked();
   env->ReleaseStringChars(jKey, key);
   return static_cast<jboolean>(result);
 }
 
 void JSObject::New(JNIEnv *env, jobject jThis) {
-  v8::Persistent<v8::Value> *result = nullptr;
   V8_SCOPE(env, jThis)
-    auto value = v8::Object::New(runtime->isolate_);
-    result = new v8::Persistent<v8::Value>(runtime->isolate_, value);
-  V8_END()
+  auto value = v8::Object::New(runtime->isolate_);
+  auto result = new v8::Persistent<v8::Value>(runtime->isolate_, value);
   JSValue::SetReference(env, jThis, (jlong) result);
 }
 
 void JSObject::Delete(JNIEnv *env, jobject jThis, jstring jKey) {
   const uint16_t *key = env->GetStringChars(jKey, nullptr);
   const jint keyLen = env->GetStringLength(jKey);
-  V8_CONTEXT(env, jThis, v8::Object)
-    UNUSED(that->Delete(context, V8_STRING(isolate, key, keyLen)));
-  V8_END()
+  SETUP(env, jThis, v8::Object)
+  UNUSED(that->Delete(context, V8_STRING(isolate, key, keyLen)));
   env->ReleaseStringChars(jKey, key);
 }
 

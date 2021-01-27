@@ -46,111 +46,78 @@ jint JSContext::OnLoad(JNIEnv *env) {
 }
 
 jobject JSContext::Eval(JNIEnv *env, jobject jThis, jstring jCode, jstring jSource, jint jLine) {
-  v8::Persistent<v8::Value> *result = nullptr;
-  JSType type = kNone;
-  v8::Persistent<v8::Value> *error = nullptr;
-
   jint codeLen = env->GetStringLength(jCode);
   auto code = env->GetStringChars(jCode, nullptr);
 
   jint sourceLen = env->GetStringLength(jSource);
   auto source = env->GetStringChars(jSource, nullptr);
 
-  V8_CONTEXT(env, jThis, v8::Object)
-    v8::TryCatch tryCatch(runtime->isolate_);
-    v8::ScriptOrigin scriptOrigin(V8_STRING(isolate, source, sourceLen), v8::Integer::New(runtime->isolate_, jLine));
-    auto script = v8::Script::Compile(context, V8_STRING(isolate, code, codeLen), &scriptOrigin);
-    if (script.IsEmpty()) {
-      LOGE("Compile script with an exception");
-      error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
-      return;
-    }
-    auto returned = script.ToLocalChecked()->Run(context);
-    if (returned.IsEmpty()) {
-      LOGE("Run script with an exception");
-      error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
-      return;
-    }
-    auto checkedResult = returned.ToLocalChecked();
-    type = NodeRuntime::GetType(checkedResult);
-    result = new v8::Persistent<v8::Value>(isolate, checkedResult);
-  V8_END()
-  if (error) {
-    JSError::Throw(env, runtime, error);
+  SETUP(env, jThis, v8::Object)
+  v8::TryCatch tryCatch(runtime->isolate_);
+  v8::ScriptOrigin scriptOrigin(V8_STRING(isolate, source, sourceLen), v8::Integer::New(runtime->isolate_, jLine));
+  auto script = v8::Script::Compile(context, V8_STRING(isolate, code, codeLen), &scriptOrigin);
+  if (script.IsEmpty()) {
+    LOGE("Compile script with an exception");
+    runtime->Throw(env, tryCatch.Exception());
+    return nullptr;
+  }
+  auto result = script.ToLocalChecked()->Run(context);
+  if (result.IsEmpty()) {
+    LOGE("Run script with an exception");
+    runtime->Throw(env, tryCatch.Exception());
     return nullptr;
   }
   env->ReleaseStringChars(jCode, code);
   env->ReleaseStringChars(jSource, source);
-  return runtime->Wrap(env, result, type);
+  return runtime->ToJava(env, result.ToLocalChecked());
 }
 
 jobject JSContext::ParseJson(JNIEnv *env, jobject jThis, jstring jJson) {
-  v8::Persistent<v8::Value> *result = nullptr;
-  JSType type = kNone;
-  v8::Persistent<v8::Value> *error = nullptr;
   const uint16_t *json = env->GetStringChars(jJson, nullptr);
   const jint jsonLen = env->GetStringLength(jJson);
-  V8_CONTEXT(env, jThis, v8::Object)
-    v8::Context::Scope contextScope(context);
-    v8::TryCatch tryCatch(isolate);
-    auto returned = v8::JSON::Parse(context, V8_STRING(isolate, json, jsonLen));
-    if (returned.IsEmpty()) {
-      error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
-      return;
-    }
-    auto checkedResult = returned.ToLocalChecked();
-    type = NodeRuntime::GetType(checkedResult);
-    result = new v8::Persistent<v8::Value>(isolate, checkedResult);
-  V8_END()
-  if (error) {
-    JSError::Throw(env, runtime, error);
+  SETUP(env, jThis, v8::Object)
+  v8::Context::Scope contextScope(context);
+  v8::TryCatch tryCatch(isolate);
+  auto result = v8::JSON::Parse(context, V8_STRING(isolate, json, jsonLen));
+  if (result.IsEmpty()) {
+    runtime->Throw(env, tryCatch.Exception());
     return nullptr;
   }
   env->ReleaseStringChars(jJson, json);
-  return runtime->Wrap(env, result, type);
+  return runtime->ToJava(env, result.ToLocalChecked());
 }
-
 
 jobject JSContext::ThrowError(JNIEnv *env, jobject jThis, jstring jMessage) {
   const uint16_t *message = env->GetStringChars(jMessage, nullptr);
   const jint messageLen = env->GetStringLength(jMessage);
-  v8::Persistent<v8::Value> *result = nullptr;
-  V8_CONTEXT(env, jThis, v8::Object)
-    auto error = v8::Exception::Error(V8_STRING(isolate, message, messageLen));
-    isolate->ThrowException(error);
-    result = new v8::Persistent<v8::Value>(isolate, error);
-  V8_END()
+  SETUP(env, jThis, v8::Object)
+  auto error = v8::Exception::Error(V8_STRING(isolate, message, messageLen));
+  isolate->ThrowException(error);
   env->ReleaseStringChars(jMessage, message);
-  return runtime->Wrap(env, result, JSType::kError);
+  return runtime->ToJava(env, error);
 }
 
 // TODO: Not working, illegal context
 jobject JSContext::Require(JNIEnv *env, jobject jThis, jstring jPath) {
-  v8::Persistent<v8::Value> *result = nullptr;
-  JSType type = kUndefined;
-
   jint pathLen = env->GetStringLength(jPath);
   auto path = env->GetStringChars(jPath, nullptr);
 
-  V8_CONTEXT(env, jThis, v8::Object)
-    auto *argv = new v8::Local<v8::Value>[1];
-    argv[0] = V8_STRING(isolate, path, pathLen);
+  SETUP(env, jThis, v8::Object)
+  auto *argv = new v8::Local<v8::Value>[1];
+  argv[0] = V8_STRING(isolate, path, pathLen);
+  auto global = runtime->global_->Get(isolate);
+  v8::TryCatch tryCatch(isolate);
 
-    auto global = runtime->global_->Get(isolate);
+  auto require = global->Get(context, V8_UTF_STRING(isolate, "require")).ToLocalChecked()->ToObject(context).ToLocalChecked();
+  assert(require->IsFunction());
 
-    auto require = global->Get(context, V8_UTF_STRING(isolate, "require")).ToLocalChecked()->ToObject(context).ToLocalChecked();
-    assert(require->IsFunction());
-
-    auto returned = require->CallAsFunction(context, global, 1, argv);
-    if (!returned.IsEmpty()) {
-      auto checkedResult = returned.ToLocalChecked();
-      type = NodeRuntime::GetType(checkedResult);
-      result = new v8::Persistent<v8::Value>(isolate, checkedResult);
-    }
-  V8_END()
-
+  auto result = require->CallAsFunction(context, global, 1, argv);
+  if (result.IsEmpty()) {
+    runtime->Throw(env, tryCatch.Exception());
+    return nullptr;
+  }
   env->ReleaseStringChars(jPath, path);
-  return runtime->Wrap(env, result, type);
+  return runtime->ToJava(env, result.ToLocalChecked());
 }
 
 void JSContext::SetShared(JNIEnv *env, NodeRuntime *runtime) {

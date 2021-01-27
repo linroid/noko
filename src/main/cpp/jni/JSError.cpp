@@ -45,17 +45,16 @@ void JSError::New(JNIEnv *env, jobject jThis, jstring jMessage) {
   v8::Persistent<v8::Value> *result = nullptr;
 
   V8_SCOPE(env, jThis)
-    auto message = V8_STRING(isolate, messageChars, messageLen);
-    auto value = v8::Exception::Error(message);
-    result = new v8::Persistent<v8::Value>(runtime->isolate_, value);
-  V8_END()
+  auto message = V8_STRING(isolate, messageChars, messageLen);
+  auto value = v8::Exception::Error(message);
+  result = new v8::Persistent<v8::Value>(runtime->isolate_, value);
   env->ReleaseStringChars(jMessage, messageChars);
   JSValue::SetReference(env, jThis, (jlong) result);
 }
 
 void JSError::Throw(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *error) {
   LOGE("Throw exception");
-  auto jerror = env->NewObject(jClazz, jConstructor, runtime->jContext_, (jlong) error);
-  auto jexception = (jthrowable) env->NewObject(jExceptionClazz, jExceptionConstructor, jerror);
-  env->Throw(jexception);
+  auto jError = env->NewObject(jClazz, jConstructor, runtime->jContext_, (jlong) error);
+  auto jException = (jthrowable) env->NewObject(jExceptionClazz, jExceptionConstructor, jError);
+  env->Throw(jException);
 }

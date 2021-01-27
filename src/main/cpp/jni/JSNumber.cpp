@@ -27,10 +27,8 @@ jint JSNumber::OnLoad(JNIEnv *env) {
 }
 
 void JSNumber::New(JNIEnv *env, jobject jThis, jdouble jData) {
-  v8::Persistent<v8::Value> *result = nullptr;
   V8_SCOPE(env, jThis)
-    auto value = v8::Number::New(runtime->isolate_, jData);
-    result = new v8::Persistent<v8::Value>(runtime->isolate_, value);
-  V8_END()
+  auto value = v8::Number::New(runtime->isolate_, jData);
+  auto result = new v8::Persistent<v8::Value>(runtime->isolate_, value);
   JSValue::SetReference(env, jThis, (jlong) result);
 }

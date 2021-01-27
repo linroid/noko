@@ -284,6 +284,40 @@ bool NodeRuntime::InitLoop() {
   return true;
 }
 
+jobject NodeRuntime::ToJava(JNIEnv *env, v8::Local<v8::Value> value) {
+  if (value->IsNull()) {
+    return this->jNull_;
+  } else if (value->IsUndefined()) {
+    return this->jUndefined_;
+  } else if (value->IsBoolean()) {
+    v8::Local<v8::Boolean> target = value->ToBoolean(isolate_);
+    if (target->Value()) {
+      return this->jTrue_;
+    } else {
+      return this->jFalse_;
+    }
+  } else {
+    auto reference = new v8::Persistent<v8::Value>(isolate_, value);
+    if (value->IsNumber()) {
+      return JSNumber::Wrap(env, this, reference);
+    } else if (value->IsObject()) {
+      if (value->IsFunction()) {
+        return JSFunction::Wrap(env, this, reference);
+      } else if (value->IsPromise()) {
+        return JSPromise::Wrap(env, this, reference);
+      } else if (value->IsNativeError()) {
+        return JSError::Wrap(env, this, reference);
+      } else if (value->IsArray()) {
+        return JSArray::Wrap(env, this, reference);
+      }
+      return JSObject::Wrap(env, this, reference);
+    } else if (value->IsString()) {
+      return JSString::Wrap(env, this, reference);
+    }
+    return JSValue::Wrap(env, this, reference);
+  }
+}
+
 jobject NodeRuntime::Wrap(JNIEnv *env, v8::Persistent<v8::Value> *value, JSType type) {
   switch (type) {
     case kNull:
@@ -469,6 +503,12 @@ void NodeRuntime::MountFile(const char *path, const int mask) {
   auto runnable = [&]() {
   };
   Await(runnable);
+}
+
+void NodeRuntime::Throw(JNIEnv *env, v8::Local<v8::Value> exception) {
+  auto reference = new v8::Persistent<v8::Value>(isolate_, exception);
+  auto jException = JSError::Wrap(env, this, reference);
+  env->Throw((jthrowable) jException);
 }
 
 int init_node() {

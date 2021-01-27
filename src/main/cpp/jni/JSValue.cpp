@@ -63,53 +63,35 @@ jstring JSValue::ToString(JNIEnv *env, jobject jThis) {
 }
 
 jstring JSValue::TypeOf(JNIEnv *env, jobject jThis) {
-  uint16_t *unicodeChars = nullptr;
-  jsize length = 0;
-  V8_CONTEXT(env, jThis, v8::Value)
-    auto type = that->TypeOf(isolate);
-    v8::String::Value unicodeString(isolate, type);
-    unicodeChars = *unicodeString;
-    length = unicodeString.length();
-  V8_END()
-  return env->NewString(unicodeChars, length);
+  SETUP(env, jThis, v8::Value)
+  auto type = that->TypeOf(isolate);
+  v8::String::Value unicodeString(isolate, type);
+  uint16_t *unicodeChars = *unicodeString;
+  return env->NewString(unicodeChars, unicodeString.length());
 }
 
 jstring JSValue::ToJson(JNIEnv *env, jobject jThis) {
-  uint16_t *unicodeChars = nullptr;
-  jsize length = 0;
-  V8_CONTEXT(env, jThis, v8::Value)
-    auto str = v8::JSON::Stringify(context, that);
-    if (str.IsEmpty()) {
-      unicodeChars = new uint16_t[0];
-    } else {
-      auto value = str.ToLocalChecked();
-      v8::String::Value unicodeString(isolate, value);
-      unicodeChars = *unicodeString;
-      length = unicodeString.length();
-    }
-  V8_END()
-  return env->NewString(unicodeChars, length);
+  SETUP(env, jThis, v8::Value)
+  auto str = v8::JSON::Stringify(context, that);
+  if (str.IsEmpty()) {
+    return nullptr;
+  }
+  auto value = str.ToLocalChecked();
+  v8::String::Value unicodeString(isolate, value);
+  uint16_t *unicodeChars = *unicodeString;
+  return env->NewString(unicodeChars, unicodeString.length());
 }
 
 jdouble JSValue::ToNumber(JNIEnv *env, jobject jThis) {
-  jdouble result = 0;
-  v8::Persistent<v8::Value> *error = nullptr;
-  V8_CONTEXT(env, jThis, v8::Value)
-    v8::TryCatch tryCatch(runtime->isolate_);
-    auto number = that->ToNumber(context);
-    if (number.IsEmpty()) {
-      error = new v8::Persistent<v8::Value>(runtime->isolate_, tryCatch.Exception());
-      result = 0.0;
-      return;
-    }
-    v8::Local<v8::Number> checked = number.ToLocalChecked();
-    result = checked->Value();
-  V8_END()
-  if (error) {
-    JSError::Throw(env, runtime, error);
+  SETUP(env, jThis, v8::Value)
+  v8::TryCatch tryCatch(runtime->isolate_);
+  auto number = that->ToNumber(context);
+  if (number.IsEmpty()) {
+    runtime->Throw(env, tryCatch.Exception());
     return 0.0;
   }
-  return result;
+  v8::Local<v8::Number> checked = number.ToLocalChecked();
+  return checked->Value();
 }
 
 void JSValue::Dispose(JNIEnv *env, jobject jThis) {

@@ -32,7 +32,6 @@ NodeRuntime::NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, bo
   : onBeforeStart_(onBeforeStart), keepAlive_(keepAlive), strict_(strict) {
   env->GetJavaVM(&vm_);
   jThis_ = env->NewGlobalRef(jThis);
-
   sharedMutex_.lock();
   ++instanceCount_;
   ++seq_;
@@ -506,8 +505,7 @@ void NodeRuntime::MountFile(const char *path, const int mask) {
 }
 
 void NodeRuntime::Throw(JNIEnv *env, v8::Local<v8::Value> exception) {
-  auto reference = new v8::Persistent<v8::Value>(isolate_, exception);
-  auto jException = JSError::Wrap(env, this, reference);
+  auto jException = JSError::ToException(env, this, exception);
   env->Throw((jthrowable) jException);
 }
 

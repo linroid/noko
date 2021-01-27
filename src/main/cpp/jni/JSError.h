@@ -23,7 +23,7 @@ public:
 
   JNICALL static void New(JNIEnv *env, jobject jThis, jstring jMessage);
 
-  static void Throw(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *error);
+  static jthrowable ToException(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> error);
 
   static jint OnLoad(JNIEnv *env);
 };

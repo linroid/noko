@@ -11,10 +11,8 @@ jclass JSArray::jClazz;
 jmethodID JSArray::jConstructor;
 
 jint JSArray::Size(JNIEnv *env, jobject jThis) {
-  int result = 0;
   SETUP(env, jThis, v8::Array)
-  result = that->Length();
-  return result;
+  return that->Length();
 }
 
 
@@ -27,9 +25,7 @@ void JSArray::New(JNIEnv *env, jobject jThis) {
 
 jboolean JSArray::AddAll(JNIEnv *env, jobject jThis, jobjectArray jElements) {
   auto size = env->GetArrayLength(jElements);
-  bool result = true;
   v8::Persistent<v8::Value> *elements[size];
-  v8::Persistent<v8::Value> *error = nullptr;
   for (int i = 0; i < size; ++i) {
     auto jElement = env->GetObjectArrayElement(jElements, i);
     elements[i] = JSValue::Unwrap(env, jElement);
@@ -41,19 +37,14 @@ jboolean JSArray::AddAll(JNIEnv *env, jobject jThis, jobjectArray jElements) {
   for (int i = 0; i < size; ++i) {
     auto element = elements[i]->Get(isolate);
     if (!that->Set(context, index + i, element).ToChecked()) {
-      result = false;
-      break;
+      return false;
     }
     if (tryCatch.HasCaught()) {
-      error = new v8::Persistent<v8::Value>(isolate, tryCatch.Exception());
-      break;
+      runtime->Throw(env, tryCatch.Exception());
+      return false;
     }
   }
-  if (error) {
-    JSError::Throw(env, runtime, error);
-    return 0;
-  }
-  return static_cast<jboolean>(result);
+  return true;
 }
 
 jint JSArray::OnLoad(JNIEnv *env) {
@@ -89,12 +80,10 @@ jobject JSArray::Get(JNIEnv *env, jobject jThis, jint jIndex) {
 }
 
 jboolean JSArray::Add(JNIEnv *env, jobject jThis, jobject jElement) {
-  v8::Persistent<v8::Value> *error = nullptr;
   auto element = JSValue::Unwrap(env, jElement);
-  bool success = false;
   SETUP(env, jThis, v8::TypedArray)
   v8::TryCatch tryCatch(runtime->isolate_);
-  success = that->Set(context, that->Length(), element->Get(isolate)).ToChecked();
+  auto success = that->Set(context, that->Length(), element->Get(isolate)).ToChecked();
   if (tryCatch.HasCaught()) {
     runtime->Throw(env, tryCatch.Exception());
     return 0;

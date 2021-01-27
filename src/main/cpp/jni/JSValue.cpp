@@ -72,9 +72,14 @@ jstring JSValue::TypeOf(JNIEnv *env, jobject jThis) {
 
 jstring JSValue::ToJson(JNIEnv *env, jobject jThis) {
   SETUP(env, jThis, v8::Value)
+  v8::TryCatch tryCatch(runtime->isolate_);
   auto str = v8::JSON::Stringify(context, that);
   if (str.IsEmpty()) {
-    return nullptr;
+    if (tryCatch.HasCaught()) {
+      runtime->Throw(env, tryCatch.Exception());
+      return nullptr;
+    }
+    return env->NewString(new uint16_t[0], 0);
   }
   auto value = str.ToLocalChecked();
   v8::String::Value unicodeString(isolate, value);

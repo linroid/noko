@@ -42,19 +42,17 @@ jint JSError::OnLoad(JNIEnv *env) {
 void JSError::New(JNIEnv *env, jobject jThis, jstring jMessage) {
   auto messageChars = env->GetStringChars(jMessage, nullptr);
   const jint messageLen = env->GetStringLength(jMessage);
-  v8::Persistent<v8::Value> *result = nullptr;
 
   V8_SCOPE(env, jThis)
   auto message = V8_STRING(isolate, messageChars, messageLen);
   auto value = v8::Exception::Error(message);
-  result = new v8::Persistent<v8::Value>(runtime->isolate_, value);
+  auto result = new v8::Persistent<v8::Value>(runtime->isolate_, value);
   env->ReleaseStringChars(jMessage, messageChars);
   JSValue::SetReference(env, jThis, (jlong) result);
 }
 
-void JSError::Throw(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *error) {
-  LOGE("Throw exception");
-  auto jError = env->NewObject(jClazz, jConstructor, runtime->jContext_, (jlong) error);
-  auto jException = (jthrowable) env->NewObject(jExceptionClazz, jExceptionConstructor, jError);
-  env->Throw(jException);
+jthrowable JSError::ToException(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> error) {
+  auto reference = new v8::Persistent<v8::Value>(runtime->isolate_, error);
+  auto jError = env->NewObject(jClazz, jConstructor, runtime->jContext_, (jlong) reference);
+  return (jthrowable) env->NewObject(jExceptionClazz, jExceptionConstructor, jError);
 }

@@ -20,6 +20,15 @@ void staticCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
   callback->Call(info);
 }
 
+static void WeakCallback(const v8::WeakCallbackInfo<JniCallback> &data) {
+  LOGW("WeakCallback");
+  JniCallback *callback = data.GetParameter();
+  ENTER_JNI(callback->runtime->vm_)
+  JSValue::SetReference(env, callback->that, 0);
+  EXIT_JNI(callback->runtime->vm_)
+  delete callback;
+}
+
 void JSFunction::New(JNIEnv *env, jobject jThis, jstring jName) {
   const uint16_t *name = env->GetStringChars(jName, nullptr);
   const jint nameLen = env->GetStringLength(jName);
@@ -32,6 +41,7 @@ void JSFunction::New(JNIEnv *env, jobject jThis, jstring jName) {
   func->SetName(V8_STRING(isolate, name, nameLen));
 
   auto result = new v8::Persistent<v8::Value>(runtime->isolate_, func);
+  result->SetWeak(callback, WeakCallback, v8::WeakCallbackType::kParameter);
   env->ReleaseStringChars(jName, name);
   JSValue::SetReference(env, jThis, (jlong) result);
 }

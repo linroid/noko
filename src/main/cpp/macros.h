@@ -16,7 +16,6 @@
 #define V8_SCOPE(env, jThis) \
   auto runtime = JSValue::GetRuntime(env, jThis); \
   auto isolate = runtime->isolate_; \
-  auto reference = JSValue::Unwrap(env, jThis); \
   v8::Locker locker(runtime->isolate_); \
   v8::HandleScope handleScope(runtime->isolate_); \
 
@@ -24,6 +23,7 @@
 
 #define SETUP(env, jThis, type) \
   V8_SCOPE(env, jThis) \
+  auto reference = JSValue::Unwrap(env, jThis); \
   auto context = runtime->context_.Get(isolate); \
   auto persistent = reinterpret_cast<v8::Persistent<type> *>(reference); \
   auto that = v8::Local<type>::New(runtime->isolate_, *persistent);

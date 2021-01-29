@@ -1,6 +1,5 @@
 package com.linroid.knode.js
 
-import android.util.Log
 import com.linroid.knode.JSException
 import com.linroid.knode.KNode
 import java.lang.annotation.Native
@@ -42,6 +41,10 @@ class JSContext @NativeConstructor private constructor(
   @Deprecated("Not working")
   fun require(path: String): JSValue {
     return nativeRequire(path)
+  }
+
+  override fun toString(): String {
+    return "JSContext"
   }
 
   private external fun nativeEval(code: String, source: String, line: Int): JSValue

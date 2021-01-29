@@ -2,6 +2,7 @@ package com.linroid.knode.js
 
 import android.net.Uri
 import android.os.Debug
+import android.util.Log
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
@@ -26,6 +27,8 @@ open class JSValue(context: JSContext? = null, @Native protected val reference: 
     if (context != null) {
       this.context = context
     }
+    JSValueReference(this)
+    //TODO: Monitor js object is collected if the object is created by java side
   }
 
   /** For native access runtime ptr */
@@ -113,18 +116,8 @@ open class JSValue(context: JSContext? = null, @Native protected val reference: 
   }
 
   override fun close() {
+    Log.w(TAG, "dispose: $javaClass ${super.hashCode()} ($reference)")
     nativeDispose()
-  }
-
-  @Throws(Throwable::class)
-  protected open fun finalize() {
-//        if (BuildConfig.DEBUG) {
-//            check(reference != 0L) { "No v8 object referenced" }
-//        }
-//        if (reference != 0L) {
-//            Log.i("JSValue", "nativeDispose: $reference")
-//            nativeDispose()
-//        }
   }
 
   override fun equals(other: Any?): Boolean {

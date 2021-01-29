@@ -14,18 +14,11 @@ void JniCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
     auto parameters = env->NewObjectArray(info.Length(), clazz, nullptr);
     for (int i = 0; i < info.Length(); ++i) {
       v8::Local<v8::Value> element = info[i];
-      auto value = new v8::Persistent<v8::Value>(runtime->isolate_, element);
-      auto type = NodeRuntime::GetType(element);
-      auto obj = runtime->Wrap(env, value, type);
+      auto obj = runtime->ToJava(env, element);
       env->SetObjectArrayElement(parameters, i, obj);
-      if (type >= kValue) {
-        env->DeleteLocalRef(obj);
-      }
     }
     auto caller = (v8::Local<v8::Value>) info.This();
-    auto value = new v8::Persistent<v8::Value>(runtime->isolate_, caller);
-    auto type = NodeRuntime::GetType(caller);
-    auto jCaller = runtime->Wrap(env, value, type);
+    auto jCaller = runtime->ToJava(env, caller);
     auto jRet = env->CallObjectMethod(that, methodId, jCaller, parameters);
     env->DeleteLocalRef(jCaller);
 

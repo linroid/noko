@@ -79,6 +79,7 @@ open class JSObject : JSValue {
   }
 
   fun <T> get(key: String, clazz: Class<T>): T? {
+    Log.w(TAG, "get: $key, $clazz")
     context.node.checkThread()
     val value = nativeGet(key)
     return value.toType(clazz)

@@ -12,10 +12,10 @@
 class JniCallback {
 private:
   JavaVM *vm = nullptr;
-  jobject that;
   jclass clazz;
   jmethodID methodId;
 public:
+  jobject that;
   NodeRuntime *runtime = nullptr;
 
   JniCallback(JNIEnv *env, jobject that, jclass clazz, jmethodID methodId);

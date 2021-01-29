@@ -42,6 +42,30 @@ jboolean JSObject::Has(JNIEnv *env, jobject jThis, jstring jKey) {
   return static_cast<jboolean>(result);
 }
 
+jarray JSObject::Keys(JNIEnv *env, jobject jThis) {
+  SETUP(env, jThis, v8::Object)
+  v8::TryCatch tryCatch(isolate);
+  auto names = that->GetPropertyNames(context);
+  if (names.IsEmpty()) {
+    runtime->Throw(env, tryCatch.Exception());
+    return nullptr;
+  }
+  auto array = names.ToLocalChecked();
+  auto length = array->Length();
+  auto result = env->NewObjectArray(length, env->FindClass("java/lang/String"), nullptr);
+  for (int i = 0; i < length; i++) {
+    auto element = array->Get(context, i);
+    if (element.IsEmpty()) {
+      runtime->Throw(env, tryCatch.Exception());
+      return nullptr;
+    }
+    v8::String::Value unicodeString(isolate, element.ToLocalChecked());
+    uint16_t *unicodeChars = *unicodeString;
+    env->SetObjectArrayElement(result, i, env->NewString(unicodeChars, unicodeString.length()));
+  }
+  return result;
+}
+
 void JSObject::New(JNIEnv *env, jobject jThis) {
   V8_SCOPE(env, jThis)
   auto value = v8::Object::New(runtime->isolate_);
@@ -69,6 +93,7 @@ jint JSObject::OnLoad(JNIEnv *env) {
     {"nativeNew",    "()V",                                                 (void *) (JSObject::New)},
     {"nativeHas",    "(Ljava/lang/String;)Z",                               (void *) (JSObject::Has)},
     {"nativeDelete", "(Ljava/lang/String;)V",                               (void *) (JSObject::Delete)},
+    {"nativeKeys",   "()[Ljava/lang/String;",                               (void *) (JSObject::Keys)},
   };
   jClazz = (jclass) env->NewGlobalRef(clazz);
   jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");

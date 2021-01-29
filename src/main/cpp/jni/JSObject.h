@@ -28,6 +28,8 @@ public:
 
   static JNICALL jboolean Has(JNIEnv *env, jobject jThis, jstring jKey);
 
+  static JNICALL jarray Keys(JNIEnv *env, jobject jThis);
+
   static JNICALL void New(JNIEnv *env, jobject jThis);
 };
 

@@ -40,26 +40,15 @@ jint JSValue::OnLoad(JNIEnv *env) {
 }
 
 jstring JSValue::ToString(JNIEnv *env, jobject jThis) {
-  uint16_t *unicodeChars = nullptr;
-  jsize length = 0;
-  auto runtime = JSValue::GetRuntime(env, jThis);
-  auto isolate = runtime->isolate_;
-  auto value = JSValue::Unwrap(env, jThis);
-  auto _runnable = [&]() {
-    v8::Locker _locker(runtime->isolate_);
-    v8::HandleScope _handleScope(runtime->isolate_);
-    auto context = runtime->context_.Get(isolate);
-    auto str = value->Get(isolate)->ToString(context);
-    if (str.IsEmpty()) {
-      unicodeChars = new uint16_t[0];
-    } else {
-      v8::String::Value unicodeString(isolate, str.ToLocalChecked());
-      unicodeChars = *unicodeString;
-      length = unicodeString.length();
-    }
-  };
-  runtime->Await(_runnable);
-  return env->NewString(unicodeChars, length);
+  SETUP(env, jThis, v8::Value)
+  v8::TryCatch tryCatch(isolate);
+  auto str = that->ToString(context);
+  if (str.IsEmpty()) {
+    runtime->Throw(env, tryCatch.Exception());
+    return nullptr;
+  }
+  v8::String::Value unicodeString(isolate, str.ToLocalChecked());
+  return env->NewString(*unicodeString, unicodeString.length());
 }
 
 jstring JSValue::TypeOf(JNIEnv *env, jobject jThis) {

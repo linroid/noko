@@ -1,13 +1,17 @@
 package com.linroid.knode.js
 
 import android.net.Uri
+import android.os.Debug
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonSyntaxException
+import com.linroid.knode.BuildConfig
+import com.linroid.knode.JSValueReference
 import com.linroid.knode.KNode
 import java.io.Closeable
 import java.lang.annotation.Native
+import java.util.concurrent.Semaphore
 
 /**
  * @author linroid
@@ -30,6 +34,19 @@ open class JSValue(context: JSContext? = null, @Native protected val reference: 
   }
 
   override fun toString(): String {
+    if (BuildConfig.DEBUG
+      && Debug.isDebuggerConnected()
+      && Thread.currentThread() != context.node.thread
+    ) {
+      val semaphore = Semaphore(1)
+      var result = ""
+      context.node.submit {
+        result = nativeToString()
+        semaphore.release()
+      }
+      semaphore.acquire()
+      return result
+    }
     return nativeToString()
   }
 

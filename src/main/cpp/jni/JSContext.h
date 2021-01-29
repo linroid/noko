@@ -30,6 +30,8 @@ public:
 
   static JNICALL jobject Require(JNIEnv *env, jobject jThis, jstring jPath);
 
+  static JNICALL void ClearReference(__unused JNIEnv *env, jlong ref);
+
   static jint OnLoad(JNIEnv *env);
 
   static void SetShared(JNIEnv *env, NodeRuntime *runtime);

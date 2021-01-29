@@ -2,7 +2,6 @@ package com.linroid.knode.js
 
 import android.net.Uri
 import android.os.Debug
-import android.util.Log
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
@@ -18,7 +17,7 @@ import java.util.concurrent.Semaphore
  * @author linroid
  * @since 2019-10-19
  */
-open class JSValue(context: JSContext? = null, @Native protected val reference: Long) : Closeable {
+open class JSValue(context: JSContext? = null, @Native internal val reference: Long) : Closeable {
 
   @Suppress("LeakingThis")
   lateinit var context: JSContext
@@ -26,8 +25,11 @@ open class JSValue(context: JSContext? = null, @Native protected val reference: 
   init {
     if (context != null) {
       this.context = context
+      if (reference != 0L) {
+        // The object is just a wrapper for js object
+        JSValueReference(this, context.cleaner)
+      }
     }
-    JSValueReference(this)
     //TODO: Monitor js object is collected if the object is created by java side
   }
 
@@ -116,7 +118,6 @@ open class JSValue(context: JSContext? = null, @Native protected val reference: 
   }
 
   override fun close() {
-    Log.w(TAG, "dispose: $javaClass ${super.hashCode()} ($reference)")
     nativeDispose()
   }
 

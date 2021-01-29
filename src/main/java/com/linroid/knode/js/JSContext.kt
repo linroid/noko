@@ -19,6 +19,11 @@ class JSContext @NativeConstructor private constructor(
   internal lateinit var sharedFalse: JSBoolean
   lateinit var node: KNode
 
+  internal val cleaner = { ref: Long ->
+    check(ref != 0L) { "The reference has been already cleared" }
+    nativeClearReference(ref)
+  }
+
   init {
     context = this
   }
@@ -51,4 +56,5 @@ class JSContext @NativeConstructor private constructor(
   private external fun nativeParseJson(json: String): JSValue
   private external fun nativeThrowError(message: String): JSError
   private external fun nativeRequire(path: String): JSObject
+  private external fun nativeClearReference(ref: Long)
 }

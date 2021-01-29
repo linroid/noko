@@ -1,3 +1,4 @@
+#include <stdint.h>
 //
 // Created by linroid on 2019-10-20.
 //
@@ -32,10 +33,11 @@ jint JSContext::OnLoad(JNIEnv *env) {
   jFalseId = env->GetFieldID(clazz, "sharedFalse", "Lcom/linroid/knode/js/JSBoolean;");
 
   JNINativeMethod methods[] = {
-    {"nativeEval",       "(Ljava/lang/String;Ljava/lang/String;I)Lcom/linroid/knode/js/JSValue;", (void *) Eval},
-    {"nativeParseJson",  "(Ljava/lang/String;)Lcom/linroid/knode/js/JSValue;",                    (void *) ParseJson},
-    {"nativeThrowError", "(Ljava/lang/String;)Lcom/linroid/knode/js/JSError;",                    (void *) ThrowError},
-    {"nativeRequire",    "(Ljava/lang/String;)Lcom/linroid/knode/js/JSObject;",                   (void *) Require},
+    {"nativeEval",           "(Ljava/lang/String;Ljava/lang/String;I)Lcom/linroid/knode/js/JSValue;", (void *) Eval},
+    {"nativeParseJson",      "(Ljava/lang/String;)Lcom/linroid/knode/js/JSValue;",                    (void *) ParseJson},
+    {"nativeThrowError",     "(Ljava/lang/String;)Lcom/linroid/knode/js/JSError;",                    (void *) ThrowError},
+    {"nativeRequire",        "(Ljava/lang/String;)Lcom/linroid/knode/js/JSObject;",                   (void *) Require},
+    {"nativeClearReference", "(J)V",                                                                  (void *) ClearReference},
   };
 
   int rc = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
@@ -118,6 +120,12 @@ jobject JSContext::Require(JNIEnv *env, jobject jThis, jstring jPath) {
   }
   env->ReleaseStringChars(jPath, path);
   return runtime->ToJava(env, result.ToLocalChecked());
+}
+
+void JSContext::ClearReference(__unused JNIEnv *env, jlong ref) {
+  auto value = reinterpret_cast<v8::Persistent<v8::Value> *>(ref);
+  value->Reset();
+  delete value;
 }
 
 void JSContext::SetShared(JNIEnv *env, NodeRuntime *runtime) {

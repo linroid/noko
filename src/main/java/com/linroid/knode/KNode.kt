@@ -110,6 +110,7 @@ class KNode(
       return
     }
     nativeExit(exitCode)
+    context.runtimePtr = 0L
     active = false
   }
 

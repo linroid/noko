@@ -9,7 +9,7 @@ import java.lang.annotation.Native
  * @since 2019-10-19
  */
 class JSContext @NativeConstructor private constructor(
-  @Native internal val runtimePtr: Long,
+  @Native internal var runtimePtr: Long,
   reference: Long
 ) : JSObject(null, reference) {
 
@@ -21,9 +21,7 @@ class JSContext @NativeConstructor private constructor(
 
   internal val cleaner: (Long) -> Unit = { ref: Long ->
     check(ref != 0L) { "The reference has been already cleared" }
-    node.submit {
-      nativeClearReference(ref)
-    }
+    nativeClearReference(ref)
   }
 
   init {

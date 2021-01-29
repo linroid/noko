@@ -122,10 +122,17 @@ jobject JSContext::Require(JNIEnv *env, jobject jThis, jstring jPath) {
   return runtime->ToJava(env, result.ToLocalChecked());
 }
 
-void JSContext::ClearReference(__unused JNIEnv *env, jlong ref) {
-  auto value = reinterpret_cast<v8::Persistent<v8::Value> *>(ref);
-  value->Reset();
-  delete value;
+void JSContext::ClearReference(JNIEnv *env, jobject jThis, jlong ref) {
+  auto reference = reinterpret_cast<v8::Persistent<v8::Value> *>(ref);
+  auto runtime = JSValue::GetRuntime(env, jThis);
+  if (runtime == nullptr) {
+    delete reference;
+    return;
+  }
+  v8::Locker locker(runtime->isolate_);
+  v8::HandleScope handleScope(runtime->isolate_);
+  reference->Reset();
+  delete reference;
 }
 
 void JSContext::SetShared(JNIEnv *env, NodeRuntime *runtime) {

@@ -34,6 +34,7 @@ public:
 
   inline static NodeRuntime *GetRuntime(JNIEnv *env, jobject jObj) {
     auto ptr = env->CallLongMethod(jObj, jGetRuntime);
+    if (ptr == 0) return nullptr;
     return reinterpret_cast<NodeRuntime *>(ptr);
   }
 

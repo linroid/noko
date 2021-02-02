@@ -65,8 +65,6 @@ open class JSObject : JSValue {
   }
 
   fun set(key: String, value: Any?) {
-    // Log.d(TAG, "set $key @${Thread.currentThread().name}")
-    // Thread.dumpStack()
     nativeSet(key, from(context, value))
   }
 
@@ -79,7 +77,6 @@ open class JSObject : JSValue {
   }
 
   fun <T> get(key: String, clazz: Class<T>): T? {
-    Log.w(TAG, "get: $key, $clazz")
     context.node.checkThread()
     val value = nativeGet(key)
     return value.toType(clazz)

@@ -29,7 +29,7 @@ class KNode(
   private val cwd: File? = null,
   private val output: StdOutput,
   keepAlive: Boolean = false,
-  val strict: Boolean = false
+  val strict: Boolean = false,
 ) : Closeable {
 
   @Native
@@ -61,7 +61,7 @@ class KNode(
 
         val exitCode = nativeStart(execArgs.toTypedArray())
         Log.i(TAG, "node exited: $exitCode")
-        eventOnExit(exitCode)
+        eventOnExited(exitCode)
       } catch (error: JSException) {
         eventOnError(error)
       }
@@ -199,6 +199,12 @@ process.stdout.isRaw = true;
     eventOnPrepared(context)
   }
 
+  @Suppress("unused")
+  private fun onBeforeExit(context: JSContext) {
+    Log.w(TAG,"onBeforeExit")
+    eventOnBeforeExit(context)
+  }
+
   internal fun checkThread() {
     if (strict) {
       check(Thread.currentThread() == context.node.thread) { "Couldn't operate node object non origin thread: ${Thread.currentThread()}" }
@@ -228,8 +234,13 @@ process.stdout.isRaw = true;
     listeners.forEach { it.onNodePrepared(context) }
   }
 
-  private fun eventOnExit(exitCode: Int) {
-    Log.w(TAG, "eventOnExit: exitCode=$exitCode")
+  private fun eventOnBeforeExit(context: JSContext) {
+    Log.i(TAG, "eventOnBeforeExit")
+    listeners.forEach { it.onNodeBeforeExit(context) }
+  }
+
+  private fun eventOnExited(exitCode: Int) {
+    Log.w(TAG, "eventOnExited: exitCode=$exitCode")
     active = false
     listeners.forEach { it.onNodeExited(exitCode) }
   }
@@ -252,6 +263,8 @@ process.stdout.isRaw = true;
   interface EventListener {
 
     fun onNodePrepared(context: JSContext) {}
+
+    fun onNodeBeforeExit(context: JSContext) {}
 
     fun onNodeExited(exitCode: Int) {}
 

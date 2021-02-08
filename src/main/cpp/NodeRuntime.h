@@ -39,6 +39,7 @@ class NodeRuntime {
 private:
   jobject jThis_ = nullptr;
   jmethodID onBeforeStart_ = nullptr;
+  jmethodID onBeforeExit_ = nullptr;
 
   bool running_ = false;
   std::thread::id threadId_;
@@ -67,6 +68,8 @@ private:
 
   void OnPrepared();
 
+  void OnBeforeExit();
+
 public:
   jobject jContext_ = nullptr;
   jobject jNull_ = nullptr;
@@ -80,7 +83,7 @@ public:
   v8::Persistent<v8::Context> context_;
   v8::Persistent<v8::Function> require_;
 
-  NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, bool keepAlive, bool strict);
+  NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, jmethodID onBeforeExit, bool keepAlive, bool strict);
 
   ~NodeRuntime();
 

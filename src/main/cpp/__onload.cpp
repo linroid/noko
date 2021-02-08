@@ -35,6 +35,7 @@ struct JvmNodeClass {
   JNIEnv *env;
   jfieldID ptr;
   jmethodID onBeforeStart;
+  jmethodID onBeforeExit;
 } NodeClass;
 
 jmethodID jRunMethodId;
@@ -156,7 +157,7 @@ JNICALL void mountFile(JNIEnv *env, jobject jThis, jstring jPath, jint mask) {
 }
 
 JNICALL jlong nativeNew(JNIEnv *env, jobject jThis, jboolean keepAlive, jboolean strict) {
-  auto *runtime = new NodeRuntime(env, jThis, NodeClass.onBeforeStart, keepAlive, strict);
+  auto *runtime = new NodeRuntime(env, jThis, NodeClass.onBeforeStart, NodeClass.onBeforeExit, keepAlive, strict);
   return reinterpret_cast<jlong>(runtime);
 }
 
@@ -242,6 +243,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
 
   NodeClass.ptr = env->GetFieldID(clazz, "ptr", "J");
   NodeClass.onBeforeStart = env->GetMethodID(clazz, "onBeforeStart", "(Lcom/linroid/knode/js/JSContext;)V");
+  NodeClass.onBeforeExit = env->GetMethodID(clazz, "onBeforeExit", "(Lcom/linroid/knode/js/JSContext;)V");
 
   LOAD_JNI_CLASS(JSValue)
   LOAD_JNI_CLASS(JSContext)

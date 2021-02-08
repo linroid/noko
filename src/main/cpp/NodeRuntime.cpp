@@ -28,8 +28,18 @@ int NodeRuntime::seq_ = 0;
 bool nodeInitialized = false;
 std::unique_ptr<node::MultiIsolatePlatform> platform;
 
-NodeRuntime::NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, bool keepAlive, bool strict)
-  : onBeforeStart_(onBeforeStart), keepAlive_(keepAlive), strict_(strict) {
+NodeRuntime::NodeRuntime(
+  JNIEnv *env,
+  jobject jThis,
+  jmethodID onBeforeStart,
+  jmethodID onBeforeExit,
+  bool keepAlive,
+  bool strict
+) : onBeforeStart_(onBeforeStart),
+    onBeforeExit_(onBeforeExit),
+    keepAlive_(keepAlive),
+    strict_(strict) {
+
   env->GetJavaVM(&vm_);
   jThis_ = env->NewGlobalRef(jThis);
   sharedMutex_.lock();
@@ -90,6 +100,12 @@ void NodeRuntime::OnPrepared() {
     JSContext::SetShared(env, this);
 
     env->CallVoidMethod(jThis_, onBeforeStart_, jContext_);
+  EXIT_JNI(vm_)
+}
+
+void NodeRuntime::OnBeforeExit() {
+  ENTER_JNI(vm_)
+    env->CallVoidMethod(jThis_, onBeforeExit_, jContext_);
   EXIT_JNI(vm_)
 }
 
@@ -206,6 +222,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
         LOGW("more=%d after call `beforeExit`", more);
       } while (more);
     }
+    OnBeforeExit();
     LOGW("Exiting uv loop");
     // node::EmitExit() returns the current exit code.
     auto exitCodeMaybe = node::EmitProcessExit(env.get());

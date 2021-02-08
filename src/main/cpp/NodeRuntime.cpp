@@ -62,9 +62,9 @@ NodeRuntime::~NodeRuntime() {
     env->DeleteGlobalRef(jContext_);
   EXIT_JNI(vm_)
 
-  eventLoop_ = nullptr;
   isolate_ = nullptr;
   running_ = false;
+  LOGI("set running=false");
   sharedMutex_.lock();
   --instanceCount_;
   sharedMutex_.unlock();
@@ -72,7 +72,7 @@ NodeRuntime::~NodeRuntime() {
 }
 
 void NodeRuntime::OnPrepared() {
-  LOGI("OnPrepared");
+  LOGI("OnPrepared: %p", this);
   v8::Local<v8::Context> context = context_.Get(isolate_);
   v8::HandleScope handleScope(isolate_);
   v8::Context::Scope contextScope(context);
@@ -195,7 +195,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
         // If there are new tasks, continue.
         more = uv_loop_alive(eventLoop_);
         if (more) continue;
-
+        LOGW("No more task, try exit");
         // node::EmitBeforeExit() is used to emit the 'beforeExit' event on
         // the `process` object.
         node::EmitProcessBeforeExit(env.get());
@@ -203,15 +203,15 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
         // 'beforeExit' can also schedule new work that keeps the event loop
         // running.
         more = uv_loop_alive(eventLoop_);
+        LOGW("more=%d after call `beforeExit`", more);
       } while (more);
     }
-
+    LOGW("Exiting uv loop");
     // node::EmitExit() returns the current exit code.
     auto exitCodeMaybe = node::EmitProcessExit(env.get());
     if (exitCodeMaybe.IsJust()) {
       exitCode = exitCodeMaybe.ToChecked();
     }
-
     // node::Stop() can be used to explicitly stop the event loop and keep
     // further JavaScript from running. It can be called from any thread,
     // and will act like worker.terminate() if called from another thread.
@@ -229,6 +229,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
     global_ = nullptr;
   }
   running_ = false;
+  LOGI("set running=false");
   platform->AddIsolateFinishedCallback(isolate, [](void *data) {
     *static_cast<bool *>(data) = true;
   }, &platform_finished);
@@ -238,13 +239,15 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
   while (!platform_finished)
     uv_run(eventLoop_, UV_RUN_ONCE);
   int err = uv_loop_close(eventLoop_);
-  LOGI("close loop result: %d", err);
+  eventLoop_ = nullptr;
+  LOGI("close loop result: %d, callbacks.size=%d", err, callbacks_.size());
   // uv_loop_delete(loop);
   // assert(err == 0);
   return exitCode;
 }
 
 void NodeRuntime::Exit(int code) {
+  LOGI("NodeRuntime.Exit(%d)", code);
   if (keepAlive_) {
     uv_async_send(keepAliveHandle_);
   }
@@ -254,6 +257,7 @@ void NodeRuntime::Exit(int code) {
     auto context = context_.Get(isolate_);
     v8::Local<v8::Value> v8Code = v8::Number::New(isolate_, code);
     auto exitFunc = process->Get(context, V8_UTF_STRING(isolate_, "exit"));
+    LOGI("Calling process.exit(%d)", code);
     UNUSED(v8::Local<v8::Function>::Cast(exitFunc.ToLocalChecked())->Call(context, process, 1, &v8Code));
   });
 }
@@ -268,7 +272,7 @@ bool NodeRuntime::InitLoop() {
   if (keepAlive_) {
     keepAliveHandle_ = new uv_async_t();
     ret = uv_async_init(eventLoop_, keepAliveHandle_, [](uv_async_t *handle) {
-      LOGD("stop keep alive");
+      LOGD("Stop keep alive");
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCDFAInspection"
       uv_close((uv_handle_t *) handle, [](uv_handle_t *h) {

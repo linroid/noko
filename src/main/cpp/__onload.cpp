@@ -1,3 +1,4 @@
+#include <__bit_reference>
 //
 // Created by linroid on 2019-10-19.
 //
@@ -105,6 +106,7 @@ JNICALL jint start(JNIEnv *env, jobject jThis, jobjectArray jArgs) {
   }
 
   int code = jint(runtime->Start(args));
+  LOGI("free runtime=%p", runtime);
   delete runtime;
   env->SetLongField(jThis, NodeClass.ptr, 0);
   return code;
@@ -199,7 +201,7 @@ JNICALL void nativeExit(JNIEnv *env, jobject jThis, jint exitCode) {
 //     return servers;
 // }
 
-JNICALL void nativeSetup(JNIEnv *env, jclass jThis, jobject connectivity_manager) {
+JNICALL void nativeSetup(__unused JNIEnv *env, __unused jclass jThis, jobject connectivity_manager) {
   ares_library_init_android(connectivity_manager);
   LOGI("ares_library_android_initialized: %d", ares_library_android_initialized());
   // int max = 5;

@@ -125,25 +125,25 @@ jobject JSContext::Require(JNIEnv *env, jobject jThis, jstring jPath) {
 void JSContext::ClearReference(JNIEnv *env, jobject jThis, jlong ref) {
   auto reference = reinterpret_cast<v8::Persistent<v8::Value> *>(ref);
   auto runtime = JSValue::GetRuntime(env, jThis);
+  LOGV("clear %p(runtime=%p)", reference, runtime);
   if (runtime == nullptr) {
-    LOGW("delete 1 %p", reference);
+    LOGW("delete %p(runtime=%p) @1", reference, runtime);
     delete reference;
     return;
   }
-  if (!runtime->Post([&reference, &runtime] {
-    LOGW("runtime = %p", runtime);
+  bool submitted = runtime->Post([reference, runtime] {
     if (runtime != nullptr && runtime->IsRunning()) {
       v8::Locker locker(runtime->isolate_);
       v8::HandleScope handleScope(runtime->isolate_);
       reference->Reset();
-      LOGW("delete 2 %p", reference);
-      delete reference;
+      LOGI("delete %p(runtime=%p) @2", reference, runtime);
     } else {
-      LOGW("delete 3 %p", reference);
-      delete reference;
+      LOGW("delete %p(runtime=%p) @3", reference, runtime);
     }
-  })) {
-    LOGW("delete 4 %p", reference);
+    delete reference;
+  });
+  if (!submitted) {
+    LOGW("delete %p(runtime=%p) @4", reference, runtime);
     delete reference;
   }
 }

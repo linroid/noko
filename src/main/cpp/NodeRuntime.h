@@ -4,6 +4,7 @@
 
 #ifndef NODE_NODE_RUNTIME_H
 #define NODE_NODE_RUNTIME_H
+#define LOG_TAG "NodeRuntime"
 
 #include <jni.h>
 #include <string>

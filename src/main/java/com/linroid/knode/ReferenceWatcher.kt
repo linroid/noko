@@ -7,7 +7,7 @@ import java.lang.ref.ReferenceQueue
 /**
  * Created by linroid on 1/27/21.
  */
-internal object ReferenceWatcher : Thread("js-object-reference-watcher") {
+internal object ReferenceWatcher : Thread("js-object-watcher") {
 
   private const val TAG = "ReferenceWatcher"
 

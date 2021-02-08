@@ -102,6 +102,10 @@ public:
   static JSType GetType(v8::Local<v8::Value> &value);
 
   void Throw(JNIEnv *env, v8::Local<v8::Value> exception);
+
+  bool IsRunning() {
+    return running_;
+  }
 };
 
 #endif //NODE_NODE_RUNTIME_H

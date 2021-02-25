@@ -111,15 +111,17 @@ static void ObserverWeakCallback(const v8::WeakCallbackInfo<JniPropertyObserver>
 
 void JSObject::Watch(JNIEnv *env, jobject jThis, jobjectArray jKeys, jobject jObserver) {
   SETUP(env, jThis, v8::Object)
-  auto size = env->GetArrayLength(jKeys);
+  auto length = env->GetArrayLength(jKeys);
 
+  LOGI("watch %d properties", length);
   jclass clazz = env->GetObjectClass(jObserver);
   jmethodID methodId = env->GetMethodID(clazz, "onPropertyChanged", "(Ljava/lang/String;Ljava/lang/Object;)V");
 
-  for (int i = 0; i < size; ++i) {
-    jobject element = env->GetObjectArrayElement(jKeys, i);
-    const uint16_t *key = env->GetStringChars((jstring) (element), nullptr);
-    const jint keyLen = env->GetStringLength((jstring) (element));
+  for (int i = 0; i < length; ++i) {
+    LOGI("bind key[%d]", i);
+    jstring element = (jstring) env->GetObjectArrayElement(jKeys, i);
+    const uint16_t *key = env->GetStringChars(element, nullptr);
+    const jint keyLen = env->GetStringLength(element);
     auto v8Key = V8_STRING(isolate, key, keyLen);
 
     /**
@@ -154,7 +156,14 @@ void JSObject::Watch(JNIEnv *env, jobject jThis, jobjectArray jKeys, jobject jOb
     UNUSED(holder->Set(context, 2, v8Observer));
 
     UNUSED(that->DefineProperty(context, v8Key, descriptor));
+
+    env->ReleaseStringChars(element, key);
+    LOGI("bind key[%d] end", i);
   }
+  if (env->ExceptionCheck()) {
+    LOGW("Exception");
+  }
+  LOGI("watch end");
 }
 
 jint JSObject::OnLoad(JNIEnv *env) {

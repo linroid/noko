@@ -7,7 +7,6 @@ import com.linroid.knode.js.JSString
 import com.linroid.knode.js.JSValue
 import com.linroid.knode.observable.PropertyObserver
 import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import org.junit.Assert.assertEquals
@@ -51,7 +50,6 @@ class JSObjectTest : KNodeTest() {
     val stringValue = obj.get<JSValue>("stringValue")
     assertInstance(stringValue, JSString::class)
     assertEquals("string2", stringValue.toString())
-
 
     assertInstance(obj.get("floatValue"), JSNumber::class)
     assertInstance(obj.get("doubleValue"), JSNumber::class)

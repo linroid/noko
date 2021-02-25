@@ -91,8 +91,8 @@ open class JSObject : JSValue {
     return nativeKeys()
   }
 
-  fun watch(observer: PropertyObserver, vararg keys: String) {
-    nativeWatch(keys, observer)
+  fun watch(observer: PropertyObserver, vararg properties: String) {
+    nativeWatch(properties, observer)
   }
 
   private external fun nativeGet(key: String): JSValue
@@ -101,7 +101,7 @@ open class JSObject : JSValue {
   private external fun nativeSet(key: String, value: JSValue?)
   private external fun nativeDelete(key: String)
   private external fun nativeNew()
-  private external fun nativeWatch(keys: Array<out String>, observer: PropertyObserver)
+  private external fun nativeWatch(properties: Array<out String>, observer: PropertyObserver)
 
   companion object {
     private const val TAG = "JSObject"

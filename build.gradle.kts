@@ -62,6 +62,7 @@ dependencies {
   implementation(Libs.gson)
   implementation(Libs.Jetpack.collection)
   groupImplementation(Libs.Kotlin)
+  groupImplementation(Libs.Coroutine)
 
   testImplementation(Libs.Test.junit)
   androidTestImplementation(Libs.Jetpack.Test.junit)

@@ -2,6 +2,7 @@ package com.linroid.knode.js
 
 import android.util.Log
 import com.google.gson.JsonObject
+import com.linroid.knode.observable.PropertyObserver
 import java.lang.reflect.InvocationTargetException
 
 /**
@@ -90,12 +91,17 @@ open class JSObject : JSValue {
     return nativeKeys()
   }
 
+  fun watch(observer: PropertyObserver, vararg keys: String) {
+    nativeWatch(keys, observer)
+  }
+
   private external fun nativeGet(key: String): JSValue
   private external fun nativeKeys(): Array<String>
   private external fun nativeHas(key: String): Boolean
   private external fun nativeSet(key: String, value: JSValue?)
   private external fun nativeDelete(key: String)
   private external fun nativeNew()
+  private external fun nativeWatch(keys: Array<out String>, observer: PropertyObserver)
 
   companion object {
     private const val TAG = "JSObject"

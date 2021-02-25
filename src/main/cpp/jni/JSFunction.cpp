@@ -21,7 +21,7 @@ void staticCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
 }
 
 static void WeakCallback(const v8::WeakCallbackInfo<JniCallback> &data) {
-  LOGW("WeakCallback");
+  LOGW("ObserverWeakCallback");
   JniCallback *callback = data.GetParameter();
   ENTER_JNI(callback->runtime->vm_)
   JSValue::SetReference(env, callback->that, 0);

@@ -4,6 +4,7 @@ set(NODE_LIB_DIR ${PROJECT_SOURCE_DIR}/prebuilts/${ANDROID_ABI})
 set(SOURCES
         __onload.cpp
         NodeRuntime.cpp
+        JniPropertyObserver.cpp
         jni/JSContext.cpp
         jni/JSValue.cpp
         jni/JSObject.cpp

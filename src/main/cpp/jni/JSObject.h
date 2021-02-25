@@ -30,6 +30,8 @@ public:
 
   static JNICALL jobjectArray Keys(JNIEnv *env, jobject jThis);
 
+  static JNICALL void Watch(JNIEnv *env, jobject jThis, jobjectArray jKeys, jobject jObserver);
+
   static JNICALL void New(JNIEnv *env, jobject jThis);
 };
 

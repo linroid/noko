@@ -10,7 +10,7 @@ import java.lang.annotation.Native
  */
 class JSContext @NativeConstructor private constructor(
   @Native internal var runtimePtr: Long,
-  reference: Long
+  reference: Long,
 ) : JSObject(null, reference) {
 
   internal lateinit var sharedNull: JSNull
@@ -21,6 +21,7 @@ class JSContext @NativeConstructor private constructor(
 
   internal val cleaner: (Long) -> Unit = { ref: Long ->
     check(ref != 0L) { "The reference has been already cleared" }
+    check(runtimePtr != 0L) { "The Node.js runtime is not active anymore" }
     nativeClearReference(ref)
   }
 

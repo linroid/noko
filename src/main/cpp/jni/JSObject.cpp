@@ -144,6 +144,8 @@ void JSObject::Watch(JNIEnv *env, jobject jThis, jobjectArray jKeys, jobject jOb
       auto value = that->Get(context, v8Key).ToLocalChecked();
       UNUSED(holder->Set(context, 1, value));
       UNUSED(that->Delete(context, v8Key));
+    } else {
+      UNUSED(holder->Set(context, 1, v8::Undefined(isolate)));
     }
 
     auto observer = new JniPropertyObserver(env, jObserver, clazz, methodId);

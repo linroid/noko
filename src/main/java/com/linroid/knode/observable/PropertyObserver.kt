@@ -2,6 +2,7 @@ package com.linroid.knode.observable
 
 import androidx.annotation.Keep
 import com.linroid.knode.js.JSObject
+import com.linroid.knode.js.JSValue
 
 /**
  * An observer will be called when the property of [JSObject] is changed
@@ -11,5 +12,5 @@ import com.linroid.knode.js.JSObject
  */
 @Keep
 interface PropertyObserver {
-  fun onPropertyChanged(key: String, value: Any?)
+  fun onPropertyChanged(key: String, value: JSValue)
 }

@@ -5,6 +5,11 @@ import com.linroid.knode.js.JSNumber
 import com.linroid.knode.js.JSObject
 import com.linroid.knode.js.JSString
 import com.linroid.knode.js.JSValue
+import com.linroid.knode.observable.PropertyObserver
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -51,5 +56,12 @@ class JSObjectTest : KNodeTest() {
     assertInstance(obj.get("floatValue"), JSNumber::class)
     assertInstance(obj.get("doubleValue"), JSNumber::class)
     assertInstance(obj.get("stringValue"), JSString::class)
+  }
+
+  fun watch() {
+    val observer = mock<PropertyObserver>()
+    obj.watch(observer, "name")
+    obj.set("name", "Test")
+    verify(observer).onPropertyChanged("name", any<JSString>())
   }
 }

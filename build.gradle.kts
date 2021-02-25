@@ -65,6 +65,8 @@ dependencies {
   groupImplementation(Libs.Coroutine)
 
   testImplementation(Libs.Test.junit)
+  testImplementation(Libs.Test.mockio)
   androidTestImplementation(Libs.Jetpack.Test.junit)
   androidTestImplementation(Libs.Jetpack.Test.espressoCore)
+  androidTestImplementation(Libs.Test.mockio)
 }

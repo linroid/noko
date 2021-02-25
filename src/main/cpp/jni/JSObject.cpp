@@ -42,7 +42,7 @@ jboolean JSObject::Has(JNIEnv *env, jobject jThis, jstring jKey) {
   return static_cast<jboolean>(result);
 }
 
-jarray JSObject::Keys(JNIEnv *env, jobject jThis) {
+jobjectArray JSObject::Keys(JNIEnv *env, jobject jThis) {
   SETUP(env, jThis, v8::Object)
   v8::TryCatch tryCatch(isolate);
   auto names = that->GetPropertyNames(context);

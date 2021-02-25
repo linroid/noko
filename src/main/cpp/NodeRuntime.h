@@ -95,15 +95,11 @@ public:
 
   bool Post(const std::function<void()> &runnable);
 
-  jobject Wrap(JNIEnv *env, v8::Persistent<v8::Value> *value, JSType type);
-
   jobject ToJava(JNIEnv *env, v8::Local<v8::Value> value);
 
   v8::Local<v8::Value> Require(const char *path);
 
   void MountFile(const char *path, const int mask);
-
-  static JSType GetType(v8::Local<v8::Value> &value);
 
   void Throw(JNIEnv *env, v8::Local<v8::Value> exception);
 

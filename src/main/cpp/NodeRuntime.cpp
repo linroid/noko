@@ -339,40 +339,6 @@ jobject NodeRuntime::ToJava(JNIEnv *env, v8::Local<v8::Value> value) {
   }
 }
 
-jobject NodeRuntime::Wrap(JNIEnv *env, v8::Persistent<v8::Value> *value, JSType type) {
-  switch (type) {
-    case kNull:
-      return this->jNull_;
-    case kUndefined:
-      return this->jUndefined_;
-    case kBoolean: {
-      v8::Local<v8::Value> local = value->Get(isolate_);
-      v8::Local<v8::Boolean> target = local->ToBoolean(isolate_);
-      if (target->Value()) {
-        return this->jTrue_;
-      } else {
-        return this->jFalse_;
-      }
-    }
-    case kObject:
-      return JSObject::Wrap(env, this, value);
-    case kString:
-      return JSString::Wrap(env, this, value);
-    case kNumber:
-      return JSNumber::Wrap(env, this, value);
-    case kFunction:
-      return JSFunction::Wrap(env, this, value);
-    case kPromise:
-      return JSPromise::Wrap(env, this, value);
-    case kArray:
-      return JSArray::Wrap(env, this, value);
-    case kError:
-      return JSError::Wrap(env, this, value);
-    default:
-      return JSValue::Wrap(env, this, value);
-  }
-}
-
 void NodeRuntime::TryLoop() {
   if (!eventLoop_) {
     LOGE("TryLoop but eventLoop is NULL");
@@ -459,32 +425,6 @@ void NodeRuntime::Handle(uv_async_t *handle) {
 #pragma clang diagnostic pop
   callbackHandle_ = nullptr;
   asyncMutex_.unlock();
-}
-
-JSType NodeRuntime::GetType(v8::Local<v8::Value> &value) {
-  if (value->IsNull()) {
-    return JSType::kNull;
-  } else if (value->IsUndefined()) {
-    return JSType::kUndefined;
-  } else if (value->IsBoolean()) {
-    return JSType::kBoolean;
-  } else if (value->IsNumber()) {
-    return JSType::kNumber;
-  } else if (value->IsObject()) {
-    if (value->IsFunction()) {
-      return JSType::kFunction;
-    } else if (value->IsPromise()) {
-      return JSType::kPromise;
-    } else if (value->IsNativeError()) {
-      return JSType::kError;
-    } else if (value->IsArray()) {
-      return JSType::kArray;
-    }
-    return JSType::kObject;
-  } else if (value->IsString()) {
-    return JSType::kString;
-  }
-  return JSType::kValue;
 }
 
 // v8::Local<v8::Value> NodeRuntime::Require(const char *path) {

@@ -24,11 +24,11 @@ public:
 
   static JNICALL void Delete(JNIEnv *env, jobject jThis, jstring jKey);
 
-  static JNICALL void Set(JNIEnv *env, jobject jThis, jstring jKey, jobject);
+  static JNICALL void Set(JNIEnv *env, jobject jThis, jstring jKey, jobject jValue);
 
   static JNICALL jboolean Has(JNIEnv *env, jobject jThis, jstring jKey);
 
-  static JNICALL jarray Keys(JNIEnv *env, jobject jThis);
+  static JNICALL jobjectArray Keys(JNIEnv *env, jobject jThis);
 
   static JNICALL void New(JNIEnv *env, jobject jThis);
 };

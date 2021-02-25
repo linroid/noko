@@ -11,17 +11,16 @@
 class JniPropertyObserver {
 private:
   JavaVM *vm = nullptr;
-  jclass clazz;
   jmethodID methodId;
 public:
-  jobject that;
   NodeRuntime *runtime = nullptr;
+  jobject that;
 
-  JniPropertyObserver(JNIEnv *env, jobject that, jclass clazz, jmethodID methodId);
+  JniPropertyObserver(NodeRuntime *runtime, JNIEnv *env, jobject that, jmethodID methodId);
 
   ~JniPropertyObserver();
 
-  void onPropertyChanged(v8::Local<v8::Value>&key, v8::Local<v8::Value>&value);
+  void onPropertyChanged(JNIEnv *env, jstring key, jobject value);
 };
 
 

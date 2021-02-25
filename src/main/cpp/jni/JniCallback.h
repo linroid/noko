@@ -15,10 +15,10 @@ private:
   jclass clazz;
   jmethodID methodId;
 public:
-  jobject that;
   NodeRuntime *runtime = nullptr;
+  jobject that;
 
-  JniCallback(JNIEnv *env, jobject that, jclass clazz, jmethodID methodId);
+  JniCallback(NodeRuntime *runtime, JNIEnv *env, jobject that, jclass clazz, jmethodID methodId);
 
   ~JniCallback();
 

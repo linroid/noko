@@ -32,9 +32,8 @@ static void WeakCallback(const v8::WeakCallbackInfo<JniCallback> &data) {
 void JSFunction::New(JNIEnv *env, jobject jThis, jstring jName) {
   const uint16_t *name = env->GetStringChars(jName, nullptr);
   const jint nameLen = env->GetStringLength(jName);
-  auto callback = new JniCallback(env, jThis, JSValue::jClazz, jCall);
   V8_SCOPE(env, jThis)
-  callback->runtime = runtime;
+  auto callback = new JniCallback(runtime, env, jThis, JSValue::jClazz, jCall);
   auto data = v8::External::New(isolate, callback);
   auto context = runtime->context_.Get(isolate);
   auto func = v8::FunctionTemplate::New(isolate, staticCallback, data)->GetFunction(context).ToLocalChecked();

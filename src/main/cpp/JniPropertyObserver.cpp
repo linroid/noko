@@ -5,15 +5,13 @@
 #include "JniPropertyObserver.h"
 #include "jni/JSValue.h"
 
-JniPropertyObserver::JniPropertyObserver(JNIEnv *env, jobject that, jclass clazz, jmethodID methodId)
-  : that(env->NewGlobalRef(that)), clazz(clazz), methodId(methodId) {
+JniPropertyObserver::JniPropertyObserver(NodeRuntime *runtime, JNIEnv *env, jobject that, jmethodID methodId)
+  : runtime(runtime), that(env->NewGlobalRef(that)), methodId(methodId) {
   env->GetJavaVM(&vm);
 }
 
-void JniPropertyObserver::onPropertyChanged(v8::Local<v8::Value> &key, v8::Local<v8::Value> &value) {
-  ENTER_JNI(runtime->vm_)
-    env->CallObjectMethod(that, methodId, runtime->ToJava(env, key), runtime->ToJava(env, value));
-  EXIT_JNI(runtime->vm_)
+void JniPropertyObserver::onPropertyChanged(JNIEnv *env, jstring key, jobject value) {
+  env->CallVoidMethod(that, methodId, key, value);
 }
 
 JniPropertyObserver::~JniPropertyObserver() {

@@ -92,16 +92,23 @@ static void GetterCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
 
 static void SetterCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
   auto holder = info.Data().As<v8::Object>();
-  auto context = info.GetIsolate()->GetCurrentContext();
+  auto isolate = info.GetIsolate();
+  auto context = isolate->GetCurrentContext();
   auto newValue = info[0];
   UNUSED(holder->Set(context, 1, newValue));
 
-  auto key = holder->Get(context, 0).ToLocalChecked();
+  auto key = holder->Get(context, 0).ToLocalChecked().As<v8::String>();
 
   auto v8Observer = holder->Get(context, 2).ToLocalChecked().As<v8::External>();
 
+  v8::String::Value unicodeString(isolate, key);
+
   auto observer = reinterpret_cast<JniPropertyObserver *>(v8Observer->Value());
-  observer->onPropertyChanged(key, newValue);
+  ENTER_JNI(observer->runtime->vm_)
+    jstring jKey = env->NewString(*unicodeString, unicodeString.length());
+    jobject jValue = observer->runtime->ToJava(env, newValue);
+    observer->onPropertyChanged(env, jKey, jValue);
+  EXIT_JNI(observer->runtime->vm_)
 }
 
 static void ObserverWeakCallback(const v8::WeakCallbackInfo<JniPropertyObserver> &data) {
@@ -114,8 +121,7 @@ void JSObject::Watch(JNIEnv *env, jobject jThis, jobjectArray jKeys, jobject jOb
   SETUP(env, jThis, v8::Object)
   auto length = env->GetArrayLength(jKeys);
 
-  jclass clazz = env->GetObjectClass(jObserver);
-  jmethodID methodId = env->GetMethodID(clazz, "onPropertyChanged", "(Ljava/lang/String;Lcom/linroid/knode/js/JSValue;)V");
+  jmethodID methodId = env->GetMethodID(env->GetObjectClass(jObserver), "onPropertyChanged", "(Ljava/lang/String;Lcom/linroid/knode/js/JSValue;)V");
 
   for (int i = 0; i < length; ++i) {
     auto jKey = (jstring) env->GetObjectArrayElement(jKeys, i);
@@ -149,7 +155,7 @@ void JSObject::Watch(JNIEnv *env, jobject jThis, jobjectArray jKeys, jobject jOb
       UNUSED(holder->Set(context, 1, v8::Undefined(isolate)));
     }
 
-    auto observer = new JniPropertyObserver(env, jObserver, clazz, methodId);
+    auto observer = new JniPropertyObserver(runtime, env, jObserver, methodId);
     auto v8Observer = v8::External::New(isolate, observer);
     auto weakRef = new v8::Persistent<v8::Value>(isolate, v8Observer);
     weakRef->SetWeak(observer, ObserverWeakCallback, v8::WeakCallbackType::kParameter);

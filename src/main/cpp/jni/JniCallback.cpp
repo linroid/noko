@@ -4,8 +4,8 @@
 
 #include "JniCallback.h"
 
-JniCallback::JniCallback(JNIEnv *env, jobject that, jclass clazz, jmethodID methodId)
-  : that(env->NewGlobalRef(that)), clazz(clazz), methodId(methodId) {
+JniCallback::JniCallback(NodeRuntime *runtime, JNIEnv *env, jobject that, jclass clazz, jmethodID methodId)
+  : runtime(runtime), that(env->NewGlobalRef(that)), clazz(clazz), methodId(methodId) {
   env->GetJavaVM(&vm);
 }
 

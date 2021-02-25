@@ -113,15 +113,13 @@ void JSObject::Watch(JNIEnv *env, jobject jThis, jobjectArray jKeys, jobject jOb
   SETUP(env, jThis, v8::Object)
   auto length = env->GetArrayLength(jKeys);
 
-  LOGI("watch %d properties", length);
   jclass clazz = env->GetObjectClass(jObserver);
-  jmethodID methodId = env->GetMethodID(clazz, "onPropertyChanged", "(Ljava/lang/String;Ljava/lang/Object;)V");
+  jmethodID methodId = env->GetMethodID(clazz, "onPropertyChanged", "(Ljava/lang/String;Lcom/linroid/knode/js/JSValue;)V");
 
   for (int i = 0; i < length; ++i) {
-    LOGI("bind key[%d]", i);
-    jstring element = (jstring) env->GetObjectArrayElement(jKeys, i);
-    const uint16_t *key = env->GetStringChars(element, nullptr);
-    const jint keyLen = env->GetStringLength(element);
+    auto jKey = (jstring) env->GetObjectArrayElement(jKeys, i);
+    const uint16_t *key = env->GetStringChars(jKey, nullptr);
+    const jint keyLen = env->GetStringLength(jKey);
     auto v8Key = V8_STRING(isolate, key, keyLen);
 
     /**
@@ -157,13 +155,8 @@ void JSObject::Watch(JNIEnv *env, jobject jThis, jobjectArray jKeys, jobject jOb
 
     UNUSED(that->DefineProperty(context, v8Key, descriptor));
 
-    env->ReleaseStringChars(element, key);
-    LOGI("bind key[%d] end", i);
+    env->ReleaseStringChars(jKey, key);
   }
-  if (env->ExceptionCheck()) {
-    LOGW("Exception");
-  }
-  LOGI("watch end");
 }
 
 jint JSObject::OnLoad(JNIEnv *env) {

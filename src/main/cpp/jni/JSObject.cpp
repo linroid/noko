@@ -86,7 +86,7 @@ static void GetterCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
   auto holder = info.Data().As<v8::Object>();
   auto context = info.GetIsolate()->GetCurrentContext();
   if (holder->Has(context, 0).ToChecked()) {
-    info.GetReturnValue().Set(holder->Get(context, 0).ToLocalChecked());
+    info.GetReturnValue().Set(holder->Get(context, 1).ToLocalChecked());
   }
 }
 
@@ -97,10 +97,11 @@ static void SetterCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
   UNUSED(holder->Set(context, 1, newValue));
 
   auto key = holder->Get(context, 0).ToLocalChecked();
-  auto observer = holder->Get(context, 2).ToLocalChecked().As<v8::External>();
 
-  auto callback = reinterpret_cast<JniPropertyObserver *>(observer->Value());
-  callback->onPropertyChanged(key, newValue);
+  auto v8Observer = holder->Get(context, 2).ToLocalChecked().As<v8::External>();
+
+  auto observer = reinterpret_cast<JniPropertyObserver *>(v8Observer->Value());
+  observer->onPropertyChanged(key, newValue);
 }
 
 static void ObserverWeakCallback(const v8::WeakCallbackInfo<JniPropertyObserver> &data) {
@@ -150,7 +151,7 @@ void JSObject::Watch(JNIEnv *env, jobject jThis, jobjectArray jKeys, jobject jOb
 
     auto observer = new JniPropertyObserver(env, jObserver, clazz, methodId);
     auto v8Observer = v8::External::New(isolate, observer);
-    auto weakRef = new v8::Persistent<v8::Value>(runtime->isolate_, v8Observer);
+    auto weakRef = new v8::Persistent<v8::Value>(isolate, v8Observer);
     weakRef->SetWeak(observer, ObserverWeakCallback, v8::WeakCallbackType::kParameter);
 
     UNUSED(holder->Set(context, 2, v8Observer));

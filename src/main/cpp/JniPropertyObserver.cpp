@@ -12,6 +12,10 @@ JniPropertyObserver::JniPropertyObserver(NodeRuntime *runtime, JNIEnv *env, jobj
 
 void JniPropertyObserver::onPropertyChanged(JNIEnv *env, jstring key, jobject value) {
   env->CallVoidMethod(that, methodId, key, value);
+  if (env->ExceptionCheck()) {
+    LOGW("An error occurred when calling jni callback");
+    env->Throw(env->ExceptionOccurred());
+  }
 }
 
 JniPropertyObserver::~JniPropertyObserver() {

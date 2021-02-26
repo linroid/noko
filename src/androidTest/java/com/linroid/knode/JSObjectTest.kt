@@ -7,12 +7,14 @@ import com.linroid.knode.js.JSString
 import com.linroid.knode.js.JSValue
 import com.linroid.knode.observable.PropertyObserver
 import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.internal.verification.AtLeast
 
 /**
  * @author linroid
@@ -24,12 +26,12 @@ class JSObjectTest : KNodeTest() {
   private lateinit var obj: JSObject
 
   @Before
-  fun setup() {
+  fun setup() = runInNode {
     obj = JSObject(context)
   }
 
   @Test
-  fun setterAndGetter() {
+  fun setterAndGetter() = runInNode {
     obj.set("intValue", 1)
     val intValue = obj.get<JSValue>("intValue")
     assertInstance(intValue, JSNumber::class)
@@ -56,10 +58,17 @@ class JSObjectTest : KNodeTest() {
     assertInstance(obj.get("stringValue"), JSString::class)
   }
 
-  fun watch() {
+  @Test
+  fun watchProperties() = runInNode {
+    println("watchProperties")
     val observer = mock<PropertyObserver>()
-    obj.watch(observer, "name")
-    obj.set("name", "Test")
-    verify(observer).onPropertyChanged("name", any<JSString>())
+    obj.watch(observer, "name", "age")
+
+    obj.set("name", "Foo")
+    obj.set("name", "Bar")
+    verify(observer, AtLeast(2)).onPropertyChanged(eq("name"), any<JSString>())
+
+    obj.set("age", 18)
+    verify(observer).onPropertyChanged(eq("age"), any<JSNumber>())
   }
 }

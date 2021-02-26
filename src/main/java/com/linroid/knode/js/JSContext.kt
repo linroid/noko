@@ -21,7 +21,7 @@ class JSContext @NativeConstructor private constructor(
 
   internal val cleaner: (Long) -> Unit = { ref: Long ->
     check(ref != 0L) { "The reference has been already cleared" }
-    check(runtimePtr != 0L) { "The Node.js runtime is not active anymore" }
+    // check(runtimePtr != 0L) { "The Node.js runtime is not active anymore" }
     nativeClearReference(ref)
   }
 

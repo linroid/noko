@@ -66,7 +66,13 @@ dependencies {
 
   testImplementation(Libs.Test.junit)
   testImplementation(Libs.Test.mockio)
+  testImplementation(Libs.Test.mockioKotliln) {
+    exclude(module = "mockito-core")
+  }
   androidTestImplementation(Libs.Jetpack.Test.junit)
   androidTestImplementation(Libs.Jetpack.Test.espressoCore)
   androidTestImplementation(Libs.Test.mockio)
+  androidTestImplementation(Libs.Test.mockioKotliln) {
+    exclude(module = "mockito-core")
+  }
 }

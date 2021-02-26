@@ -10,6 +10,7 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -56,6 +57,22 @@ class JSObjectTest : KNodeTest() {
     assertInstance(obj.get("floatValue"), JSNumber::class)
     assertInstance(obj.get("doubleValue"), JSNumber::class)
     assertInstance(obj.get("stringValue"), JSString::class)
+  }
+
+  @Test
+  fun deleteAndHas() = runInNode {
+    obj.set("foo", 1)
+    assert(obj.has("foo"))
+    assert(!obj.has("bar"))
+    obj.delete("foo")
+    assert(!obj.has("foo"))
+  }
+
+  @Test
+  fun keys() = runInNode {
+    obj.set("foo", 1)
+    obj.set("bar", 1)
+    assertArrayEquals(arrayOf("foo", "bar"), obj.keys())
   }
 
   @Test

@@ -201,7 +201,7 @@ process.stdout.isRaw = true;
 
   @Suppress("unused")
   private fun onBeforeExit(context: JSContext) {
-    Log.w(TAG,"onBeforeExit")
+    Log.w(TAG, "onBeforeExit")
     eventOnBeforeExit(context)
   }
 

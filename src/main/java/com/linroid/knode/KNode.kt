@@ -312,7 +312,7 @@ process.stdout.isRaw = true;
 
     fun setup(context: Context) {
       Log.i(TAG, "setup")
-      ReferenceWatcher.start()
+      // ReferenceWatcher.start()
 
       val connectionManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
       setDnsEnv(connectionManager)

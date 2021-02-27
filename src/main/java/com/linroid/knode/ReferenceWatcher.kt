@@ -14,7 +14,7 @@ internal object ReferenceWatcher : Thread("js-object-watcher") {
   val queue = ReferenceQueue<JSValue>()
 
   override fun run() {
-    Log.i(TAG, "start reference watcher...")
+    Log.i(TAG, "start js object reference watcher...")
     while (true) {
       val ref = queue.remove()
       ref.clear()

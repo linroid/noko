@@ -207,7 +207,7 @@ process.stdout.isRaw = true;
 
   internal fun checkThread() {
     if (strict) {
-      check(Thread.currentThread() == context.node.thread) { "Couldn't operate node object non origin thread: ${Thread.currentThread()}" }
+      check(Thread.currentThread() == context.node.thread) { "Operating js object is only allowed in origin thread: current=${Thread.currentThread()}" }
     }
   }
 

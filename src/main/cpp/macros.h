@@ -9,8 +9,6 @@
 #include "v8.h"
 #include "log.h"
 
-#define LOG_TAG "KNode_Native"
-
 // LOGD("%s(%d)-<%s>",  __FILE__, __LINE__, __FUNCTION__); \
 
 #define V8_SCOPE(env, jThis) \

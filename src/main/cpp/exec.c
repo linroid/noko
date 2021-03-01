@@ -16,8 +16,6 @@
 #include <unistd.h>
 #include "log.h"
 
-#define LOG_TAG "exec.c"
-
 #define PATH "/system/bin/"
 
 static const char *rewrite_executable(const char *filename, char *buffer, int buffer_len) {

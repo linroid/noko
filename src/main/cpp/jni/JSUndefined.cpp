@@ -5,7 +5,6 @@
 #include "JSUndefined.h"
 #include "JSContext.h"
 
-
 jclass JSUndefined::jClazz;
 jmethodID JSUndefined::jConstructor;
 

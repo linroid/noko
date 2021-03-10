@@ -42,14 +42,13 @@ NodeRuntime::NodeRuntime(
 
   env->GetJavaVM(&vm_);
   jThis_ = env->NewGlobalRef(jThis);
-  sharedMutex_.lock();
+  std::lock_guard<std::mutex> lock(sharedMutex_);
   ++instanceCount_;
   ++seq_;
   id_ = seq_;
   if (!nodeInitialized) {
     init_node();
   }
-  sharedMutex_.unlock();
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat"
   LOGD("Construct NodeRuntime: thread_id=%d, id=%d, this=%p", std::this_thread::get_id(), id_, this);
@@ -61,8 +60,8 @@ NodeRuntime::~NodeRuntime() {
 #pragma clang diagnostic ignored "-Wformat"
   LOGE("~NodeRuntime(): thread_id=%d, id=%d, this=%p", std::this_thread::get_id(), id_, this);
 #pragma clang diagnostic pop
-  std::lock_guard<std::mutex> instanceLock(instanceMutex_);
-  std::lock_guard<std::mutex> lock(asyncMutex_);
+  std::lock_guard<std::mutex> sharedLock(sharedMutex_);
+  std::lock_guard<std::mutex> asyncLock(asyncMutex_);
   ENTER_JNI(vm_)
     env->DeleteGlobalRef(jThis_);
     env->DeleteGlobalRef(jUndefined_);
@@ -75,10 +74,9 @@ NodeRuntime::~NodeRuntime() {
   isolate_ = nullptr;
   running_ = false;
   LOGI("set running=false");
-  sharedMutex_.lock();
+
   --instanceCount_;
-  sharedMutex_.unlock();
-  LOGE("~NodeRuntime() finished");
+  LOGE("~NodeRuntime() finished, instanceCount=%d", instanceCount_);
 }
 
 void NodeRuntime::OnPrepared() {
@@ -377,7 +375,6 @@ bool NodeRuntime::Await(const std::function<void()> &runnable) {
       cv.notify_one();
     };
 
-    std::lock_guard<std::mutex> instanceLock(instanceMutex_);
     std::unique_lock<std::mutex> lock(asyncMutex_);
     if (!running_) {
       LOGE("Instance has been destroyed, ignore await");
@@ -393,13 +390,18 @@ bool NodeRuntime::Await(const std::function<void()> &runnable) {
 }
 
 bool NodeRuntime::Post(const std::function<void()> &runnable) {
+  if (!running_) {
+    return false;
+  }
   if (std::this_thread::get_id() == threadId_) {
     runnable();
     return true;
   } else {
+    if (!running_) {
+      return false;
+    }
     std::lock_guard<std::mutex> lock(asyncMutex_);
     if (!running_) {
-      runnable();
       return false;
     }
     callbacks_.push_back(runnable);

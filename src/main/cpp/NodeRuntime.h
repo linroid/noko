@@ -43,7 +43,6 @@ private:
   bool running_ = false;
   std::thread::id threadId_;
   std::mutex asyncMutex_;
-  std::mutex instanceMutex_;
   std::vector<std::function<void()>> callbacks_;
   int id_ = -1;
   bool keepAlive_ = false;

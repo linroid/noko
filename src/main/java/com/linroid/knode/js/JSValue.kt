@@ -9,9 +9,10 @@ import com.google.gson.JsonSyntaxException
 import com.linroid.knode.BuildConfig
 import com.linroid.knode.JSValueReference
 import com.linroid.knode.KNode
+import com.linroid.knode.await
+import kotlinx.coroutines.runBlocking
 import java.io.Closeable
 import java.lang.annotation.Native
-import java.util.concurrent.Semaphore
 
 /**
  * @author linroid
@@ -43,14 +44,11 @@ open class JSValue(context: JSContext? = null, @Native internal val reference: L
       && Debug.isDebuggerConnected()
       && Thread.currentThread() != context.node.thread
     ) {
-      val semaphore = Semaphore(1)
-      var result = ""
-      context.node.submit {
-        result = nativeToString()
-        semaphore.release()
+      return runBlocking {
+        context.node.await {
+          nativeToString()
+        }
       }
-      semaphore.acquire()
-      return result
     }
     return nativeToString()
   }

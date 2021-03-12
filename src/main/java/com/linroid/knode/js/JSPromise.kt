@@ -16,15 +16,15 @@ class JSPromise : JSObject {
   }
 
   fun reject(error: String) {
-    context.node.submit(Runnable {
+    context.node.post {
       nativeReject(JSError(context, error))
-    })
+    }
   }
 
   fun resolve(value: Any?) {
-    context.node.submit(Runnable {
+    context.node.post {
       nativeResolve(from(context, value))
-    })
+    }
   }
 
   fun then(callback: (JSValue) -> Unit): JSPromise {

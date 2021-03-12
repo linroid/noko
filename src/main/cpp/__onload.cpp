@@ -113,36 +113,36 @@ JNICALL jint start(JNIEnv *env, jobject jThis, jobjectArray jArgs) {
   return code;
 }
 
-struct SubmitData {
+struct PostMessage {
   jobject runnable;
   NodeRuntime *runtime;
 };
 
-JNICALL jboolean submit(JNIEnv *env, jobject jThis, jobject jRunnable) {
+JNICALL jboolean post(JNIEnv *env, jobject jThis, jobject jRunnable) {
   jlong ptr = env->GetLongField(jThis, NodeClass.ptr);
   if (ptr == 0) {
-    LOGE("submit but ptr is 0");
+    LOGE("post but ptr is 0");
     return 0;
   }
-  auto *data = new SubmitData();
-  data->runtime = get_runtime(env, jThis);
-  data->runnable = env->NewGlobalRef(jRunnable);
-  auto success = data->runtime->Post([data] {
+  auto *message = new PostMessage();
+  message->runtime = get_runtime(env, jThis);
+  message->runnable = env->NewGlobalRef(jRunnable);
+  auto success = message->runtime->Post([message] {
     JNIEnv *_env;
-    auto stat = data->runtime->vm_->GetEnv((void **) (&_env), JNI_VERSION_1_6);
+    auto stat = message->runtime->vm_->GetEnv((void **) (&_env), JNI_VERSION_1_6);
     if (stat == JNI_EDETACHED) {
-      data->runtime->vm_->AttachCurrentThread(&_env, nullptr);
+      message->runtime->vm_->AttachCurrentThread(&_env, nullptr);
     }
-    _env->CallVoidMethod(data->runnable, jRunMethodId);
-    _env->DeleteGlobalRef(data->runnable);
+    _env->CallVoidMethod(message->runnable, jRunMethodId);
+    _env->DeleteGlobalRef(message->runnable);
     if (stat == JNI_EDETACHED) {
-      data->runtime->vm_->DetachCurrentThread();
+      message->runtime->vm_->DetachCurrentThread();
     }
-    delete data;
+    delete message;
   });
   if (!success) {
-    env->DeleteGlobalRef(data->runnable);
-    delete data;
+    env->DeleteGlobalRef(message->runnable);
+    delete message;
   }
   return 1;
 }
@@ -216,7 +216,7 @@ static JNINativeMethod nodeMethods[] = {
   {"nativeExit",      "(I)V",                                 (void *) nativeExit},
   {"nativeStart",     "([Ljava/lang/String;)I",               (void *) start},
   {"nativeMountFile", "(Ljava/lang/String;I)V",               (void *) mountFile},
-  {"nativeSubmit",    "(Ljava/lang/Runnable;)Z",              (void *) submit},
+  {"nativePost",      "(Ljava/lang/Runnable;)Z",              (void *) post},
 };
 
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {

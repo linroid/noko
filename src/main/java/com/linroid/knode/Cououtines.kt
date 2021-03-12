@@ -13,7 +13,7 @@ import kotlin.coroutines.suspendCoroutine
  */
 suspend fun JSPromise.await(): JSValue {
   return suspendCoroutine { continuation ->
-    context.node.submit {
+    context.node.post {
       then {
         continuation.resume(it)
       }.catch {
@@ -32,7 +32,7 @@ suspend fun JSValue.awaitIfPromise(): JSValue {
 
 suspend fun <T, V : JSValue> V.awaitWith(action: V.() -> T): T {
   return suspendCancellableCoroutine { continuation ->
-    val success = context.node.submit {
+    val success = context.node.post {
       try {
         continuation.resume(action())
       } catch (error: Exception) {
@@ -47,7 +47,7 @@ suspend fun <T, V : JSValue> V.awaitWith(action: V.() -> T): T {
 
 suspend fun <T> KNode.await(action: () -> T): T {
   return suspendCancellableCoroutine { continuation ->
-    val success = submit {
+    val success = post {
       try {
         continuation.resume(action())
       } catch (error: Exception) {

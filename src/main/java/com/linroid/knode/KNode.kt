@@ -123,7 +123,7 @@ class KNode(
     Log.v(TAG, "mount $file -> $mask")
   }
 
-  fun submit(action: Runnable): Boolean {
+  fun post(action: Runnable): Boolean {
     if (!isActive()) {
       Log.w(TAG, "Submit but not active: active=$active, ptr=$ptr, seq=$seq", Exception())
       return false
@@ -132,7 +132,7 @@ class KNode(
       action.run()
       return true
     }
-    return nativeSubmit(action)
+    return nativePost(action)
   }
 
   @Suppress("unused")
@@ -151,8 +151,7 @@ class KNode(
     // process.set("execPath", execFile.absolutePath)
     val setupCode = StringBuilder()
     if (output.supportsColor) {
-      setupCode.append(
-        """
+      setupCode.append("""
 process.stderr.isTTY = true;
 process.stderr.isRaw = true;
 process.stdout.isTTY = true;
@@ -258,7 +257,7 @@ process.stdout.isRaw = true;
 
   private external fun nativeMountFile(path: String, @FileAccessMask mask: Int)
 
-  private external fun nativeSubmit(action: Runnable): Boolean
+  private external fun nativePost(action: Runnable): Boolean
 
   interface EventListener {
 

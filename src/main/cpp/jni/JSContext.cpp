@@ -123,27 +123,31 @@ jobject JSContext::Require(JNIEnv *env, jobject jThis, jstring jPath) {
 }
 
 void JSContext::ClearReference(JNIEnv *env, jobject jThis, jlong ref) {
-  auto reference = reinterpret_cast<v8::Persistent<v8::Value> *>(ref);
   auto runtime = JSValue::GetRuntime(env, jThis);
+  auto reference = reinterpret_cast<v8::Persistent<v8::Value> *>(ref);
+
   LOGV("clear %p(runtime=%p)", reference, runtime);
   if (runtime == nullptr) {
-    LOGW("delete %p(runtime=%p) @1", reference, runtime);
     delete reference;
     return;
   }
+
+  if (!runtime->IsRunning()) {
+    LOGW("runtime is not running, free %p", reference);
+    delete reference;
+    return;
+  }
+
   bool submitted = runtime->Post([reference, runtime] {
-    if (runtime != nullptr && runtime->IsRunning()) {
+    if (runtime->IsRunning()) {
       v8::Locker locker(runtime->isolate_);
       v8::HandleScope handleScope(runtime->isolate_);
       reference->Reset();
-      LOGI("delete %p(runtime=%p) @2", reference, runtime);
-    } else {
-      LOGW("delete %p(runtime=%p) @3", reference, runtime);
     }
     delete reference;
   });
   if (!submitted) {
-    LOGW("delete %p(runtime=%p) @4", reference, runtime);
+    LOGW("clear(%p) but couldn't enqueue the request", reference);
     delete reference;
   }
 }

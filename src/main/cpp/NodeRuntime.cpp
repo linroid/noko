@@ -393,17 +393,14 @@ bool NodeRuntime::Post(const std::function<void()> &runnable) {
   if (!running_) {
     return false;
   }
+  std::lock_guard<std::mutex> lock(asyncMutex_);
+  if (!running_) {
+    return false;
+  }
   if (std::this_thread::get_id() == threadId_) {
     runnable();
     return true;
   } else {
-    if (!running_) {
-      return false;
-    }
-    std::lock_guard<std::mutex> lock(asyncMutex_);
-    if (!running_) {
-      return false;
-    }
     callbacks_.push_back(runnable);
     this->TryLoop();
     return true;

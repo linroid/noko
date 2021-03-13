@@ -43,7 +43,7 @@ class KNode(
   private val envs = HashMap(customEnvs)
   private val versions = HashMap(customVersions)
 
-  var thread: Thread? = null
+  private var thread: Thread? = null
 
   var onSetupFs: () -> Unit = {
     mountFile(File("/"), ACCESS_READ_WRITE)
@@ -51,7 +51,7 @@ class KNode(
 
   fun start(vararg args: String) {
     seq = counter.incrementAndGet()
-    thread = thread(isDaemon = true, name = "knode-${seq}") {
+    thread = thread(isDaemon = true, name = "knode(${seq})") {
       try {
         val execArgs = ArrayList<String>()
         execArgs.add(exec.absolutePath)
@@ -128,7 +128,7 @@ class KNode(
       Log.w(TAG, "Submit but not active: active=$active, ptr=$ptr, seq=$seq", Exception())
       return false
     }
-    if (Thread.currentThread() == thread) {
+    if (isInThread()) {
       action.run()
       return true
     }
@@ -206,8 +206,12 @@ process.stdout.isRaw = true;
 
   internal fun checkThread() {
     if (strict) {
-      check(Thread.currentThread() == context.node.thread) { "Operating js object is only allowed in origin thread: current=${Thread.currentThread()}" }
+      check(!isInThread()) { "Operating js object is only allowed in origin thread: current=${Thread.currentThread()}" }
     }
+  }
+
+  fun isInThread(): Boolean {
+    return Thread.currentThread() != thread
   }
 
   private fun attachStdOutput(context: JSContext) {

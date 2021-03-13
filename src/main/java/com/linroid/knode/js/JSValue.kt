@@ -42,7 +42,7 @@ open class JSValue(context: JSContext? = null, @Native internal val reference: L
   override fun toString(): String {
     if (BuildConfig.DEBUG
       && Debug.isDebuggerConnected()
-      && Thread.currentThread() != context.node.thread
+      && context.node.isInThread()
     ) {
       return runBlocking {
         context.node.await {

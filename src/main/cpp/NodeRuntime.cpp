@@ -460,9 +460,6 @@ void NodeRuntime::MountFile(const char *path, const int mask) {
   auto context = context_.Get(isolate_);
   auto env = node::GetCurrentEnvironment(context);
   node::MountFile(env, path, mask);
-  auto runnable = [&]() {
-  };
-  Await(runnable);
 }
 
 void NodeRuntime::Throw(JNIEnv *env, v8::Local<v8::Value> exception) {

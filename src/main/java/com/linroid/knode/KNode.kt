@@ -45,10 +45,6 @@ class KNode(
 
   private var thread: Thread? = null
 
-  var onSetupFs: () -> Unit = {
-    mountFile(File("/"), ACCESS_READ_WRITE)
-  }
-
   fun start(vararg args: String) {
     seq = counter.incrementAndGet()
     thread = thread(isDaemon = true, name = "knode(${seq})") {
@@ -118,11 +114,6 @@ class KNode(
     exit(0)
   }
 
-  fun mountFile(file: File, mask: Int) {
-    nativeMountFile(file.absolutePath, mask)
-    Log.v(TAG, "mount $file -> $mask")
-  }
-
   fun post(action: Runnable): Boolean {
     if (!isActive()) {
       Log.w(TAG, "Submit but not active: active=$active, ptr=$ptr, seq=$seq", Exception())
@@ -141,7 +132,6 @@ class KNode(
     this.context = context
     active = true
     context.node = this
-    onSetupFs()
     check(isActive()) { "isActive is not match the current state" }
     attachStdOutput(context)
     // val process: JSObject = context.get("process")
@@ -196,6 +186,17 @@ process.stdout.isRaw = true;
       }
     }
     eventOnPrepared(context)
+  }
+
+
+  fun chroot(path: String) {
+    Log.d(TAG, "chroot $path")
+    nativeChroot(path)
+  }
+
+  fun mount(source: String, target: String, mode: Int) {
+    Log.d(TAG, "mount $source as $target($mode)")
+    nativeMount(source, target, mode)
   }
 
   @Suppress("unused")
@@ -259,9 +260,11 @@ process.stdout.isRaw = true;
 
   private external fun nativeStart(args: Array<out String>): Int
 
-  private external fun nativeMountFile(path: String, @FileAccessMask mask: Int)
-
   private external fun nativePost(action: Runnable): Boolean
+
+  private external fun nativeMount(source: String, target: String, mode: Int)
+
+  private external fun nativeChroot(path: String)
 
   interface EventListener {
 
@@ -283,13 +286,14 @@ process.stdout.isRaw = true;
     const val ACCESS_READ_WRITE = ACCESS_READ or ACCESS_WRITE
 
     @IntDef(ACCESS_NONE, ACCESS_READ, ACCESS_WRITE, ACCESS_READ_WRITE)
-    annotation class FileAccessMask
+    annotation class FileAccessMode
 
     private val counter = AtomicInteger(0)
 
     private val customVersions = HashMap<String, String>()
     private val customEnvs = HashMap<String, String>()
     private var exec = File("node")
+
     var gson: Gson = Gson()
 
     init {

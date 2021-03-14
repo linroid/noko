@@ -454,12 +454,20 @@ v8::Local<v8::Value> NodeRuntime::Require(const char *path) {
   return scope.Escape(result);
 }
 
-void NodeRuntime::MountFile(const char *path, const int mask) {
+void NodeRuntime::Mount(const char *src, const char *dst, const int mode) {
   v8::Locker _locker(isolate_);
   v8::HandleScope _handleScope(isolate_);
   auto context = context_.Get(isolate_);
   auto env = node::GetCurrentEnvironment(context);
-  node::MountFile(env, path, mask);
+  node::Mount(env, src, dst, mode);
+}
+
+void NodeRuntime::Chroot(const char *path) {
+  v8::Locker _locker(isolate_);
+  v8::HandleScope _handleScope(isolate_);
+  auto context = context_.Get(isolate_);
+  auto env = node::GetCurrentEnvironment(context);
+  node::Chroot(env, path);
 }
 
 void NodeRuntime::Throw(JNIEnv *env, v8::Local<v8::Value> exception) {

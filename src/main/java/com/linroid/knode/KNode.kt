@@ -134,6 +134,9 @@ class KNode(
     context.node = this
     check(isActive()) { "isActive is not match the current state" }
     attachStdOutput(context)
+
+    eventOnNodeBeforeStart(context)
+
     // val process: JSObject = context.get("process")
 
     // process.set("argv0", "node")
@@ -194,9 +197,9 @@ process.stdout.isRaw = true;
     nativeChroot(path)
   }
 
-  fun mount(source: String, target: String, mode: Int) {
-    Log.d(TAG, "mount $source as $target($mode)")
-    nativeMount(source, target, mode)
+  fun mount(src: String, dst: String, @FileAccessMode mode: Int) {
+    Log.d(TAG, "mount $src as $dst($mode)")
+    nativeMount(src, dst, mode)
   }
 
   @Suppress("unused")
@@ -233,6 +236,11 @@ process.stdout.isRaw = true;
     })
   }
 
+  private fun eventOnNodeBeforeStart(context: JSContext) {
+    Log.i(TAG, "eventOnNodeBeforeStart")
+    listeners.forEach { it.onNodeBeforeStart(context) }
+  }
+
   private fun eventOnPrepared(context: JSContext) {
     Log.i(TAG, "eventOnPrepared")
     listeners.forEach { it.onNodePrepared(context) }
@@ -262,11 +270,13 @@ process.stdout.isRaw = true;
 
   private external fun nativePost(action: Runnable): Boolean
 
-  private external fun nativeMount(source: String, target: String, mode: Int)
+  private external fun nativeMount(src: String, dst: String, mode: Int)
 
   private external fun nativeChroot(path: String)
 
   interface EventListener {
+
+    fun onNodeBeforeStart(context: JSContext) {}
 
     fun onNodePrepared(context: JSContext) {}
 

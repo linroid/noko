@@ -88,14 +88,14 @@ int start_redirecting_stdout_stderr() {
   return 0;
 }
 
-NodeRuntime *get_runtime(JNIEnv *env, jobject jThis) {
+NodeRuntime *getRuntime(JNIEnv *env, jobject jThis) {
   jlong ptr = env->GetLongField(jThis, NodeClass.ptr);
   return reinterpret_cast<NodeRuntime *>(ptr);
 }
 
-JNICALL jint start(JNIEnv *env, jobject jThis, jobjectArray jArgs) {
+JNICALL jint nativeStart(JNIEnv *env, jobject jThis, jobjectArray jArgs) {
   LOGD("start");
-  auto runtime = get_runtime(env, jThis);
+  auto runtime = getRuntime(env, jThis);
   jsize argc = env->GetArrayLength(jArgs);
   std::vector<std::string> args(static_cast<unsigned long>(argc));
 
@@ -118,14 +118,14 @@ struct PostMessage {
   NodeRuntime *runtime;
 };
 
-JNICALL jboolean post(JNIEnv *env, jobject jThis, jobject jRunnable) {
+JNICALL jboolean nativePost(JNIEnv *env, jobject jThis, jobject jRunnable) {
   jlong ptr = env->GetLongField(jThis, NodeClass.ptr);
   if (ptr == 0) {
     LOGE("post but ptr is 0");
     return 0;
   }
   auto *message = new PostMessage();
-  message->runtime = get_runtime(env, jThis);
+  message->runtime = getRuntime(env, jThis);
   message->runnable = env->NewGlobalRef(jRunnable);
   auto success = message->runtime->Post([message] {
     JNIEnv *_env;
@@ -147,11 +147,21 @@ JNICALL jboolean post(JNIEnv *env, jobject jThis, jobject jRunnable) {
   return 1;
 }
 
-JNICALL void mountFile(JNIEnv *env, jobject jThis, jstring jPath, jint mask) {
+JNICALL void nativeMount(JNIEnv *env, jobject jThis, jstring jSrc, jstring jDst, jint mode) {
+  const char *source = env->GetStringUTFChars(jSrc, nullptr);
+  const char *target = env->GetStringUTFChars(jDst, nullptr);
+
+  auto runtime = getRuntime(env, jThis);
+  runtime->Mount(source,target,  mode);
+
+  env->ReleaseStringUTFChars(jDst, source);
+  env->ReleaseStringUTFChars(jSrc, source);
+}
+JNICALL void nativeChroot(JNIEnv *env, jobject jThis, jstring jPath) {
   const char *path = env->GetStringUTFChars(jPath, nullptr);
 
-  auto runtime = get_runtime(env, jThis);
-  runtime->MountFile(path, mask);
+  auto runtime = getRuntime(env, jThis);
+  runtime->Chroot(path);
 
   env->ReleaseStringUTFChars(jPath, path);
 }
@@ -162,7 +172,7 @@ JNICALL jlong nativeNew(JNIEnv *env, jobject jThis, jboolean keepAlive, jboolean
 }
 
 JNICALL void nativeExit(JNIEnv *env, jobject jThis, jint exitCode) {
-  auto runtime = get_runtime(env, jThis);
+  auto runtime = getRuntime(env, jThis);
   runtime->Exit(exitCode);
 }
 //
@@ -211,12 +221,13 @@ JNICALL void nativeSetup(__unused JNIEnv *env, __unused jclass jThis, jobject co
 }
 
 static JNINativeMethod nodeMethods[] = {
-  {"nativeSetup",     "(Landroid/net/ConnectivityManager;)V", (void *) nativeSetup},
-  {"nativeNew",       "(ZZ)J",                                (void *) nativeNew},
-  {"nativeExit",      "(I)V",                                 (void *) nativeExit},
-  {"nativeStart",     "([Ljava/lang/String;)I",               (void *) start},
-  {"nativeMountFile", "(Ljava/lang/String;I)V",               (void *) mountFile},
-  {"nativePost",      "(Ljava/lang/Runnable;)Z",              (void *) post},
+  {"nativeSetup",  "(Landroid/net/ConnectivityManager;)V",     (void *) nativeSetup},
+  {"nativeNew",    "(ZZ)J",                                    (void *) nativeNew},
+  {"nativeExit",   "(I)V",                                     (void *) nativeExit},
+  {"nativeStart",  "([Ljava/lang/String;)I",                   (void *) nativeStart},
+  {"nativeMount",  "(Ljava/lang/String;Ljava/lang/String;I)V", (void *) nativeMount},
+  {"nativeChroot", "(Ljava/lang/String;)V",                    (void *) nativeChroot},
+  {"nativePost",   "(Ljava/lang/Runnable;)Z",                  (void *) nativePost},
 };
 
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {

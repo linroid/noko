@@ -97,7 +97,9 @@ public:
 
   v8::Local<v8::Value> Require(const char *path);
 
-  void MountFile(const char *path, const int mask);
+  void Mount(const char *src, const char *dst, const int mode);
+
+  void Chroot(const char *path);
 
   void Throw(JNIEnv *env, v8::Local<v8::Value> exception);
 

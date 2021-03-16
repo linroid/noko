@@ -43,6 +43,7 @@ class KNode(
   private val envs = HashMap(customEnvs)
   private val versions = HashMap(customVersions)
 
+  private var root: File? = null
   private var thread: Thread? = null
 
   fun start(vararg args: String) {
@@ -52,8 +53,7 @@ class KNode(
         val execArgs = ArrayList<String>()
         execArgs.add(exec.absolutePath)
         execArgs.addAll(args)
-
-        Log.d(TAG, execArgs.joinToString(" "))
+        Log.d(TAG, "exec ${execArgs.joinToString(" ")}")
 
         val exitCode = nativeStart(execArgs.toTypedArray())
         Log.i(TAG, "node exited: $exitCode")
@@ -171,7 +171,7 @@ process.stdout.isRaw = true;
     envs.entries.forEach {
       setEnv(it.key, it.value)
     }
-    setupCode.append("process.execPath = '/node'\n")
+    setupCode.append("process.execPath = '${exec.absolutePath}'\n")
     versions.forEach {
       setVersion(it.key, it.value)
     }
@@ -192,14 +192,22 @@ process.stdout.isRaw = true;
   }
 
 
-  fun chroot(path: String) {
-    Log.d(TAG, "chroot $path")
-    nativeChroot(path)
+  fun chroot(dir: File) {
+    Log.d(TAG, "chroot $dir")
+    this.root = dir
+    nativeChroot(dir.absolutePath)
   }
 
-  fun mount(src: String, dst: String, @FileAccessMode mode: Int) {
+  fun mount(src: File, dst: String, @FileAccessMode mode: Int) {
     Log.d(TAG, "mount $src as $dst($mode)")
-    nativeMount(src, dst, mode)
+    check(dst.startsWith("/")) { "The dst path must be a absolute path(starts with '/')" }
+    root?.let {
+      val dir = File(it, dst.substring(0))
+      if (!dir.exists()) {
+        dir.mkdirs()
+      }
+    }
+    nativeMount(src.absolutePath, dst, mode)
   }
 
   @Suppress("unused")

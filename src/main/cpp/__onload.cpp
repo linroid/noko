@@ -48,7 +48,7 @@ void *thread_stderr_func(void *) {
     if (buf[redirect_size - 1] == '\n')
       --redirect_size;
     buf[redirect_size] = 0;
-    __android_log_write(ANDROID_LOG_ERROR, LOG_TAG, buf);
+    __android_log_write(ANDROID_LOG_ERROR, "stderr", buf);
   }
   return nullptr;
 }
@@ -61,7 +61,7 @@ void *thread_stdout_func(void *) {
     if (buf[redirect_size - 1] == '\n')
       --redirect_size;
     buf[redirect_size] = 0;
-    __android_log_write(ANDROID_LOG_INFO, LOG_TAG, buf);
+    __android_log_write(ANDROID_LOG_INFO, "stdout", buf);
   }
   return nullptr;
 }
@@ -148,15 +148,16 @@ JNICALL jboolean nativePost(JNIEnv *env, jobject jThis, jobject jRunnable) {
 }
 
 JNICALL void nativeMount(JNIEnv *env, jobject jThis, jstring jSrc, jstring jDst, jint mode) {
-  const char *source = env->GetStringUTFChars(jSrc, nullptr);
+  const char *src = env->GetStringUTFChars(jSrc, nullptr);
   const char *target = env->GetStringUTFChars(jDst, nullptr);
 
   auto runtime = getRuntime(env, jThis);
-  runtime->Mount(source,target,  mode);
+  runtime->Mount(src, target, mode);
 
-  env->ReleaseStringUTFChars(jDst, source);
-  env->ReleaseStringUTFChars(jSrc, source);
+  env->ReleaseStringUTFChars(jDst, src);
+  env->ReleaseStringUTFChars(jSrc, src);
 }
+
 JNICALL void nativeChroot(JNIEnv *env, jobject jThis, jstring jPath) {
   const char *path = env->GetStringUTFChars(jPath, nullptr);
 

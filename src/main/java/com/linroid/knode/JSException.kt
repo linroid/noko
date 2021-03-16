@@ -13,3 +13,4 @@ class JSException(val error: JSObject) : RuntimeException(error.toString()) {
     return error.get<JSValue>("stack").toString()
   }
 }
+

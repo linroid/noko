@@ -29,7 +29,7 @@ class KNode(
   private val cwd: File? = null,
   private val output: StdOutput,
   keepAlive: Boolean = false,
-  val strict: Boolean = false,
+  val strict: Boolean = true,
 ) : Closeable {
 
   @Native
@@ -60,6 +60,8 @@ class KNode(
         eventOnExited(exitCode)
       } catch (error: JSException) {
         eventOnError(error)
+      } catch (error: Exception) {
+        Log.w(TAG, "unexpected exception", error)
       }
     }
   }
@@ -119,7 +121,7 @@ class KNode(
       Log.w(TAG, "Submit but not active: active=$active, ptr=$ptr, seq=$seq", Exception())
       return false
     }
-    if (isInThread()) {
+    if (isInNodeThread()) {
       action.run()
       return true
     }
@@ -134,7 +136,6 @@ class KNode(
     context.node = this
     check(isActive()) { "isActive is not match the current state" }
     attachStdOutput(context)
-
     eventOnNodeBeforeStart(context)
 
     // val process: JSObject = context.get("process")
@@ -218,15 +219,16 @@ process.stdout.isRaw = true;
 
   internal fun checkThread() {
     if (strict) {
-      check(!isInThread()) { "Operating js object is only allowed in origin thread: current=${Thread.currentThread()}" }
+      check(isInNodeThread()) { "Operating js object is only allowed in origin thread: current=${Thread.currentThread()}" }
     }
   }
 
-  fun isInThread(): Boolean {
-    return Thread.currentThread() != thread
+  internal fun isInNodeThread(): Boolean {
+    return Thread.currentThread() == thread
   }
 
   private fun attachStdOutput(context: JSContext) {
+    Log.d("KNode", "attachStdOutput")
     val process: JSObject = context.get("process")
     val stdout: JSObject = process.get("stdout")
     stdout.set("write", object : JSFunction(context, "write") {

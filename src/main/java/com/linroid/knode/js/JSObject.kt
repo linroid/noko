@@ -15,13 +15,12 @@ open class JSObject : JSValue {
   protected constructor(context: JSContext?, reference: Long) : super(context, reference)
 
   constructor(context: JSContext, data: JsonObject? = null) : super(context, 0) {
+    context.node.checkThread()
     nativeNew()
     data?.entrySet()?.forEach {
       set(it.key, from(context, it.value))
     }
     addBinds()
-
-    context.node.checkThread()
   }
 
   private fun addBinds() {

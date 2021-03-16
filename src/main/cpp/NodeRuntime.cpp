@@ -146,7 +146,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
     v8::Context::Scope context_scope(context);
     auto flags = static_cast<node::EnvironmentFlags::Flags>(node::EnvironmentFlags::kOwnsProcessState |
                                                             node::EnvironmentFlags::kOwnsEmbedded);
-    LOGD("CreateEnvironment: flags=%llud", flags);
+    LOGD("CreateEnvironment: flags=%lud", flags);
     std::unique_ptr<node::Environment, decltype(&node::FreeEnvironment)> env(
       node::CreateEnvironment(isolate_data.get(), context, args, args, flags),
       node::FreeEnvironment);
@@ -255,7 +255,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
     uv_run(eventLoop_, UV_RUN_ONCE);
   int err = uv_loop_close(eventLoop_);
   eventLoop_ = nullptr;
-  LOGI("close loop result: %d, callbacks.size=%d", err, callbacks_.size());
+  LOGI("close loop result: %d, callbacks.size=%lu", err, callbacks_.size());
   // uv_loop_delete(loop);
   // assert(err == 0);
   return exitCode;

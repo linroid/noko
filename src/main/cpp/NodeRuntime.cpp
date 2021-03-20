@@ -209,7 +209,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
         // If there are new tasks, continue.
         more = uv_loop_alive(eventLoop_);
         if (more) continue;
-        LOGW("No more task, try exit");
+        LOGW("no more task, try exit");
         // node::EmitBeforeExit() is used to emit the 'beforeExit' event on
         // the `process` object.
         node::EmitProcessBeforeExit(env.get());
@@ -221,7 +221,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
       } while (more);
     }
     OnBeforeExit();
-    LOGW("Exiting uv loop");
+    LOGW("exiting uv loop");
     // node::EmitExit() returns the current exit code.
     auto exitCodeMaybe = node::EmitProcessExit(env.get());
     if (exitCodeMaybe.IsJust()) {
@@ -473,6 +473,16 @@ void NodeRuntime::Chroot(const char *path) {
 void NodeRuntime::Throw(JNIEnv *env, v8::Local<v8::Value> exception) {
   auto jException = JSError::ToException(env, this, exception);
   env->Throw((jthrowable) jException);
+}
+
+void NodeRuntime::CheckThread() {
+  if (std::this_thread::get_id() != threadId_) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wformat"
+    LOGE("js object can only be accessed from the Node.js thread: current=%ld, threadId=%ld", std::this_thread::get_id(), threadId_);
+#pragma clang diagnostic pop
+    std::abort();
+  }
 }
 
 int init_node() {

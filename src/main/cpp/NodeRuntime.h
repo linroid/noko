@@ -103,6 +103,8 @@ public:
 
   void Throw(JNIEnv *env, v8::Local<v8::Value> exception);
 
+  void CheckThread();
+
   bool IsRunning() {
     return running_;
   }

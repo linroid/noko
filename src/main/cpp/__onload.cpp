@@ -149,13 +149,13 @@ JNICALL jboolean nativePost(JNIEnv *env, jobject jThis, jobject jRunnable) {
 
 JNICALL void nativeMount(JNIEnv *env, jobject jThis, jstring jSrc, jstring jDst, jint mode) {
   const char *src = env->GetStringUTFChars(jSrc, nullptr);
-  const char *target = env->GetStringUTFChars(jDst, nullptr);
+  const char *dst = env->GetStringUTFChars(jDst, nullptr);
 
   auto runtime = getRuntime(env, jThis);
-  runtime->Mount(src, target, mode);
+  runtime->Mount(src, dst, mode);
 
   env->ReleaseStringUTFChars(jDst, src);
-  env->ReleaseStringUTFChars(jSrc, src);
+  env->ReleaseStringUTFChars(jSrc, dst);
 }
 
 JNICALL void nativeChroot(JNIEnv *env, jobject jThis, jstring jPath) {

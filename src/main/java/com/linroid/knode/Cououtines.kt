@@ -5,20 +5,21 @@ import com.linroid.knode.js.JSValue
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 /**
  * @author linroid
  * @since 2020/3/8
  */
 suspend fun JSPromise.await(): JSValue {
-  return suspendCoroutine { continuation ->
-    context.node.post {
+  return suspendCancellableCoroutine { continuation ->
+    if (!context.node.post {
       then {
         continuation.resume(it)
       }.catch {
         continuation.resumeWithException(JSException(it))
       }
+    }) {
+      continuation.cancel()
     }
   }
 }

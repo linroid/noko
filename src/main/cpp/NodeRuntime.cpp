@@ -51,7 +51,7 @@ NodeRuntime::NodeRuntime(
   }
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat"
-  LOGD("Construct NodeRuntime: thread_id=%d, id=%d, this=%p", std::this_thread::get_id(), id_, this);
+  LOGD("new NodeRuntime: thread_id=%d, id=%d, this=%p", std::this_thread::get_id(), id_, this);
 #pragma clang diagnostic pop
 }
 

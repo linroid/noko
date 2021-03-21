@@ -199,15 +199,28 @@ process.stdout.isRaw = true;
     nativeChroot(dir.absolutePath)
   }
 
-  fun mount(src: File, dst: String, @FileAccessMode mode: Int) {
-    Log.d(TAG, "mount $src as $dst($mode)")
+  fun mount(src: File, dst: String, @FileAccessMode mode: Int, mapping: Boolean = true) {
+    Log.d(TAG, "mount $src as $dst($mode), mapping=$mapping")
+    check(src.exists()) { "File doesn't exists: $src" }
     check(dst.startsWith("/")) { "The dst path must be a absolute path(starts with '/')" }
-    root?.let {
-      val dir = File(it, dst.substring(0))
-      if (!dir.exists()) {
-        dir.mkdirs()
+
+    val root = root ?: throw IllegalStateException("must call chroot first!")
+    if (mapping) {
+      if (src.isDirectory) {
+        val dir = File(root, dst.substring(0))
+        if (!dir.exists()) {
+          dir.mkdirs()
+        }
+      } else {
+        src.parentFile?.mkdirs()
+        val file = File(root, dst.substring(0))
+        if (!file.exists()) {
+          file.createNewFile()
+          file.setReadOnly()
+        }
       }
     }
+
     nativeMount(src.absolutePath, dst, mode)
   }
 

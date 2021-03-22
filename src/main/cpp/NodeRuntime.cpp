@@ -151,7 +151,10 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
     std::unique_ptr<node::Environment, decltype(&node::FreeEnvironment)> env(
       node::CreateEnvironment(isolate_data.get(), context, args, args, flags),
       node::FreeEnvironment);
-
+    node::SetProcessExitHandler(env.get(), [](node::Environment *environment, int code) {
+      LOGW("exiting node process: %d", code);
+      node::Stop(environment);
+    });
     isolate_ = isolate;
     context_.Reset(isolate, context);
     global_ = new v8::Persistent<v8::Object>(isolate, context->Global());
@@ -180,10 +183,6 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
       return v8::Null(isolate_);
     });
 
-    node::SetProcessExitHandler(env.get(), [](node::Environment *environment, int code) {
-      LOGW("exit node process");
-      node::Stop(environment);
-    });
     {
       if (keepAlive_) {
         isolate->SetPromiseHook([](v8::PromiseHookType type,

@@ -14,6 +14,8 @@ import com.linroid.knode.js.JSContext
 import com.linroid.knode.js.JSFunction
 import com.linroid.knode.js.JSObject
 import com.linroid.knode.js.JSValue
+import com.linroid.knode.path.FileSystem
+import com.linroid.knode.path.RealFileSystem
 import java.io.Closeable
 import java.io.File
 import java.lang.annotation.Native
@@ -28,6 +30,7 @@ import kotlin.concurrent.thread
 class KNode(
   private val cwd: File? = null,
   private val output: StdOutput,
+  private val fs: FileSystem = RealFileSystem(),
   keepAlive: Boolean = false,
   val strict: Boolean = true,
 ) : Closeable {
@@ -162,8 +165,8 @@ process.stdout.isRaw = true;
     }
 
     cwd?.let {
-      setEnv("PWD", cwd.absolutePath)
-      setupCode.append("process.chdir('${cwd.absolutePath}');\n")
+      setEnv("PWD", fs.path(cwd))
+      setupCode.append("process.chdir('${fs.path(cwd)}');\n")
     }
     if (output.supportsColor) {
       setEnv("COLORTERM", "truecolor")
@@ -171,7 +174,7 @@ process.stdout.isRaw = true;
     envs.entries.forEach {
       setEnv(it.key, it.value)
     }
-    setupCode.append("process.execPath = '${exec.absolutePath}'\n")
+    setupCode.append("process.execPath = '${fs.path(exec)}'\n")
     versions.forEach {
       setVersion(it.key, it.value)
     }
@@ -260,6 +263,7 @@ process.stdout.isRaw = true;
 
   private fun eventOnNodeBeforeStart(context: JSContext) {
     Log.i(TAG, "eventOnNodeBeforeStart")
+    fs.mount(context.node)
     listeners.forEach { it.onNodeBeforeStart(context) }
   }
 
@@ -316,6 +320,9 @@ process.stdout.isRaw = true;
     const val ACCESS_READ = 1
     const val ACCESS_WRITE = 2
     const val ACCESS_READ_WRITE = ACCESS_READ or ACCESS_WRITE
+
+    const val ENV_HOME = "HOME"
+    const val ENV_TMPDIR = "TMPDIR"
 
     @IntDef(ACCESS_NONE, ACCESS_READ, ACCESS_WRITE, ACCESS_READ_WRITE)
     annotation class FileAccessMode

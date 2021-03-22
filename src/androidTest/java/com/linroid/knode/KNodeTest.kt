@@ -26,7 +26,7 @@ abstract class KNodeTest : KNode.EventListener, StdOutput {
     println("setupNode")
     val appContext = InstrumentationRegistry.getInstrumentation().targetContext
     file = File.createTempFile("tests_", "temp.js")
-    node = KNode(appContext.cacheDir, this, true)
+    node = KNode(appContext.cacheDir, this, keepAlive = true)
     node.start(file.absolutePath)
     node.addEventListener(this)
     startLatch.await(3, TimeUnit.SECONDS)

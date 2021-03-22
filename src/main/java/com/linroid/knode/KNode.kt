@@ -203,7 +203,7 @@ process.stdout.isRaw = true;
 
   fun mount(src: File, dst: String, @FileAccessMode mode: Int, mapping: Boolean = true) {
     Log.d(TAG, "mount $src as $dst($mode), mapping=$mapping")
-    check(src.exists()) { "File doesn't exists: $src" }
+    check(src.exists()) { "File doesn't exists: $src, fs=$fs" }
     check(dst.startsWith("/")) { "The dst path must be a absolute path(starts with '/')" }
 
     val root = root ?: throw IllegalStateException("must call chroot first!")

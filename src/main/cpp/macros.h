@@ -13,6 +13,10 @@
 
 #define V8_SCOPE(env, jThis) \
   auto runtime = JSValue::GetRuntime(env, jThis); \
+  if (runtime == nullptr) { \
+    LOGE("GetRuntime returns nullptr %s(%d)-<%s>", __FILE__, __LINE__, __FUNCTION__); \
+    env->FatalError("GetRuntime returns nullptr"); \
+  } \
   auto isolate = runtime->isolate_; \
   v8::Locker locker(runtime->isolate_); \
   v8::HandleScope handleScope(runtime->isolate_); \

@@ -101,14 +101,13 @@ class KNode(
    * @param exitCode The exit code
    */
   fun exit(exitCode: Int) {
-    Log.w(TAG, "exit($exitCode)")
+    Log.w(TAG, "exit($exitCode)", Exception())
     if (!isActive()) {
       Log.w(TAG, "dispose but not active")
       Thread.dumpStack()
       return
     }
     nativeExit(exitCode)
-    context.runtimePtr = 0L
     active = false
   }
 

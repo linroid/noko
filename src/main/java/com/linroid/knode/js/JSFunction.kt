@@ -19,6 +19,7 @@ open class JSFunction : JSObject {
 
   constructor(context: JSContext, name: String, callable: Callable? = null) : super(context, 0) {
     this.callable = callable
+    context.node.checkThread()
     nativeNew(name)
   }
 
@@ -37,6 +38,8 @@ open class JSFunction : JSObject {
   }
 
   fun call(receiver: JSValue, vararg parameters: Any?): JSValue {
+    context.node.checkThread()
+    check(context.runtimePtr != 0L) { "node has been disposed" }
     val v8Parameters = Array(parameters.size) { from(context, parameters[it]) }
     return nativeCall(receiver, v8Parameters)
   }

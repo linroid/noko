@@ -16,10 +16,15 @@ private:
   static jfieldID jUndefinedId;
   static jfieldID jTrueId;
   static jfieldID jFalseId;
+  static jfieldID jPtr;
 
 public:
   inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime) {
     return env->NewObject(jClazz, jConstructor, (jlong) runtime, (jlong) runtime->global_);
+  }
+
+  static void ClearPtr(JNIEnv *env, jobject obj) {
+    env->SetLongField(obj, jPtr, 0l);
   }
 
   static JNICALL jobject ParseJson(JNIEnv *env, jobject jThis, jstring jJson);

@@ -19,6 +19,7 @@ jfieldID JSContext::jNullId;
 jfieldID JSContext::jUndefinedId;
 jfieldID JSContext::jTrueId;
 jfieldID JSContext::jFalseId;
+jfieldID JSContext::jPtr;
 
 jint JSContext::OnLoad(JNIEnv *env) {
   jclass clazz = env->FindClass("com/linroid/knode/js/JSContext");
@@ -31,6 +32,7 @@ jint JSContext::OnLoad(JNIEnv *env) {
   jUndefinedId = env->GetFieldID(clazz, "sharedUndefined", "Lcom/linroid/knode/js/JSUndefined;");
   jTrueId = env->GetFieldID(clazz, "sharedTrue", "Lcom/linroid/knode/js/JSBoolean;");
   jFalseId = env->GetFieldID(clazz, "sharedFalse", "Lcom/linroid/knode/js/JSBoolean;");
+  jPtr = env->GetFieldID(clazz, "runtimePtr", "J");
 
   JNINativeMethod methods[] = {
     {"nativeEval",           "(Ljava/lang/String;Ljava/lang/String;I)Lcom/linroid/knode/js/JSValue;", (void *) Eval},

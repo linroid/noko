@@ -68,6 +68,7 @@ NodeRuntime::~NodeRuntime() {
     env->DeleteGlobalRef(jNull_);
     env->DeleteGlobalRef(jTrue_);
     env->DeleteGlobalRef(jFalse_);
+    JSContext::ClearPtr(env, jContext_);
     env->DeleteGlobalRef(jContext_);
   EXIT_JNI(vm_)
 

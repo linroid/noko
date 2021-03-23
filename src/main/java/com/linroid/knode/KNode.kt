@@ -414,7 +414,11 @@ process.stdout.isRaw = true;
 
       // Create symlink to execute node cmd
       exec.delete()
-      Os.symlink("$libraryDir/node.so", exec.absolutePath)
+      Os.symlink(executableFile(context).absolutePath, exec.absolutePath)
+    }
+
+    fun executableFile(context: Context): File {
+      return File(context.applicationInfo.nativeLibraryDir, "node.so")
     }
 
     @JvmStatic

@@ -44,8 +44,8 @@ find_library(z-lib z)
 
 target_link_libraries(knode libnode ${log-lib} ${z-lib})
 
-add_executable(node.so ./main.cpp)
-target_link_libraries(node.so libnode ${log-lib})
+add_executable(libnode_bin.so ./main.cpp)
+target_link_libraries(libnode_bin.so libnode ${log-lib})
 
 add_library(exec SHARED ./exec.c)
 target_link_libraries(exec ${log-lib})

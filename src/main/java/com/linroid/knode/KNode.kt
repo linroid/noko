@@ -418,7 +418,7 @@ process.stdout.isRaw = true;
     }
 
     fun executableFile(context: Context): File {
-      return File(context.applicationInfo.nativeLibraryDir, "node.so")
+      return File(context.applicationInfo.nativeLibraryDir, "libnode_bin.so")
     }
 
     @JvmStatic

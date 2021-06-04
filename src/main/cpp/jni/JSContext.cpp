@@ -109,7 +109,7 @@ jobject JSContext::Require(JNIEnv *env, jobject jThis, jstring jPath) {
   SETUP(env, jThis, v8::Object)
   auto *argv = new v8::Local<v8::Value>[1];
   argv[0] = V8_STRING(isolate, path, pathLen);
-  auto global = runtime->global_->Get(isolate);
+  auto global = runtime->global_.Get(isolate);
   v8::TryCatch tryCatch(isolate);
 
   auto require = global->Get(context, V8_UTF_STRING(isolate, "require")).ToLocalChecked()->ToObject(context).ToLocalChecked();

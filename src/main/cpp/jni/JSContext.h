@@ -20,7 +20,7 @@ private:
 
 public:
   inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime) {
-    return env->NewObject(jClazz, jConstructor, (jlong) runtime, (jlong) runtime->global_);
+    return env->NewObject(jClazz, jConstructor, (jlong) runtime, (jlong) &runtime->global_);
   }
 
   static void ClearPtr(JNIEnv *env, jobject obj) {

@@ -6,7 +6,7 @@ package com.linroid.knode.js
  */
 class JSBoolean @NativeConstructor private constructor(
   context: JSContext, reference: Long,
-  private val data: Boolean
+  private val data: Boolean,
 ) : JSPrimitive(context, reference) {
 
   fun get(): Boolean = data

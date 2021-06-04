@@ -13,12 +13,12 @@ import kotlin.coroutines.resumeWithException
 suspend fun JSPromise.await(): JSValue {
   return suspendCancellableCoroutine { continuation ->
     if (!context.node.post {
-      then {
-        continuation.resume(it)
-      }.catch {
-        continuation.resumeWithException(JSException(it))
-      }
-    }) {
+        then {
+          continuation.resume(it)
+        }.catch {
+          continuation.resumeWithException(JSException(it))
+        }
+      }) {
       continuation.cancel()
     }
   }

@@ -118,46 +118,38 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
   }
 
   std::shared_ptr<node::ArrayBufferAllocator> allocator = node::ArrayBufferAllocator::Create();
-  v8::Isolate *isolate = node::NewIsolate(allocator, eventLoop_, platform.get());
+  isolate_ = node::NewIsolate(allocator, eventLoop_, platform.get());
 
-  if (isolate == nullptr) {
-    LOGE("%s: Failed to initialize V8 Isolate", args[0].c_str());
+  if (isolate_ == nullptr) {
+    LOGE("Failed to initialize V8 isolate: %s", args[0].c_str());
     return 2;
   }
 
   {
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolate_scope(isolate);
+    v8::Locker locker(isolate_);
+    v8::Isolate::Scope isolateScope(isolate_);
 
-    // Create a node::IsolateData instance that will later be released using
-    // node::FreeIsolateData().
-    std::unique_ptr<node::IsolateData, decltype(&node::FreeIsolateData)> isolate_data(
-      node::CreateIsolateData(isolate, eventLoop_, platform.get(), allocator.get()),
-      node::FreeIsolateData);
-
-    // Set up a new v8::Context.
-    v8::HandleScope handle_scope(isolate);
-    v8::Local<v8::Context> context = node::NewContext(isolate);
+    auto isolateData = node::CreateIsolateData(isolate_, eventLoop_, platform.get(), allocator.get());
+    v8::HandleScope handleScope(isolate_);
+    v8::Local<v8::Context> context = node::NewContext(isolate_);
     if (context.IsEmpty()) {
-      LOGE("%s: Failed to initialize V8 Context\n", args[0].c_str());
+      LOGE("%s: Failed to initialize V8 Context", args[0].c_str());
       return 3;
     }
-    // The v8::Context needs to be entered when node::CreateEnvironment() and
-    // node::LoadEnvironment() are being called.
-    v8::Context::Scope context_scope(context);
+
+    v8::Context::Scope contextScope(context);
     auto flags = static_cast<node::EnvironmentFlags::Flags>(node::EnvironmentFlags::kOwnsProcessState |
                                                             node::EnvironmentFlags::kOwnsEmbedded);
     LOGD("CreateEnvironment: flags=%lud", flags);
-    std::unique_ptr<node::Environment, decltype(&node::FreeEnvironment)> env(
-      node::CreateEnvironment(isolate_data.get(), context, args, args, flags),
-      node::FreeEnvironment);
-    node::SetProcessExitHandler(env.get(), [](node::Environment *environment, int code) {
+    auto env = node::CreateEnvironment(isolateData, context, args, args, flags);
+    node::SetProcessExitHandler(env, [](node::Environment *environment, int code) {
       LOGW("exiting node process: %d", code);
       node::Stop(environment);
     });
-    isolate_ = isolate;
-    context_.Reset(isolate, context);
-    global_ = new v8::Persistent<v8::Object>(isolate, context->Global());
+
+    context_.Reset(isolate_, context);
+    global_.Reset(isolate_, context->Global());
+
     OnPrepared();
 
     // Set up the Node.js instance for execution, and run code inside of it.
@@ -177,89 +169,96 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
     //         "require('vm').runInThisContext(process.argv[1]);");
 
     isolate_->SetMicrotasksPolicy(v8::MicrotasksPolicy::kAuto);
-    node::LoadEnvironment(env.get(), [&](const node::StartExecutionCallbackInfo &info) -> v8::MaybeLocal<v8::Value> {
+    node::LoadEnvironment(env, [&](const node::StartExecutionCallbackInfo &info) -> v8::MaybeLocal<v8::Value> {
       require_.Reset(isolate_, info.native_require);
       process_.Reset(isolate_, info.process_object);
       return v8::Null(isolate_);
     });
 
-    {
-      if (keepAlive_) {
-        isolate->SetPromiseHook([](v8::PromiseHookType type,
-                                   v8::Local<v8::Promise> promise,
-                                   v8::Local<v8::Value> parent) {
-          if (type == v8::PromiseHookType::kInit) {
-            promise->GetIsolate()->RunMicrotasks();
-          }
-        });
-      }
-
-      // SealHandleScope protects against handle leaks from callbacks.
-      v8::SealHandleScope seal(isolate);
-
-      int more;
-      do {
-        uv_run(eventLoop_, UV_RUN_DEFAULT);
-
-        // V8 tasks on background threads may end up scheduling new tasks in the
-        // foreground, which in turn can keep the event loop going. For example,
-        // WebAssembly.compile() may do so.
-        platform->DrainTasks(isolate);
-
-        // If there are new tasks, continue.
-        more = uv_loop_alive(eventLoop_);
-        if (more) continue;
-        LOGW("no more task, try exit");
-        // node::EmitBeforeExit() is used to emit the 'beforeExit' event on
-        // the `process` object.
-        node::EmitProcessBeforeExit(env.get());
-
-        // 'beforeExit' can also schedule new work that keeps the event loop
-        // running.
-        more = uv_loop_alive(eventLoop_);
-        LOGW("more=%d after call `beforeExit`", more);
-      } while (more);
-    }
+    RunLoop(env);
     OnBeforeExit();
-    LOGW("exiting uv loop");
     // node::EmitExit() returns the current exit code.
-    auto exitCodeMaybe = node::EmitProcessExit(env.get());
+    auto exitCodeMaybe = node::EmitProcessExit(env);
     if (exitCodeMaybe.IsJust()) {
       exitCode = exitCodeMaybe.ToChecked();
     }
     // node::Stop() can be used to explicitly stop the event loop and keep
     // further JavaScript from running. It can be called from any thread,
     // and will act like worker.terminate() if called from another thread.
-    node::Stop(env.get());
+    node::Stop(env);
+
+    node::FreeIsolateData(isolateData);
+    node::FreeEnvironment(env);
+
+    context_.Reset();
+    global_.Reset();
+    running_ = false;
   }
 
+  CloseLoop();
+  return exitCode;
+}
+
+
+void NodeRuntime::CloseLoop() {
+  LOGW("closing uv loop");
   // Unregister the Isolate with the platform and add a listener that is called
   // when the Platform is done cleaning up any state it had associated with
   // the Isolate.
-  bool platform_finished = false;
-  context_.Reset();
-  if (global_ != nullptr) {
-    global_->Reset();
-    delete global_;
-    global_ = nullptr;
-  }
-  running_ = false;
-  LOGI("set running=false");
-  platform->AddIsolateFinishedCallback(isolate, [](void *data) {
+  bool platformFinished = false;
+  platform->AddIsolateFinishedCallback(isolate_, [](void *data) {
     *static_cast<bool *>(data) = true;
-  }, &platform_finished);
-  platform->UnregisterIsolate(isolate);
-  isolate->Dispose();
+  }, &platformFinished);
+  platform->UnregisterIsolate(isolate_);
+  isolate_->Dispose();
   // Wait until the platform has cleaned up all relevant resources.
-  while (!platform_finished)
+  while (!platformFinished) {
     uv_run(eventLoop_, UV_RUN_ONCE);
-  int err = uv_loop_close(eventLoop_);
+  }
+  int uvErrorCode = uv_loop_close(eventLoop_);
   eventLoop_ = nullptr;
-  LOGI("close loop result: %d, callbacks.size=%lu", err, callbacks_.size());
+  LOGI("close loop result: %d, callbacks.size=%lu", uvErrorCode, callbacks_.size());
   // uv_loop_delete(loop);
   // assert(err == 0);
-  return exitCode;
 }
+
+void NodeRuntime::RunLoop(node::Environment *env) {
+  if (keepAlive_) {
+    isolate_->SetPromiseHook([](v8::PromiseHookType type,
+                                v8::Local<v8::Promise> promise,
+                                v8::Local<v8::Value> parent) {
+      if (type == v8::PromiseHookType::kInit) {
+        promise->GetIsolate()->RunMicrotasks();
+      }
+    });
+  }
+
+  v8::SealHandleScope seal(isolate_);
+
+  int more;
+  do {
+    uv_run(eventLoop_, UV_RUN_DEFAULT);
+
+    // V8 tasks on background threads may end up scheduling new tasks in the
+    // foreground, which in turn can keep the event loop going. For example,
+    // WebAssembly.compile() may do so.
+    platform->DrainTasks(isolate_);
+
+    // If there are new tasks, continue.
+    more = uv_loop_alive(eventLoop_);
+    if (more) continue;
+    LOGW("no more task, try exit");
+    // node::EmitBeforeExit() is used to emit the 'beforeExit' event on
+    // the `process` object.
+    node::EmitProcessBeforeExit(env);
+
+    // 'beforeExit' can also schedule new work that keeps the event loop
+    // running.
+    more = uv_loop_alive(eventLoop_);
+    LOGW("more=%d after call `beforeExit`", more);
+  } while (more);
+}
+
 
 void NodeRuntime::Exit(int code) {
   LOGI("NodeRuntime.Exit(%d)", code);
@@ -444,7 +443,7 @@ v8::Local<v8::Value> NodeRuntime::Require(const char *path) {
   v8::EscapableHandleScope scope(isolate_);
   auto context = context_.Get(isolate_);
   auto require = require_.Get(isolate_);
-  auto global = global_->Get(isolate_);
+  auto global = global_.Get(isolate_);
   v8::Context::Scope contextScope(context);
 
   auto *argv = new v8::Local<v8::Value>[1];

@@ -64,6 +64,10 @@ private:
 
   void TryLoop();
 
+  void RunLoop(node::Environment *env);
+
+  void CloseLoop();
+
   void OnPrepared();
 
   void OnBeforeExit();
@@ -77,7 +81,7 @@ public:
   JavaVM *vm_ = nullptr;
 
   v8::Isolate *isolate_ = nullptr;
-  v8::Persistent<v8::Object> *global_ = nullptr;
+  v8::Persistent<v8::Object> global_;
   v8::Persistent<v8::Context> context_;
   v8::Persistent<v8::Function> require_;
 

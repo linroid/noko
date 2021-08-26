@@ -228,7 +228,7 @@ void NodeRuntime::RunLoop(node::Environment *env) {
                                 v8::Local<v8::Promise> promise,
                                 v8::Local<v8::Value> parent) {
       if (type == v8::PromiseHookType::kInit) {
-        promise->GetIsolate()->RunMicrotasks();
+        // promise->GetIsolate()->RunMicrotasks();
       }
     });
   }

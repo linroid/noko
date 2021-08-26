@@ -58,7 +58,7 @@ jobject JSContext::Eval(JNIEnv *env, jobject jThis, jstring jCode, jstring jSour
 
   SETUP(env, jThis, v8::Object)
   v8::TryCatch tryCatch(runtime->isolate_);
-  v8::ScriptOrigin scriptOrigin(V8_STRING(isolate, source, sourceLen), v8::Integer::New(runtime->isolate_, jLine));
+  v8::ScriptOrigin scriptOrigin(V8_STRING(isolate, source, sourceLen), v8::Integer::New(runtime->isolate_, jLine), v8::Integer::New(runtime->isolate_, 0));
   auto script = v8::Script::Compile(context, V8_STRING(isolate, code, codeLen), &scriptOrigin);
   if (script.IsEmpty()) {
     LOGE("Compile script with an exception");

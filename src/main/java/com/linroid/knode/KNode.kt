@@ -20,9 +20,16 @@ import java.io.Closeable
 import java.io.File
 import java.lang.annotation.Native
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.concurrent.thread
 
 /**
+ * Create a new node instance
+ *
+ * @param cwd The current work directory for node
+ * @param output The standard output interface
+ * @param fs
+ * @param keepAlive If all the js code is executed completely, should we keep the node running
+ * @param strictMode If true to do thread checking when doing operation on js objects
+ *
  * @author linroid
  * @since 2019-10-16
  */
@@ -33,66 +40,87 @@ class KNode(
   private val fs: FileSystem = RealFileSystem(),
   keepAlive: Boolean = false,
   private val strictMode: Boolean = true,
-) : Closeable {
+) : Closeable, Runnable {
 
   @Native
   private var ptr: Long = nativeNew(keepAlive, strictMode)
-  private val listeners = HashSet<EventListener>()
+  private val listeners = HashSet<Listener>()
 
   @Volatile
-  private var active = false
+  private var running = false
   private lateinit var context: JSContext
-  private var seq = 0
-  private val envs = HashMap(customEnvs)
+  private var sequence = 0
+  private val environmentVariables = HashMap(customEnvs)
   private val versions = HashMap(customVersions)
 
+  /**
+   * The root directory for node.js, set by [chroot]
+   */
   private var root: File? = null
+
+  /**
+   * The thread that running node
+   */
   private var thread: Thread? = null
 
-  fun start(vararg args: String) {
-    seq = counter.incrementAndGet()
-    thread = thread(isDaemon = true, name = "knode(${seq})") {
-      try {
-        val execArgs = ArrayList<String>()
-        execArgs.add(exec.absolutePath)
-        execArgs.addAll(args)
-        Log.d(TAG, "exec ${execArgs.joinToString(" ")}")
+  /**
+   * The execute arguments for node
+   */
+  private val execArgs = ArrayList<String>()
 
-        val exitCode = nativeStart(execArgs.toTypedArray())
-        Log.i(TAG, "node exited: $exitCode")
-        eventOnExited(exitCode)
-      } catch (error: JSException) {
-        eventOnError(error)
-      } catch (error: Exception) {
-        Log.w(TAG, "unexpected exception", error)
-      }
+  /**
+   * Start node instance with arguments
+   */
+  fun start(vararg args: String) {
+    execArgs.clear()
+    execArgs.add(exec.absolutePath)
+    execArgs.addAll(args)
+    sequence = counter.incrementAndGet()
+    thread = Thread(this, "knode(${sequence})").also {
+      it.isDaemon = true
+      it.start()
     }
   }
 
-  fun addEventListener(listener: EventListener) = synchronized(this) {
+  override fun run() {
+    try {
+      Log.d(TAG, "exec ${execArgs.joinToString(" ")}")
+      val exitCode = nativeStart(execArgs.toTypedArray())
+      Log.i(TAG, "node exited: $exitCode")
+      eventOnStopped(exitCode)
+    } catch (error: JSException) {
+      eventOnError(error)
+    } catch (error: Exception) {
+      Log.w(TAG, "unexpected exception", error)
+    }
+  }
+
+  /**
+   * Add a listener to listen the state of node instance
+   */
+  fun addListener(listener: Listener) = synchronized(this) {
     listeners.add(listener)
   }
 
   /**
-   * Removes a listener from this Process
-   * @param listener the listener interface object to remove
+   * Removes a listener from this node instance
    */
-  fun removeEventListener(listener: EventListener) = synchronized(this) {
+  fun removeListener(listener: Listener) = synchronized(this) {
     listeners.remove(listener)
   }
 
   /**
    * Determines if the process is currently active.  If it is inactive, either it hasn't
-   * yet been started, or the process completed. Use an @EventListener to determine the
+   * yet been started, or the process completed. Use aListener] to determine the
    * state.
    * @return true if active, false otherwise
    */
-  private fun isActive(): Boolean {
-    return active && ptr != 0L
+  private fun isRunning(): Boolean {
+    return running && ptr != 0L
   }
 
   fun addEnv(key: String, value: String) {
-    envs[key] = value
+    environmentVariables[key] = value
   }
 
   fun addVersion(key: String, value: String) {
@@ -105,13 +133,13 @@ class KNode(
    */
   fun exit(exitCode: Int) {
     Log.w(TAG, "exit($exitCode)", Exception())
-    if (!isActive()) {
-      Log.w(TAG, "dispose but not active")
+    if (!isRunning()) {
+      Log.w(TAG, "The node is ")
       Thread.dumpStack()
       return
     }
     nativeExit(exitCode)
-    active = false
+    running = false
   }
 
   override fun close() {
@@ -119,8 +147,8 @@ class KNode(
   }
 
   fun post(action: Runnable): Boolean {
-    if (!isActive()) {
-      Log.w(TAG, "Submit but not active: active=$active, ptr=$ptr, seq=$seq", Exception())
+    if (!isRunning()) {
+      Log.w(TAG, "Submit but not active: active=$running, ptr=$ptr, seq=$sequence", Exception())
       return false
     }
     if (isInNodeThread()) {
@@ -131,15 +159,15 @@ class KNode(
   }
 
   @Suppress("unused")
-  private fun onBeforeStart(context: JSContext) {
-    Log.i(TAG, "onBeforeStart")
+  private fun attach(context: JSContext) {
+    Log.i(TAG, "attach")
     this.context = context
-    active = true
+    running = true
     context.node = this
-    check(isActive()) { "isActive() doesn't match the current state" }
+    check(isRunning()) { "isActive() doesn't match the current state" }
     attachStdOutput(context)
     try {
-      eventOnNodeBeforeStart(context)
+      eventOnAttach(context)
     } catch (error: Throwable) {
       Log.w(TAG, "eventOnNodeBeforeStart", error)
     }
@@ -175,7 +203,7 @@ process.stdout.isRaw = true;
     if (output.supportsColor) {
       setEnv("COLORTERM", "truecolor")
     }
-    envs.entries.forEach {
+    environmentVariables.entries.forEach {
       setEnv(it.key, it.value)
     }
     setupCode.append("process.execPath = '${fs.path(exec)}'\n")
@@ -199,12 +227,28 @@ process.stdout.isRaw = true;
   }
 
 
+  /**
+   * Change the root filesystem,
+   * once you call this method, the filesystem for node will be changed to a virtual filesystem.
+   * Call [mount] to mount addition files/directories and set custom permissions
+   *
+   * @param dir The directory path in the real filesystem
+   */
   fun chroot(dir: File) {
     Log.d(TAG, "chroot $dir")
     this.root = dir
     nativeChroot(dir.absolutePath)
   }
 
+  /**
+   * Mount a [src] file/directory in the real filesystem as [dst] in the virtual file system
+   *
+   * @param src The directory path in the real filesystem
+   * @param dst The destination path in the virtual filesystem
+   * @param mode The file permission, see [FileAccessMode]
+   * @param mapping If the [dst] path related to [root] is not exists in real filesystem,
+   * whether to create one to make it visible when list files in it's parent directory
+   */
   fun mount(src: File, dst: String, @FileAccessMode mode: Int, mapping: Boolean = true) {
     Log.d(TAG, "mount $src as $dst($mode), mapping=$mapping")
     check(src.exists()) { "File doesn't exists: $src, fs=$fs" }
@@ -231,9 +275,9 @@ process.stdout.isRaw = true;
   }
 
   @Suppress("unused")
-  private fun onBeforeExit(context: JSContext) {
-    Log.w(TAG, "onBeforeExit")
-    eventOnBeforeExit(context)
+  private fun detach(context: JSContext) {
+    Log.w(TAG, "detach()")
+    eventOnDetach(context)
   }
 
   internal fun checkThread() {
@@ -247,7 +291,7 @@ process.stdout.isRaw = true;
   }
 
   private fun attachStdOutput(context: JSContext) {
-    Log.d("KNode", "attachStdOutput")
+    Log.d(TAG, "attachStdOutput")
     val process: JSObject = context.get("process")
     val stdout: JSObject = process.get("stdout")
     stdout.set("write", object : JSFunction(context, "write") {
@@ -265,37 +309,59 @@ process.stdout.isRaw = true;
     })
   }
 
-  private fun eventOnNodeBeforeStart(context: JSContext) {
-    Log.i(TAG, "eventOnNodeBeforeStart")
+  private fun eventOnAttach(context: JSContext) {
+    Log.i(TAG, "eventOnAttach()")
     fs.mount(context.node)
-    listeners.forEach { it.onNodeBeforeStart(context) }
+    listeners.forEach { it.onAttach(context) }
   }
 
   private fun eventOnPrepared(context: JSContext) {
-    Log.i(TAG, "eventOnPrepared")
+    Log.i(TAG, "eventOnPrepared()")
     listeners.forEach {
       try {
-        it.onNodePrepared(context)
+        it.onPrepared(context)
       } catch (error: Throwable) {
-        Log.w(TAG, "An error occurred in onNodePrepared")
+        Log.w(TAG, "An error occurred in eventOnPrepared(), listener=$it", error)
+        throw error
       }
     }
   }
 
-  private fun eventOnBeforeExit(context: JSContext) {
-    Log.i(TAG, "eventOnBeforeExit")
-    listeners.forEach { it.onNodeBeforeExit(context) }
+  private fun eventOnDetach(context: JSContext) {
+    Log.i(TAG, "onDetach()")
+    listeners.forEach {
+      try {
+        it.onDetach(context)
+      } catch (error: Throwable) {
+        Log.w(TAG, "An error occurred in eventOnDetach(), listener=$it", error)
+        throw error
+      }
+    }
   }
 
-  private fun eventOnExited(exitCode: Int) {
-    Log.w(TAG, "eventOnExited: exitCode=$exitCode")
-    active = false
-    listeners.forEach { it.onNodeExited(exitCode) }
+  private fun eventOnStopped(exitCode: Int) {
+    Log.w(TAG, "eventOnStopped: exitCode=$exitCode")
+    running = false
+    listeners.forEach {
+      try {
+        it.onStopped(exitCode)
+      } catch (error: Throwable) {
+        Log.w(TAG, "An error occurred in onStopped(), listener=$it", error)
+        throw error
+      }
+    }
   }
 
   private fun eventOnError(error: JSException) {
     Log.e(TAG, "eventOnError")
-    listeners.forEach { it.onNodeError(error) }
+    listeners.forEach {
+      try {
+        it.onError(error)
+      } catch (error: Throwable) {
+        Log.w(TAG, "An error occurred in onError(), listener=$it", error)
+        throw error
+      }
+    }
   }
 
   private external fun nativeNew(keepAlive: Boolean, strict: Boolean): Long
@@ -310,17 +376,31 @@ process.stdout.isRaw = true;
 
   private external fun nativeChroot(path: String)
 
-  interface EventListener {
+  interface Listener {
+    /**
+     * The node is starting, do environment initialization work in this callback
+     */
+    fun onAttach(context: JSContext) {}
 
-    fun onNodeBeforeStart(context: JSContext) {}
+    /**
+     * The node environment is ready, do anything you want
+     */
+    fun onPrepared(context: JSContext) {}
 
-    fun onNodePrepared(context: JSContext) {}
+    /**
+     * The node is going to stop
+     */
+    fun onDetach(context: JSContext) {}
 
-    fun onNodeBeforeExit(context: JSContext) {}
+    /**
+     * The node has been stopped, it's time to cleanup resources
+     */
+    fun onStopped(exitCode: Int) {}
 
-    fun onNodeExited(exitCode: Int) {}
-
-    fun onNodeError(error: JSException) {}
+    /**
+     * Whoops :( something went wrong
+     */
+    fun onError(error: JSException) {}
   }
 
   companion object {

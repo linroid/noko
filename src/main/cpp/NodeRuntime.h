@@ -37,8 +37,8 @@ class NodeRuntime {
 
 private:
   jobject jThis_ = nullptr;
-  jmethodID onBeforeStart_ = nullptr;
-  jmethodID onBeforeExit_ = nullptr;
+  jmethodID jAttach_ = nullptr;
+  jmethodID jDetach_ = nullptr;
 
   bool running_ = false;
   std::thread::id threadId_;
@@ -68,9 +68,9 @@ private:
 
   void CloseLoop();
 
-  void OnPrepared();
+  void Attach();
 
-  void OnBeforeExit();
+  void Detach();
 
 public:
   jobject jContext_ = nullptr;
@@ -85,7 +85,7 @@ public:
   v8::Persistent<v8::Context> context_;
   v8::Persistent<v8::Function> require_;
 
-  NodeRuntime(JNIEnv *env, jobject jThis, jmethodID onBeforeStart, jmethodID onBeforeExit, bool keepAlive, bool strict);
+  NodeRuntime(JNIEnv *env, jobject jThis, jmethodID jAttach, jmethodID jDetach, bool keepAlive, bool strict);
 
   ~NodeRuntime();
 

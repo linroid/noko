@@ -31,12 +31,12 @@ std::unique_ptr<node::MultiIsolatePlatform> platform;
 NodeRuntime::NodeRuntime(
   JNIEnv *env,
   jobject jThis,
-  jmethodID onBeforeStart,
-  jmethodID onBeforeExit,
+  jmethodID jAttach,
+  jmethodID jDetach,
   bool keepAlive,
   bool strict
-) : onBeforeStart_(onBeforeStart),
-    onBeforeExit_(onBeforeExit),
+) : jAttach_(jAttach),
+    jDetach_(jDetach),
     keepAlive_(keepAlive),
     strict_(strict) {
 
@@ -80,8 +80,8 @@ NodeRuntime::~NodeRuntime() {
   LOGE("~NodeRuntime() finished, instanceCount=%d", instanceCount_);
 }
 
-void NodeRuntime::OnPrepared() {
-  LOGI("OnPrepared: %p", this);
+void NodeRuntime::Attach() {
+  LOGI("Attach: %p", this);
   v8::Local<v8::Context> context = context_.Get(isolate_);
   v8::HandleScope handleScope(isolate_);
   v8::Context::Scope contextScope(context);
@@ -97,13 +97,13 @@ void NodeRuntime::OnPrepared() {
     this->jTrue_ = env->NewGlobalRef(JSBoolean::Wrap(env, this, trueValue, true));
     this->jFalse_ = env->NewGlobalRef(JSBoolean::Wrap(env, this, falseValue, false));
     JSContext::SetShared(env, this);
-    env->CallVoidMethod(jThis_, onBeforeStart_, jContext_);
+    env->CallVoidMethod(jThis_, jAttach_, jContext_);
   EXIT_JNI(vm_)
 }
 
-void NodeRuntime::OnBeforeExit() {
+void NodeRuntime::Detach() {
   ENTER_JNI(vm_)
-    env->CallVoidMethod(jThis_, onBeforeExit_, jContext_);
+    env->CallVoidMethod(jThis_, jDetach_, jContext_);
   EXIT_JNI(vm_)
 }
 
@@ -149,7 +149,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
     context_.Reset(isolate_, context);
     global_.Reset(isolate_, context->Global());
 
-    OnPrepared();
+    Attach();
 
     // Set up the Node.js instance for execution, and run code inside of it.
     // There is also a variant that takes a callback and provides it with
@@ -175,7 +175,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
     });
 
     RunLoop(env);
-    OnBeforeExit();
+    Detach();
     // node::EmitExit() returns the current exit code.
     auto exitCodeMaybe = node::EmitProcessExit(env);
     if (exitCodeMaybe.IsJust()) {
@@ -439,6 +439,7 @@ void NodeRuntime::Handle(uv_async_t *handle) {
 // }
 
 v8::Local<v8::Value> NodeRuntime::Require(const char *path) {
+  CheckThread();
   v8::EscapableHandleScope scope(isolate_);
   auto context = context_.Get(isolate_);
   auto require = require_.Get(isolate_);
@@ -453,6 +454,7 @@ v8::Local<v8::Value> NodeRuntime::Require(const char *path) {
 }
 
 void NodeRuntime::Mount(const char *src, const char *dst, const int mode) {
+  CheckThread();
   v8::Locker _locker(isolate_);
   v8::HandleScope _handleScope(isolate_);
   auto context = context_.Get(isolate_);
@@ -461,6 +463,7 @@ void NodeRuntime::Mount(const char *src, const char *dst, const int mode) {
 }
 
 void NodeRuntime::Chroot(const char *path) {
+  CheckThread();
   v8::Locker _locker(isolate_);
   v8::HandleScope _handleScope(isolate_);
   auto context = context_.Get(isolate_);
@@ -469,6 +472,7 @@ void NodeRuntime::Chroot(const char *path) {
 }
 
 void NodeRuntime::Throw(JNIEnv *env, v8::Local<v8::Value> exception) {
+  CheckThread();
   auto jException = JSError::ToException(env, this, exception);
   env->Throw((jthrowable) jException);
 }

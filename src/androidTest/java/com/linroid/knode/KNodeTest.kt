@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit
  * @author linroid
  * @since 2019/11/27
  */
-abstract class KNodeTest : KNode.EventListener, StdOutput {
+abstract class KNodeTest : KNode.Listener, StdOutput {
 
   private lateinit var file: File
   private val startLatch = CountDownLatch(1)
@@ -28,14 +28,14 @@ abstract class KNodeTest : KNode.EventListener, StdOutput {
     file = File.createTempFile("tests_", "temp.js")
     node = KNode(appContext.cacheDir, this, keepAlive = true)
     node.start(file.absolutePath)
-    node.addEventListener(this)
+    node.addListener(this)
     startLatch.await(3, TimeUnit.SECONDS)
     println("Node.js is ready")
   }
 
-  override fun onNodePrepared(context: JSContext) {
-    super.onNodePrepared(context)
-    println("onNodePrepared")
+  override fun onPrepared(context: JSContext) {
+    super.onPrepared(context)
+    println("onPrepared")
     this.context = context
     startLatch.countDown()
   }

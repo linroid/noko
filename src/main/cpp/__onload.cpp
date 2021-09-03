@@ -34,8 +34,8 @@ pthread_t thread_stderr;
 struct JvmNodeClass {
   JNIEnv *env;
   jfieldID ptr;
-  jmethodID onBeforeStart;
-  jmethodID onBeforeExit;
+  jmethodID attach;
+  jmethodID detach;
 } NodeClass;
 
 jmethodID jRunMethodId;
@@ -168,7 +168,7 @@ JNICALL void nativeChroot(JNIEnv *env, jobject jThis, jstring jPath) {
 }
 
 JNICALL jlong nativeNew(JNIEnv *env, jobject jThis, jboolean keepAlive, jboolean strict) {
-  auto *runtime = new NodeRuntime(env, jThis, NodeClass.onBeforeStart, NodeClass.onBeforeExit, keepAlive, strict);
+  auto *runtime = new NodeRuntime(env, jThis, NodeClass.attach, NodeClass.detach, keepAlive, strict);
   return reinterpret_cast<jlong>(runtime);
 }
 
@@ -254,8 +254,8 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
   jRunMethodId = env->GetMethodID(jRunnableClass, "run", "()V");
 
   NodeClass.ptr = env->GetFieldID(clazz, "ptr", "J");
-  NodeClass.onBeforeStart = env->GetMethodID(clazz, "onBeforeStart", "(Lcom/linroid/knode/js/JSContext;)V");
-  NodeClass.onBeforeExit = env->GetMethodID(clazz, "onBeforeExit", "(Lcom/linroid/knode/js/JSContext;)V");
+  NodeClass.attach = env->GetMethodID(clazz, "attach", "(Lcom/linroid/knode/js/JSContext;)V");
+  NodeClass.detach = env->GetMethodID(clazz, "detach", "(Lcom/linroid/knode/js/JSContext;)V");
 
   LOAD_JNI_CLASS(JSValue)
   LOAD_JNI_CLASS(JSContext)

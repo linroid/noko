@@ -20,6 +20,7 @@ import java.io.Closeable
 import java.io.File
 import java.lang.annotation.Native
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.concurrent.thread
 
 /**
  * Create a new node instance
@@ -40,7 +41,7 @@ class KNode(
   private val fs: FileSystem = RealFileSystem(),
   keepAlive: Boolean = false,
   private val strictMode: Boolean = true,
-) : Closeable, Runnable {
+) : Closeable {
 
   @Native
   private var ptr: Long = nativeNew(keepAlive, strictMode)
@@ -64,34 +65,29 @@ class KNode(
   private var thread: Thread? = null
 
   /**
-   * The execute arguments for node
-   */
-  private val execArgs = ArrayList<String>()
-
-  /**
    * Start node instance with arguments
    */
   fun start(vararg args: String) {
-    execArgs.clear()
+    val execArgs = ArrayList<String>()
     execArgs.add(exec.absolutePath)
     execArgs.addAll(args)
     sequence = counter.incrementAndGet()
-    thread = Thread(this, "knode(${sequence})").also {
-      it.isDaemon = true
-      it.start()
+    thread = thread(isDaemon = true, name = "knode(${sequence})") {
+      startInternal(execArgs.toTypedArray())
     }
   }
 
-  override fun run() {
+  private fun startInternal(execArgs: Array<String>) {
     try {
       Log.d(TAG, "exec ${execArgs.joinToString(" ")}")
-      val exitCode = nativeStart(execArgs.toTypedArray())
+      val exitCode = nativeStart(execArgs)
       Log.i(TAG, "node exited: $exitCode")
       eventOnStopped(exitCode)
     } catch (error: JSException) {
       eventOnError(error)
     } catch (error: Exception) {
       Log.w(TAG, "unexpected exception", error)
+      throw error
     }
   }
 

@@ -10,6 +10,7 @@
 #include "JSUndefined.h"
 #include "JSNull.h"
 #include "../JniPropertyObserver.h"
+#include "../EnvHelper.h"
 
 jclass JSObject::jClazz;
 jmethodID JSObject::jConstructor;
@@ -104,11 +105,10 @@ static void SetterCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
   v8::String::Value unicodeString(isolate, key);
 
   auto observer = reinterpret_cast<JniPropertyObserver *>(v8Observer->Value());
-  ENTER_JNI(observer->runtime->vm_)
-    jstring jKey = env->NewString(*unicodeString, unicodeString.length());
-    jobject jValue = observer->runtime->ToJava(env, newValue);
-    observer->onPropertyChanged(env, jKey, jValue);
-  EXIT_JNI(observer->runtime->vm_)
+  EnvHelper env(observer->runtime->vm_);
+  jstring jKey = env->NewString(*unicodeString, unicodeString.length());
+  jobject jValue = observer->runtime->ToJava(*env, newValue);
+  observer->onPropertyChanged(*env, jKey, jValue);
 }
 
 static void ObserverWeakCallback(const v8::WeakCallbackInfo<JniPropertyObserver> &data) {

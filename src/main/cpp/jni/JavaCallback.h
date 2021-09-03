@@ -9,18 +9,18 @@
 #include "../NodeRuntime.h"
 #include "JSValue.h"
 
-class JniCallback {
+class JavaCallback {
 private:
-  JavaVM *vm = nullptr;
-  jclass clazz;
-  jmethodID methodId;
+  JavaVM *vm_ = nullptr;
+  jclass clazz_;
+  jmethodID methodId_;
 public:
   NodeRuntime *runtime = nullptr;
   jobject that;
 
-  JniCallback(NodeRuntime *runtime, JNIEnv *env, jobject that, jclass clazz, jmethodID methodId);
+  JavaCallback(NodeRuntime *runtime, JNIEnv *env, jobject that, jclass clazz, jmethodID methodId);
 
-  ~JniCallback();
+  ~JavaCallback();
 
   void Call(const v8::FunctionCallbackInfo<v8::Value> &info);
 };

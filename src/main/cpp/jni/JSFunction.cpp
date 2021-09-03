@@ -7,7 +7,8 @@
 #include "JSContext.h"
 #include "JSString.h"
 #include "JSError.h"
-#include "JniCallback.h"
+#include "JavaCallback.h"
+#include "../EnvHelper.h"
 
 jclass JSFunction::jClazz;
 jmethodID JSFunction::jConstructor;
@@ -16,16 +17,15 @@ jmethodID JSFunction::jCall;
 void staticCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
   // CHECK(info.Data()->IsExternal());
   auto external = info.Data().As<v8::External>();
-  auto callback = reinterpret_cast<JniCallback *>(external->Value());
+  auto callback = reinterpret_cast<JavaCallback *>(external->Value());
   callback->Call(info);
 }
 
-static void WeakCallback(const v8::WeakCallbackInfo<JniCallback> &data) {
+static void WeakCallback(const v8::WeakCallbackInfo<JavaCallback> &data) {
   LOGW("ObserverWeakCallback");
-  JniCallback *callback = data.GetParameter();
-  ENTER_JNI(callback->runtime->vm_)
-    JSValue::SetReference(env, callback->that, 0);
-  EXIT_JNI(callback->runtime->vm_)
+  JavaCallback *callback = data.GetParameter();
+  EnvHelper env(callback->runtime->vm_);
+  JSValue::SetReference(*env, callback->that, 0);
   delete callback;
 }
 
@@ -33,7 +33,7 @@ void JSFunction::New(JNIEnv *env, jobject jThis, jstring jName) {
   const uint16_t *name = env->GetStringChars(jName, nullptr);
   const jint nameLen = env->GetStringLength(jName);
   V8_SCOPE(env, jThis)
-  auto callback = new JniCallback(runtime, env, jThis, JSValue::jClazz, jCall);
+  auto callback = new JavaCallback(runtime, env, jThis, JSValue::jClazz, jCall);
   auto data = v8::External::New(isolate, callback);
   auto context = runtime->context_.Get(isolate);
   auto func = v8::FunctionTemplate::New(isolate, staticCallback, data)->GetFunction(context).ToLocalChecked();

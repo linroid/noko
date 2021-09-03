@@ -20,6 +20,7 @@
 #include "jni/JSPromise.h"
 #include "jni/JSArray.h"
 #include "jni/JSError.h"
+#include "EnvHelper.h"
 
 int NodeRuntime::instanceCount_ = 0;
 std::mutex NodeRuntime::sharedMutex_;
@@ -62,15 +63,16 @@ NodeRuntime::~NodeRuntime() {
 #pragma clang diagnostic pop
   std::lock_guard<std::mutex> sharedLock(sharedMutex_);
   std::lock_guard<std::mutex> asyncLock(asyncMutex_);
-  ENTER_JNI(vm_)
+  {
+    EnvHelper env(vm_);
     env->DeleteGlobalRef(jThis_);
     env->DeleteGlobalRef(jUndefined_);
     env->DeleteGlobalRef(jNull_);
     env->DeleteGlobalRef(jTrue_);
     env->DeleteGlobalRef(jFalse_);
-    JSContext::ClearPtr(env, jContext_);
+    JSContext::ClearPtr(*env, jContext_);
     env->DeleteGlobalRef(jContext_);
-  EXIT_JNI(vm_)
+  }
 
   isolate_ = nullptr;
   running_ = false;
@@ -86,25 +88,23 @@ void NodeRuntime::Attach() {
   v8::HandleScope handleScope(isolate_);
   v8::Context::Scope contextScope(context);
   running_ = true;
-  ENTER_JNI(vm_)
-    auto nullValue = new v8::Persistent<v8::Value>(isolate_, v8::Null(isolate_));
-    auto undefinedValue = new v8::Persistent<v8::Value>(isolate_, v8::Undefined(isolate_));
-    auto trueValue = new v8::Persistent<v8::Value>(isolate_, v8::True(isolate_));
-    auto falseValue = new v8::Persistent<v8::Value>(isolate_, v8::False(isolate_));
-    this->jContext_ = env->NewGlobalRef(JSContext::Wrap(env, this));
-    this->jNull_ = env->NewGlobalRef(JSNull::Wrap(env, this, nullValue));
-    this->jUndefined_ = env->NewGlobalRef(JSUndefined::Wrap(env, this, undefinedValue));
-    this->jTrue_ = env->NewGlobalRef(JSBoolean::Wrap(env, this, trueValue, true));
-    this->jFalse_ = env->NewGlobalRef(JSBoolean::Wrap(env, this, falseValue, false));
-    JSContext::SetShared(env, this);
-    env->CallVoidMethod(jThis_, jAttach_, jContext_);
-  EXIT_JNI(vm_)
+  EnvHelper env(vm_);
+  auto nullValue = new v8::Persistent<v8::Value>(isolate_, v8::Null(isolate_));
+  auto undefinedValue = new v8::Persistent<v8::Value>(isolate_, v8::Undefined(isolate_));
+  auto trueValue = new v8::Persistent<v8::Value>(isolate_, v8::True(isolate_));
+  auto falseValue = new v8::Persistent<v8::Value>(isolate_, v8::False(isolate_));
+  this->jContext_ = env->NewGlobalRef(JSContext::Wrap(*env, this));
+  this->jNull_ = env->NewGlobalRef(JSNull::Wrap(*env, this, nullValue));
+  this->jUndefined_ = env->NewGlobalRef(JSUndefined::Wrap(*env, this, undefinedValue));
+  this->jTrue_ = env->NewGlobalRef(JSBoolean::Wrap(*env, this, trueValue, true));
+  this->jFalse_ = env->NewGlobalRef(JSBoolean::Wrap(*env, this, falseValue, false));
+  JSContext::SetShared(*env, this);
+  env->CallVoidMethod(jThis_, jAttach_, jContext_);
 }
 
 void NodeRuntime::Detach() {
-  ENTER_JNI(vm_)
-    env->CallVoidMethod(jThis_, jDetach_, jContext_);
-  EXIT_JNI(vm_)
+  EnvHelper env(vm_);
+  env->CallVoidMethod(jThis_, jDetach_, jContext_);
 }
 
 int NodeRuntime::Start(std::vector<std::string> &args) {
@@ -165,7 +165,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
     //         "const publicRequire ="
     //         "  require('module').createRequire(process.cwd() + '/');"
     //         "globalThis.require = publicRequire;"
-    //         "require('vm').runInThisContext(process.argv[1]);");
+    //         "require('vm_').runInThisContext(process.argv[1]);");
 
     isolate_->SetMicrotasksPolicy(v8::MicrotasksPolicy::kAuto);
     node::LoadEnvironment(env, [&](const node::StartExecutionCallbackInfo &info) -> v8::MaybeLocal<v8::Value> {
@@ -357,9 +357,8 @@ bool NodeRuntime::Await(const std::function<void()> &runnable) {
     runnable();
     return true;
   } else if (strict_) {
-    ENTER_JNI(vm_)
-      env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), "Illegal thread access");
-    EXIT_JNI(vm_)
+    EnvHelper env(vm_);
+    env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), "Illegal thread access");
     return true;
   } else {
     std::condition_variable cv;

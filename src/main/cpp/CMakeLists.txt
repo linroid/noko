@@ -3,6 +3,7 @@ set(NODE_LIB_DIR ${PROJECT_SOURCE_DIR}/prebuilts/${ANDROID_ABI})
 
 set(SOURCES
         __onload.cpp
+        EnvHelper.cpp
         NodeRuntime.cpp
         JniPropertyObserver.cpp
         jni/JSContext.cpp
@@ -15,7 +16,7 @@ set(SOURCES
         jni/JSArray.cpp
         jni/JSNull.cpp
         jni/JSFunction.cpp
-        jni/JniCallback.cpp
+        jni/JavaCallback.cpp
         jni/JSError.cpp
         jni/JSPromise.cpp)
 

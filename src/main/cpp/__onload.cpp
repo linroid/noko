@@ -235,7 +235,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
   if (start_redirecting_stdout_stderr() == -1) {
     LOGE("Couldn't start redirecting stdout and stderr to logcat.");
   }
-  JNIEnv *env;
+  JNIEnv *env = nullptr;
   ares_library_init_jvm(vm);
   if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
     return JNI_ERR;

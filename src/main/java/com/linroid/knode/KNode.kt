@@ -32,11 +32,11 @@ class KNode(
   private val output: StdOutput,
   private val fs: FileSystem = RealFileSystem(),
   keepAlive: Boolean = false,
-  val strict: Boolean = true,
+  private val strictMode: Boolean = true,
 ) : Closeable {
 
   @Native
-  private var ptr: Long = nativeNew(keepAlive, strict)
+  private var ptr: Long = nativeNew(keepAlive, strictMode)
   private val listeners = HashSet<EventListener>()
 
   @Volatile
@@ -136,9 +136,13 @@ class KNode(
     this.context = context
     active = true
     context.node = this
-    check(isActive()) { "isActive is not match the current state" }
+    check(isActive()) { "isActive() doesn't match the current state" }
     attachStdOutput(context)
-    eventOnNodeBeforeStart(context)
+    try {
+      eventOnNodeBeforeStart(context)
+    } catch (error: Throwable) {
+      Log.w(TAG, "eventOnNodeBeforeStart", error)
+    }
 
     // val process: JSObject = context.get("process")
 
@@ -233,7 +237,7 @@ process.stdout.isRaw = true;
   }
 
   internal fun checkThread() {
-    if (strict) {
+    if (strictMode) {
       check(isInNodeThread()) { "Operating js object is only allowed in origin thread: current=${Thread.currentThread()}" }
     }
   }
@@ -269,7 +273,13 @@ process.stdout.isRaw = true;
 
   private fun eventOnPrepared(context: JSContext) {
     Log.i(TAG, "eventOnPrepared")
-    listeners.forEach { it.onNodePrepared(context) }
+    listeners.forEach {
+      try {
+        it.onNodePrepared(context)
+      } catch (error: Throwable) {
+        Log.w(TAG, "An error occurred in onNodePrepared")
+      }
+    }
   }
 
   private fun eventOnBeforeExit(context: JSContext) {

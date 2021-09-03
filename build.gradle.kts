@@ -4,18 +4,18 @@ plugins {
 }
 
 android {
-  compileSdkVersion(Builds.compileSdkVersion)
+  compileSdk = Builds.compileSdk
 
   defaultConfig {
-    minSdkVersion(Builds.minSdkVersion)
-    targetSdkVersion(Builds.compileSdkVersion)
+    minSdk = Builds.minSdk
+    targetSdk = Builds.compileSdk
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     consumerProguardFiles(file("consumer-rules.pro"))
     externalNativeBuild {
       cmake {
         cppFlags += "-std=c++11 -fexceptions"
-        arguments += "-DANDROID_STL=c++_shared"
+        arguments += setOf("-DANDROID_ARM_MODE=arm", "-DANDROID_STL=c++_shared")
 
         if (!Builds.isRelease) {
           cppFlags += " -DNODE_DEBUG"

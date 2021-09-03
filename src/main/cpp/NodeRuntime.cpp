@@ -97,7 +97,6 @@ void NodeRuntime::OnPrepared() {
     this->jTrue_ = env->NewGlobalRef(JSBoolean::Wrap(env, this, trueValue, true));
     this->jFalse_ = env->NewGlobalRef(JSBoolean::Wrap(env, this, falseValue, false));
     JSContext::SetShared(env, this);
-
     env->CallVoidMethod(jThis_, onBeforeStart_, jContext_);
   EXIT_JNI(vm_)
 }

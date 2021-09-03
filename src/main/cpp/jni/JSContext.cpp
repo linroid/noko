@@ -1,4 +1,3 @@
-#include <stdint.h>
 //
 // Created by linroid on 2019-10-20.
 //
@@ -10,8 +9,9 @@
 #include "JSObject.h"
 #include "JSValue.h"
 #include "JSString.h"
-#include "../NodeRuntime.h"
 #include "JSError.h"
+#include <cstdint>
+#include "../NodeRuntime.h"
 
 jclass JSContext::jClazz;
 jmethodID JSContext::jConstructor;

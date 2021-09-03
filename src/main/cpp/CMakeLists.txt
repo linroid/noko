@@ -5,20 +5,20 @@ set(SOURCES
         __onload.cpp
         EnvHelper.cpp
         NodeRuntime.cpp
-        JniPropertyObserver.cpp
-        jni/JSContext.cpp
-        jni/JSValue.cpp
-        jni/JSObject.cpp
-        jni/JSUndefined.cpp
-        jni/JSBoolean.cpp
-        jni/JSNumber.cpp
-        jni/JSString.cpp
-        jni/JSArray.cpp
-        jni/JSNull.cpp
-        jni/JSFunction.cpp
-        jni/JavaCallback.cpp
-        jni/JSError.cpp
-        jni/JSPromise.cpp)
+        observable/PropertiesObserver.cpp
+        types/JSContext.cpp
+        types/JSValue.cpp
+        types/JSObject.cpp
+        types/JSUndefined.cpp
+        types/JSBoolean.cpp
+        types/JSNumber.cpp
+        types/JSString.cpp
+        types/JSArray.cpp
+        types/JSNull.cpp
+        types/JSFunction.cpp
+        types/JavaCallback.cpp
+        types/JSError.cpp
+        types/JSPromise.cpp)
 
 #add_custom_command(
 #        OUTPUT ${LIB_NODE_OUTPUT}

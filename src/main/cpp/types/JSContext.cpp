@@ -128,7 +128,7 @@ void JSContext::ClearReference(JNIEnv *env, jobject jThis, jlong ref) {
   auto runtime = JSValue::GetRuntime(env, jThis);
   auto reference = reinterpret_cast<v8::Persistent<v8::Value> *>(ref);
 
-  LOGV("clear %p(runtime=%p)", reference, runtime);
+  LOGV("clear reference: reference=%p, runtime=%p", reference, runtime);
   if (runtime == nullptr) {
     delete reference;
     return;

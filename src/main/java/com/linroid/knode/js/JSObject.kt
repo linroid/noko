@@ -2,7 +2,7 @@ package com.linroid.knode.js
 
 import android.util.Log
 import com.google.gson.JsonObject
-import com.linroid.knode.observable.PropertyObserver
+import com.linroid.knode.observable.PropertiesObserver
 import java.lang.reflect.InvocationTargetException
 
 /**
@@ -90,7 +90,10 @@ open class JSObject : JSValue {
     return nativeKeys()
   }
 
-  fun watch(observer: PropertyObserver, vararg properties: String) {
+  /**
+   * Watch some properties to get notified once they are changed
+   */
+  fun watch(observer: PropertiesObserver, vararg properties: String) {
     nativeWatch(properties, observer)
   }
 
@@ -100,7 +103,7 @@ open class JSObject : JSValue {
   private external fun nativeSet(key: String, value: JSValue?)
   private external fun nativeDelete(key: String)
   private external fun nativeNew()
-  private external fun nativeWatch(properties: Array<out String>, observer: PropertyObserver)
+  private external fun nativeWatch(properties: Array<out String>, observer: PropertiesObserver)
 
   companion object {
     private const val TAG = "JSObject"

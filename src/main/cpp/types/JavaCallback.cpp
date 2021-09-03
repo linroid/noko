@@ -34,7 +34,7 @@ void JavaCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
     // TODO: Throw crash into v8
     info.GetReturnValue().Set(v8::Undefined(info.GetIsolate()));
     env->Throw(env->ExceptionOccurred());
-    if (env.IsDetached()) {
+    if (env.HasAttached()) {
       vm_->DetachCurrentThread();
     }
     return;

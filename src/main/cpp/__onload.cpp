@@ -9,18 +9,18 @@
 #include <cmath>
 #include <ares.h>
 #include "NodeRuntime.h"
-#include "jni/JSContext.h"
-#include "jni/JSValue.h"
-#include "jni/JSObject.h"
-#include "jni/JSUndefined.h"
-#include "jni/JSNumber.h"
-#include "jni/JSString.h"
-#include "jni/JSBoolean.h"
-#include "jni/JSArray.h"
-#include "jni/JSNull.h"
-#include "jni/JSFunction.h"
-#include "jni/JSError.h"
-#include "jni/JSPromise.h"
+#include "types/JSContext.h"
+#include "types/JSValue.h"
+#include "types/JSObject.h"
+#include "types/JSUndefined.h"
+#include "types/JSNumber.h"
+#include "types/JSString.h"
+#include "types/JSBoolean.h"
+#include "types/JSArray.h"
+#include "types/JSNull.h"
+#include "types/JSFunction.h"
+#include "types/JSError.h"
+#include "types/JSPromise.h"
 
 #define LOAD_JNI_CLASS(clazz) if (clazz::OnLoad(env) != JNI_OK) { \
     return JNI_ERR; \

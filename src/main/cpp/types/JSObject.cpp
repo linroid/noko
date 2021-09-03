@@ -9,7 +9,7 @@
 #include "JSString.h"
 #include "JSUndefined.h"
 #include "JSNull.h"
-#include "../JniPropertyObserver.h"
+#include "../observable/PropertiesObserver.h"
 #include "../EnvHelper.h"
 
 jclass JSObject::jClazz;
@@ -104,16 +104,16 @@ static void SetterCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
 
   v8::String::Value unicodeString(isolate, key);
 
-  auto observer = reinterpret_cast<JniPropertyObserver *>(v8Observer->Value());
+  auto observer = reinterpret_cast<PropertiesObserver *>(v8Observer->Value());
   EnvHelper env(observer->runtime->vm_);
   jstring jKey = env->NewString(*unicodeString, unicodeString.length());
   jobject jValue = observer->runtime->ToJava(*env, newValue);
   observer->onPropertyChanged(*env, jKey, jValue);
 }
 
-static void ObserverWeakCallback(const v8::WeakCallbackInfo<JniPropertyObserver> &data) {
-  LOGW("ObserverWeakCallback");
-  JniPropertyObserver *callback = data.GetParameter();
+static void ObserverWeakCallback(const v8::WeakCallbackInfo<PropertiesObserver> &data) {
+  PropertiesObserver *callback = data.GetParameter();
+  LOGW("ObserverWeakCallback: callback=%p", callback);
   delete callback;
 }
 
@@ -128,12 +128,14 @@ void JSObject::Watch(JNIEnv *env, jobject jThis, jobjectArray jKeys, jobject jOb
     const uint16_t *key = env->GetStringChars(jKey, nullptr);
     const jint keyLen = env->GetStringLength(jKey);
     auto v8Key = V8_STRING(isolate, key, keyLen);
+    env->ReleaseStringChars(jKey, key);
 
     /**
-     * Save necessary information on this object
-     * [0] -> key
-     * [1] -> value
-     * [2] -> observer
+     * Create a project and replace the property value,
+     * hold necessary information in this object
+     * [0] -> key, the property key
+     * [1] -> value, the value of key
+     * [2] -> observer, an observer to notify once the value change
      */
     auto holder = v8::Object::New(isolate);
 
@@ -155,16 +157,15 @@ void JSObject::Watch(JNIEnv *env, jobject jThis, jobjectArray jKeys, jobject jOb
       UNUSED(holder->Set(context, 1, v8::Undefined(isolate)));
     }
 
-    auto observer = new JniPropertyObserver(runtime, env, jObserver, methodId);
+    auto observer = new PropertiesObserver(runtime, env, jObserver, methodId);
     auto v8Observer = v8::External::New(isolate, observer);
     auto weakRef = new v8::Persistent<v8::Value>(isolate, v8Observer);
     weakRef->SetWeak(observer, ObserverWeakCallback, v8::WeakCallbackType::kParameter);
 
     UNUSED(holder->Set(context, 2, v8Observer));
 
+    // Now replace the origin value as our getter and setter
     UNUSED(that->DefineProperty(context, v8Key, descriptor));
-
-    env->ReleaseStringChars(jKey, key);
   }
 }
 
@@ -175,13 +176,13 @@ jint JSObject::OnLoad(JNIEnv *env) {
   }
 
   JNINativeMethod methods[] = {
-    {"nativeGet",    "(Ljava/lang/String;)Lcom/linroid/knode/js/JSValue;",                    (void *) (JSObject::Get)},
-    {"nativeSet",    "(Ljava/lang/String;Lcom/linroid/knode/js/JSValue;)V",                   (void *) (JSObject::Set)},
-    {"nativeNew",    "()V",                                                                   (void *) (JSObject::New)},
-    {"nativeHas",    "(Ljava/lang/String;)Z",                                                 (void *) (JSObject::Has)},
-    {"nativeDelete", "(Ljava/lang/String;)V",                                                 (void *) (JSObject::Delete)},
-    {"nativeKeys",   "()[Ljava/lang/String;",                                                 (void *) (JSObject::Keys)},
-    {"nativeWatch",  "([Ljava/lang/String;Lcom/linroid/knode/observable/PropertyObserver;)V", (void *) (JSObject::Watch)},
+    {"nativeGet",    "(Ljava/lang/String;)Lcom/linroid/knode/js/JSValue;",                      (void *) (JSObject::Get)},
+    {"nativeSet",    "(Ljava/lang/String;Lcom/linroid/knode/js/JSValue;)V",                     (void *) (JSObject::Set)},
+    {"nativeNew",    "()V",                                                                     (void *) (JSObject::New)},
+    {"nativeHas",    "(Ljava/lang/String;)Z",                                                   (void *) (JSObject::Has)},
+    {"nativeDelete", "(Ljava/lang/String;)V",                                                   (void *) (JSObject::Delete)},
+    {"nativeKeys",   "()[Ljava/lang/String;",                                                   (void *) (JSObject::Keys)},
+    {"nativeWatch",  "([Ljava/lang/String;Lcom/linroid/knode/observable/PropertiesObserver;)V", (void *) (JSObject::Watch)},
   };
   jClazz = (jclass) env->NewGlobalRef(clazz);
   jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/knode/js/JSContext;J)V");

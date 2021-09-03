@@ -5,7 +5,7 @@ import com.linroid.knode.js.JSNumber
 import com.linroid.knode.js.JSObject
 import com.linroid.knode.js.JSString
 import com.linroid.knode.js.JSValue
-import com.linroid.knode.observable.PropertyObserver
+import com.linroid.knode.observable.PropertiesObserver
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
@@ -78,7 +78,7 @@ class JSObjectTest : KNodeTest() {
   @Test
   fun watchProperties() = runInNode {
     println("watchProperties")
-    val observer = mock<PropertyObserver>()
+    val observer = mock<PropertiesObserver>()
     obj.watch(observer, "name", "age")
 
     obj.set("name", "Foo")

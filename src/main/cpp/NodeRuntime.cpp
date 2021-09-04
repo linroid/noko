@@ -137,9 +137,13 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
     }
 
     v8::Context::Scope contextScope(context);
-    auto flags = static_cast<node::EnvironmentFlags::Flags>(node::EnvironmentFlags::kOwnsProcessState |
-                                                            node::EnvironmentFlags::kOwnsEmbedded);
+    auto flags = static_cast<node::EnvironmentFlags::Flags>(node::EnvironmentFlags::kOwnsEmbedded
+      | node::EnvironmentFlags::kOwnsProcessState
+      | node::EnvironmentFlags::kTrackUnmanagedFds);
     LOGD("CreateEnvironment: flags=%lud", flags);
+    for (std::string &arg : args) {
+      LOGI("%s", arg.c_str());
+    }
     auto env = node::CreateEnvironment(isolateData, context, args, args, flags);
     node::SetProcessExitHandler(env, [](node::Environment *environment, int code) {
       LOGW("exiting node process: %d", code);

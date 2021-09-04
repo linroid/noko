@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit
  * @author linroid
  * @since 2019/11/27
  */
-abstract class KNodeTest : KNode.Listener, StdOutput {
+abstract class KNodeTest : KNode.LifecycleListener, StdOutput {
 
   private lateinit var file: File
   private val startLatch = CountDownLatch(1)
@@ -33,9 +33,9 @@ abstract class KNodeTest : KNode.Listener, StdOutput {
     println("Node.js is ready")
   }
 
-  override fun onPrepared(context: JSContext) {
-    super.onPrepared(context)
-    println("onPrepared")
+  override fun onNodeStart(context: JSContext) {
+    super.onNodeStart(context)
+    println("onNodeStart")
     this.context = context
     startLatch.countDown()
   }

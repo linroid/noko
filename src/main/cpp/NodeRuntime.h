@@ -101,7 +101,7 @@ public:
 
   v8::Local<v8::Value> Require(const char *path);
 
-  void Mount(const char *src, const char *dst, const int mode);
+  void MountFile(const char *src, const char *dst, const int mode);
 
   void Chroot(const char *path);
 

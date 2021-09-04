@@ -45,7 +45,7 @@ class KNode(
 
   @Native
   private var ptr: Long = nativeNew(keepAlive, strictMode)
-  private val listeners = HashSet<Listener>()
+  private val listeners = HashSet<LifecycleListener>()
 
   @Volatile
   private var running = false
@@ -82,7 +82,7 @@ class KNode(
       Log.d(TAG, "exec ${execArgs.joinToString(" ")}")
       val exitCode = nativeStart(execArgs)
       Log.i(TAG, "node exited: $exitCode")
-      eventOnStopped(exitCode)
+      eventOnExit(exitCode)
     } catch (error: JSException) {
       eventOnError(error)
     } catch (error: Exception) {
@@ -94,15 +94,15 @@ class KNode(
   /**
    * Add a listener to listen the state of node instance
    */
-  fun addListener(listener: Listener) = synchronized(this) {
-    listeners.add(listener)
+  fun addListener(lifecycleListener: LifecycleListener) = synchronized(this) {
+    listeners.add(lifecycleListener)
   }
 
   /**
    * Removes a listener from this node instance
    */
-  fun removeListener(listener: Listener) = synchronized(this) {
-    listeners.remove(listener)
+  fun removeListener(lifecycleListener: LifecycleListener) = synchronized(this) {
+    listeners.remove(lifecycleListener)
   }
 
   /**
@@ -125,16 +125,16 @@ class KNode(
 
   /**
    * Instructs the VM to halt execution as quickly as possible
-   * @param exitCode The exit code
+   * @param code The exit code
    */
-  fun exit(exitCode: Int) {
-    Log.w(TAG, "exit($exitCode)", Exception())
+  fun exit(code: Int) {
+    Log.w(TAG, "exit($code)", Exception())
     if (!isRunning()) {
       Log.w(TAG, "The node is ")
       Thread.dumpStack()
       return
     }
-    nativeExit(exitCode)
+    nativeExit(code)
     running = false
   }
 
@@ -162,17 +162,7 @@ class KNode(
     context.node = this
     check(isRunning()) { "isActive() doesn't match the current state" }
     attachStdOutput(context)
-    try {
-      eventOnAttach(context)
-    } catch (error: Throwable) {
-      Log.w(TAG, "eventOnNodeBeforeStart", error)
-    }
-
-    // val process: JSObject = context.get("process")
-
-    // process.set("argv0", "node")
-    // process.set("argv", arrayOf("node", path, *argv))
-    // process.set("execPath", execFile.absolutePath)
+    eventOnBeforeStart(context)
     val setupCode = StringBuilder()
     if (output.supportsColor) {
       setupCode.append("""
@@ -183,8 +173,6 @@ process.stdout.isRaw = true;
 """
       )
     }
-    // setupCode.append("process.argv0='node';\n")
-    // setupCode.append("process.argv[0]='node';\n")
     val setEnv: (key: String, value: String) -> Unit = { key, value ->
       setupCode.append("process.env['$key'] = '${value}';\n")
     }
@@ -219,14 +207,14 @@ process.stdout.isRaw = true;
         eventOnError(error)
       }
     }
-    eventOnPrepared(context)
+    eventOnStart(context)
   }
 
 
   /**
    * Change the root filesystem,
    * once you call this method, the filesystem for node will be changed to a virtual filesystem.
-   * Call [mount] to mount addition files/directories and set custom permissions
+   * Call [mountFile] to mount addition files/directories and set custom permissions
    *
    * @param dir The directory path in the real filesystem
    */
@@ -245,7 +233,7 @@ process.stdout.isRaw = true;
    * @param mapping If the [dst] path related to [root] is not exists in real filesystem,
    * whether to create one to make it visible when list files in it's parent directory
    */
-  fun mount(src: File, dst: String, @FileAccessMode mode: Int, mapping: Boolean = true) {
+  fun mountFile(src: File, dst: String, @FileAccessMode mode: Int, mapping: Boolean = true) {
     Log.d(TAG, "mount $src as $dst($mode), mapping=$mapping")
     check(src.exists()) { "File doesn't exists: $src, fs=$fs" }
     check(dst.startsWith("/")) { "The dst path must be a absolute path(starts with '/')" }
@@ -267,7 +255,7 @@ process.stdout.isRaw = true;
       }
     }
 
-    nativeMount(src.absolutePath, dst, mode)
+    nativeMountFile(src.absolutePath, dst, mode)
   }
 
   @Suppress("unused")
@@ -305,58 +293,40 @@ process.stdout.isRaw = true;
     })
   }
 
-  private fun eventOnAttach(context: JSContext) {
-    Log.i(TAG, "eventOnAttach()")
+  private fun eventOnBeforeStart(context: JSContext) {
+    Log.i(TAG, "eventOnBeforeStart()")
     fs.mount(context.node)
-    listeners.forEach { it.onAttach(context) }
+    listeners.forEach {
+      it.onNodeBeforeStart(context)
+    }
   }
 
-  private fun eventOnPrepared(context: JSContext) {
+  private fun eventOnStart(context: JSContext) {
     Log.i(TAG, "eventOnPrepared()")
     listeners.forEach {
-      try {
-        it.onPrepared(context)
-      } catch (error: Throwable) {
-        Log.w(TAG, "An error occurred in eventOnPrepared(), listener=$it", error)
-        throw error
-      }
+      it.onNodeStart(context)
     }
   }
 
   private fun eventOnDetach(context: JSContext) {
     Log.i(TAG, "onDetach()")
     listeners.forEach {
-      try {
-        it.onDetach(context)
-      } catch (error: Throwable) {
-        Log.w(TAG, "An error occurred in eventOnDetach(), listener=$it", error)
-        throw error
-      }
+      it.onNodeBeforeExit(context)
     }
   }
 
-  private fun eventOnStopped(exitCode: Int) {
-    Log.w(TAG, "eventOnStopped: exitCode=$exitCode")
+  private fun eventOnExit(code: Int) {
+    Log.w(TAG, "eventOnExit: code=$code")
     running = false
     listeners.forEach {
-      try {
-        it.onStopped(exitCode)
-      } catch (error: Throwable) {
-        Log.w(TAG, "An error occurred in onStopped(), listener=$it", error)
-        throw error
-      }
+      it.onNodeExit(code)
     }
   }
 
   private fun eventOnError(error: JSException) {
     Log.e(TAG, "eventOnError")
     listeners.forEach {
-      try {
-        it.onError(error)
-      } catch (error: Throwable) {
-        Log.w(TAG, "An error occurred in onError(), listener=$it", error)
-        throw error
-      }
+      it.onNodeError(error)
     }
   }
 
@@ -368,35 +338,35 @@ process.stdout.isRaw = true;
 
   private external fun nativePost(action: Runnable): Boolean
 
-  private external fun nativeMount(src: String, dst: String, mode: Int)
+  private external fun nativeMountFile(src: String, dst: String, mode: Int)
 
   private external fun nativeChroot(path: String)
 
-  interface Listener {
+  interface LifecycleListener {
     /**
-     * The node is starting, do environment initialization work in this callback
+     * Node.js is starting, do environment initialization work in this callback
      */
-    fun onAttach(context: JSContext) {}
+    fun onNodeBeforeStart(context: JSContext) {}
 
     /**
-     * The node environment is ready, do anything you want
+     * The environment of Node.js is ready, this is called before executing the main script
      */
-    fun onPrepared(context: JSContext) {}
+    fun onNodeStart(context: JSContext) {}
 
     /**
-     * The node is going to stop
+     * Node.js is going to exit
      */
-    fun onDetach(context: JSContext) {}
+    fun onNodeBeforeExit(context: JSContext) {}
 
     /**
-     * The node has been stopped, it's time to cleanup resources
+     * Node.js is already exited, it's time to cleanup resources
      */
-    fun onStopped(exitCode: Int) {}
+    fun onNodeExit(exitCode: Int) {}
 
     /**
      * Whoops :( something went wrong
      */
-    fun onError(error: JSException) {}
+    fun onNodeError(error: JSException) {}
   }
 
   companion object {

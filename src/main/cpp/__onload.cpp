@@ -147,12 +147,12 @@ JNICALL jboolean nativePost(JNIEnv *env, jobject jThis, jobject jRunnable) {
   return 1;
 }
 
-JNICALL void nativeMount(JNIEnv *env, jobject jThis, jstring jSrc, jstring jDst, jint mode) {
+JNICALL void nativeMountFile(JNIEnv *env, jobject jThis, jstring jSrc, jstring jDst, jint mode) {
   const char *src = env->GetStringUTFChars(jSrc, nullptr);
   const char *dst = env->GetStringUTFChars(jDst, nullptr);
 
   auto runtime = getRuntime(env, jThis);
-  runtime->Mount(src, dst, mode);
+  runtime->MountFile(src, dst, mode);
 
   env->ReleaseStringUTFChars(jDst, src);
   env->ReleaseStringUTFChars(jSrc, dst);
@@ -222,13 +222,13 @@ JNICALL void nativeSetup(__unused JNIEnv *env, __unused jclass jThis, jobject co
 }
 
 static JNINativeMethod nodeMethods[] = {
-  {"nativeSetup",  "(Landroid/net/ConnectivityManager;)V",     (void *) nativeSetup},
-  {"nativeNew",    "(ZZ)J",                                    (void *) nativeNew},
-  {"nativeExit",   "(I)V",                                     (void *) nativeExit},
-  {"nativeStart",  "([Ljava/lang/String;)I",                   (void *) nativeStart},
-  {"nativeMount",  "(Ljava/lang/String;Ljava/lang/String;I)V", (void *) nativeMount},
-  {"nativeChroot", "(Ljava/lang/String;)V",                    (void *) nativeChroot},
-  {"nativePost",   "(Ljava/lang/Runnable;)Z",                  (void *) nativePost},
+  {"nativeSetup",     "(Landroid/net/ConnectivityManager;)V",     (void *) nativeSetup},
+  {"nativeNew",       "(ZZ)J",                                    (void *) nativeNew},
+  {"nativeExit",      "(I)V",                                     (void *) nativeExit},
+  {"nativeStart",     "([Ljava/lang/String;)I",                   (void *) nativeStart},
+  {"nativeMountFile", "(Ljava/lang/String;Ljava/lang/String;I)V", (void *) nativeMountFile},
+  {"nativeChroot",    "(Ljava/lang/String;)V",                    (void *) nativeChroot},
+  {"nativePost",      "(Ljava/lang/Runnable;)Z",                  (void *) nativePost},
 };
 
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {

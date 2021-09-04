@@ -110,18 +110,18 @@ void NodeRuntime::Detach() {
 int NodeRuntime::Start(std::vector<std::string> &args) {
   threadId_ = std::this_thread::get_id();
 
-  // See below for the contents of this function.
   int exitCode = 0;
   if (!InitLoop()) {
-    return 1;
+    LOGE("Failed to call InitLoop()");
+    return -1;
   }
 
   std::shared_ptr<node::ArrayBufferAllocator> allocator = node::ArrayBufferAllocator::Create();
   isolate_ = node::NewIsolate(allocator, eventLoop_, platform.get());
 
   if (isolate_ == nullptr) {
-    LOGE("Failed to initialize V8 isolate: %s", args[0].c_str());
-    return 2;
+    LOGE("Failed to call node::NewIsolate()");
+    return -2;
   }
 
   {
@@ -132,21 +132,17 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
     v8::HandleScope handleScope(isolate_);
     v8::Local<v8::Context> context = node::NewContext(isolate_);
     if (context.IsEmpty()) {
-      LOGE("%s: Failed to initialize V8 Context", args[0].c_str());
-      return 3;
+      LOGE("Failed to call node::NewContext()");
+      return -3;
     }
 
     v8::Context::Scope contextScope(context);
     auto flags = static_cast<node::EnvironmentFlags::Flags>(node::EnvironmentFlags::kOwnsEmbedded
-      | node::EnvironmentFlags::kOwnsProcessState
-      | node::EnvironmentFlags::kTrackUnmanagedFds);
-    LOGD("CreateEnvironment: flags=%lud", flags);
-    for (std::string &arg : args) {
-      LOGI("%s", arg.c_str());
-    }
+                                                            | node::EnvironmentFlags::kOwnsProcessState
+                                                            | node::EnvironmentFlags::kTrackUnmanagedFds);
     auto env = node::CreateEnvironment(isolateData, context, args, args, flags);
     node::SetProcessExitHandler(env, [](node::Environment *environment, int code) {
-      LOGW("exiting node process: %d", code);
+      LOGW("Node.js process is exiting: code=%d", code);
       node::Stop(environment);
     });
 
@@ -154,22 +150,6 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
     global_.Reset(isolate_, context->Global());
 
     Attach();
-
-    // Set up the Node.js instance for execution, and run code inside of it.
-    // There is also a variant that takes a callback and provides it with
-    // the `require` and `process` objects, so that it can manually compile
-    // and run scripts as needed.
-    // The `require` function inside this script does *not* access the file
-    // system, and can only load built-in Node.js modules.
-    // `module.createRequire()` is being used to create one that is able to
-    // load files from the disk, and uses the standard CommonJS file loader
-    // instead of the internal-only `require` function.
-    // node::LoadEnvironment(
-    //         env.get(),
-    //         "const publicRequire ="
-    //         "  require('module').createRequire(process.cwd() + '/');"
-    //         "globalThis.require = publicRequire;"
-    //         "require('vm_').runInThisContext(process.argv[1]);");
 
     isolate_->SetMicrotasksPolicy(v8::MicrotasksPolicy::kAuto);
     node::LoadEnvironment(env, [&](const node::StartExecutionCallbackInfo &info) -> v8::MaybeLocal<v8::Value> {
@@ -226,16 +206,6 @@ void NodeRuntime::CloseLoop() {
 }
 
 void NodeRuntime::RunLoop(node::Environment *env) {
-  if (keepAlive_) {
-    isolate_->SetPromiseHook([](v8::PromiseHookType type,
-                                v8::Local<v8::Promise> promise,
-                                v8::Local<v8::Value> parent) {
-      if (type == v8::PromiseHookType::kInit) {
-        // promise->GetIsolate()->RunMicrotasks();
-      }
-    });
-  }
-
   v8::SealHandleScope seal(isolate_);
 
   int more;
@@ -250,7 +220,7 @@ void NodeRuntime::RunLoop(node::Environment *env) {
     // If there are new tasks, continue.
     more = uv_loop_alive(eventLoop_);
     if (more) continue;
-    LOGW("no more task, try exit");
+    LOGW("no more task, try to exit");
     // node::EmitBeforeExit() is used to emit the 'beforeExit' event on
     // the `process` object.
     node::EmitProcessBeforeExit(env);
@@ -258,13 +228,12 @@ void NodeRuntime::RunLoop(node::Environment *env) {
     // 'beforeExit' can also schedule new work that keeps the event loop
     // running.
     more = uv_loop_alive(eventLoop_);
-    LOGW("more=%d after call `beforeExit`", more);
   } while (more);
 }
 
 
 void NodeRuntime::Exit(int code) {
-  LOGI("NodeRuntime.Exit(%d)", code);
+  LOGI("Exit(%d)", code);
   if (keepAlive_) {
     uv_async_send(keepAliveHandle_);
   }
@@ -341,7 +310,7 @@ jobject NodeRuntime::ToJava(JNIEnv *env, v8::Local<v8::Value> value) {
 
 void NodeRuntime::TryLoop() {
   if (!eventLoop_) {
-    LOGE("TryLoop but eventLoop is NULL");
+    LOGE("TryLoop but eventLoop is null");
     return;
   }
   if (!callbackHandle_) {
@@ -456,7 +425,7 @@ v8::Local<v8::Value> NodeRuntime::Require(const char *path) {
   return scope.Escape(result);
 }
 
-void NodeRuntime::Mount(const char *src, const char *dst, const int mode) {
+void NodeRuntime::MountFile(const char *src, const char *dst, const int mode) {
   CheckThread();
   v8::Locker _locker(isolate_);
   v8::HandleScope _handleScope(isolate_);

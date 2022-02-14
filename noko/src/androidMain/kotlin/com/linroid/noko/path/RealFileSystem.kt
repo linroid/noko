@@ -1,6 +1,6 @@
 package com.linroid.noko.path
 
-import com.linroid.noko.noko
+import com.linroid.noko.Noko
 import java.io.File
 
 /**
@@ -17,7 +17,7 @@ class RealFileSystem : FileSystem {
     return File(path)
   }
 
-  override fun mount(node: noko) {
+  override fun mount(node: Noko) {
     // do nothing
   }
 }

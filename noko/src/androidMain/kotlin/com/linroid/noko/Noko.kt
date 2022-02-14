@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
 
 /**
- * Create a new node instance
+ * Create a new Node.js instance
  *
  * @param cwd The current work directory for node
  * @param output The standard output interface
@@ -35,7 +35,7 @@ import kotlin.concurrent.thread
  * @since 2019-10-16
  */
 @Keep
-class noko(
+class Noko(
     private val cwd: File? = null,
     private val output: StdOutput,
     private val fs: FileSystem = RealFileSystem(),
@@ -370,7 +370,7 @@ process.stdout.isRaw = true;
   }
 
   companion object {
-    private const val TAG = "noko"
+    private const val TAG = "Noko"
 
     const val ACCESS_NONE = 0
     const val ACCESS_READ = 1
@@ -442,7 +442,7 @@ process.stdout.isRaw = true;
     }
 
     fun versions(callback: (String) -> Unit) {
-      val node = noko(null, object : StdOutput {
+      val node = Noko(null, object : StdOutput {
         override fun stdout(str: String) {
           val trimmed = str.trim()
           if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
@@ -455,7 +455,7 @@ process.stdout.isRaw = true;
         }
       })
       node.start("-p", "process.versions")
-    }
+  }
 
     fun mountExecutable(context: Context, exec: File) {
       this.exec = exec

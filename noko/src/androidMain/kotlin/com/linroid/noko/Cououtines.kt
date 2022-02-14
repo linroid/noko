@@ -46,7 +46,7 @@ suspend fun <T, V : JSValue> V.awaitWith(action: V.() -> T): T {
   }
 }
 
-suspend fun <T> noko.await(action: () -> T): T {
+suspend fun <T> Noko.await(action: () -> T): T {
   return suspendCancellableCoroutine { continuation ->
     val success = post {
       try {

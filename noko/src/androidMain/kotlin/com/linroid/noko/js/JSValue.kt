@@ -8,7 +8,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonSyntaxException
 import com.linroid.noko.BuildConfig
 import com.linroid.noko.JSValueReference
-import com.linroid.noko.noko
+import com.linroid.noko.Noko
 import com.linroid.noko.await
 import kotlinx.coroutines.runBlocking
 import java.io.Closeable
@@ -98,7 +98,7 @@ open class JSValue(context: JSContext? = null, @Native internal val reference: L
       }
       type == JsonObject::class.java ||
           type == JsonElement::class.java ||
-          type == JsonArray::class.java -> noko.gson.fromJson(toJson(), JsonElement::class.java)
+          type == JsonArray::class.java -> Noko.gson.fromJson(toJson(), JsonElement::class.java)
       JSValue::class.java.isAssignableFrom(type) -> this
       type.isArray -> {
         check(this is JSArray) { "$this is not an JSArray" }
@@ -107,7 +107,7 @@ open class JSValue(context: JSContext? = null, @Native internal val reference: L
       else -> {
         val json = toJson()
         try {
-          noko.gson.fromJson(json, type)
+          Noko.gson.fromJson(json, type)
         } catch (error: JsonSyntaxException) {
           throw IllegalArgumentException("Unable to parse the json as $type: $json", error)
         }
@@ -162,7 +162,7 @@ open class JSValue(context: JSContext? = null, @Native internal val reference: L
           context.parseJson(value.toString())
         }
         else -> {
-          context.parseJson(noko.gson.toJson(value))
+          context.parseJson(Noko.gson.toJson(value))
         }
       }
     }

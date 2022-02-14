@@ -13,12 +13,12 @@ import java.util.concurrent.TimeUnit
  * @author linroid
  * @since 2019/11/27
  */
-abstract class nokoTest : noko.LifecycleListener, StdOutput {
+abstract class nokoTest : Noko.LifecycleListener, StdOutput {
 
   private lateinit var file: File
   private val startLatch = CountDownLatch(1)
 
-  private lateinit var node: noko
+  private lateinit var node: Noko
   protected lateinit var context: JSContext
 
   @Before
@@ -26,7 +26,7 @@ abstract class nokoTest : noko.LifecycleListener, StdOutput {
     println("setupNode")
     val appContext = InstrumentationRegistry.getInstrumentation().targetContext
     file = File.createTempFile("tests_", "temp.js")
-    node = noko(appContext.cacheDir, this, keepAlive = true)
+    node = Noko(appContext.cacheDir, this, keepAlive = true)
     node.start(file.absolutePath)
     node.addListener(this)
     startLatch.await(3, TimeUnit.SECONDS)
@@ -64,7 +64,7 @@ abstract class nokoTest : noko.LifecycleListener, StdOutput {
   companion object {
     init {
       val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-      noko.setup(appContext)
+      Noko.setup(appContext)
     }
   }
 }

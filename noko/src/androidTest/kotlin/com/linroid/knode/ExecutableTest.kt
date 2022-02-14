@@ -32,7 +32,7 @@ class ExecutableTest {
     //
     val cmd = File(binDir, "node")
 
-    noko.mountExecutable(ctx, cmd)
+    Noko.mountExecutable(ctx, cmd)
     assert(Os.getenv("PATH").split(':').contains(binDir.absolutePath))
     assert(Os.getenv("LD_LIBRARY_PATH").split(':').contains(ctx.applicationInfo.nativeLibraryDir))
     file = File(ctx.applicationInfo.nativeLibraryDir, "node.so")

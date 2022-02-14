@@ -1,7 +1,7 @@
 package com.linroid.noko.js
 
 import com.linroid.noko.JSException
-import com.linroid.noko.noko
+import com.linroid.noko.Noko
 import java.lang.annotation.Native
 
 /**
@@ -17,7 +17,7 @@ class JSContext @NativeConstructor private constructor(
   internal lateinit var sharedUndefined: JSUndefined
   internal lateinit var sharedTrue: JSBoolean
   internal lateinit var sharedFalse: JSBoolean
-  lateinit var node: noko
+  lateinit var node: Noko
 
   internal val cleaner: (Long) -> Unit = { ref: Long ->
     check(ref != 0L) { "The reference has been already cleared" }

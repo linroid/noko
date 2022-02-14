@@ -1,6 +1,6 @@
 package com.linroid.noko.path
 
-import com.linroid.noko.noko
+import com.linroid.noko.Noko
 import java.io.File
 
 /**
@@ -13,5 +13,5 @@ interface FileSystem {
 
   fun file(path: String): File
 
-  fun mount(node: noko)
+  fun mount(node: Noko)
 }

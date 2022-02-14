@@ -15,17 +15,17 @@ repositories {
 
 android {
   compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_16
-    targetCompatibility = JavaVersion.VERSION_16
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
   }
   defaultConfig {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     consumerProguardFiles(file("consumer-rules.pro"))
     externalNativeBuild {
-      // cmake {
-      //     cppFlags += "-std=c++11 -fexceptions"
-      //     arguments += kotlin.collections.setOf("-DANDROID_ARM_MODE=arm", "-DANDROID_STL=c++_shared")
-      // }
+      cmake {
+        cppFlags += "-std=c++11 -fexceptions"
+        arguments += setOf("-DANDROID_ARM_MODE=arm", "-DANDROID_STL=c++_shared")
+      }
     }
   }
   externalNativeBuild {
@@ -35,10 +35,14 @@ android {
     }
   }
   packagingOptions {
-    // jniLibs {
-    //   keepDebugSymbols += "**/*.so"
-    // }
+    jniLibs {
+      keepDebugSymbols += "**/*.so"
+    }
   }
+}
+java {
+  sourceCompatibility = JavaVersion.VERSION_1_8
+  targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 kotlin {
@@ -56,6 +60,8 @@ kotlin {
       dependencies {
         implementation(kotlin("test"))
         implementation(kotlin("stdlib"))
+        implementation("androidx.annotation:annotation:1.4.0-alpha02")
+        implementation("com.google.code.gson:gson:2.8.6")
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
       }
     }
@@ -83,10 +89,10 @@ kotlin {
 }
 
 android {
-  compileSdkVersion(31)
+  compileSdk = 32
   sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
   defaultConfig {
-    minSdkVersion(24)
-    targetSdkVersion(31)
+    minSdk = 24
+    targetSdk = 31
   }
 }

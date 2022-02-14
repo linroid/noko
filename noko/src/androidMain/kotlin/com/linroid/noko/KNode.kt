@@ -36,11 +36,11 @@ import kotlin.concurrent.thread
  */
 @Keep
 class noko(
-  private val cwd: File? = null,
-  private val output: StdOutput,
-  private val fs: FileSystem = RealFileSystem(),
-  keepAlive: Boolean = false,
-  private val strictMode: Boolean = true,
+    private val cwd: File? = null,
+    private val output: StdOutput,
+    private val fs: FileSystem = RealFileSystem(),
+    keepAlive: Boolean = false,
+    private val strictMode: Boolean = true,
 ) : Closeable {
 
   @Native
@@ -403,7 +403,9 @@ process.stdout.isRaw = true;
 
       val properties = connectionManager.getLinkProperties(network) ?: return
       if (properties.dnsServers.isNotEmpty()) {
-        Os.setenv("DNS_SERVERS", properties.dnsServers.joinToString(",") { it.hostAddress }, true)
+        Os.setenv("DNS_SERVERS", properties.dnsServers.joinToString(",") {
+          it.hostAddress ?: "8.8.8.8"
+        }, true)
       } else {
         Os.unsetenv("DNS_SERVERS")
       }
@@ -420,8 +422,8 @@ process.stdout.isRaw = true;
       setDnsEnv(connectionManager)
 
       val request = NetworkRequest.Builder()
-        .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
-        .build()
+          .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+          .build()
       connectionManager.registerNetworkCallback(request, object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
           Log.d(TAG, "network onAvailable: $network")

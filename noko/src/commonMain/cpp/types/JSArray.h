@@ -2,7 +2,7 @@
 #define NODE_JSARRAY_H
 
 #include <jni.h>
-#include "../NodeRuntime.h"
+#include "../Noko.h"
 
 class JSArray {
 private:
@@ -10,8 +10,8 @@ private:
   static jmethodID jConstructor;
 
 public:
-  inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
-    return env->NewObject(jClazz, jConstructor, runtime->jContext_, (jlong) value);
+  inline static jobject Wrap(JNIEnv *env, jobject jNoko, v8::Persistent<v8::Value> *value) {
+    return env->NewObject(jClazz, jConstructor, jNoko, (jlong) value);
   }
 
   JNICALL static jint Size(JNIEnv *env, jobject jThis);

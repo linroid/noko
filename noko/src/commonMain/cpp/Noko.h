@@ -1,5 +1,5 @@
-#ifndef NODE_NODE_RUNTIME_H
-#define NODE_NODE_RUNTIME_H
+#ifndef NODE_NOKO_H
+#define NODE_NOKO_H
 
 #include <jni.h>
 #include <string>
@@ -12,13 +12,13 @@
 int init_node();
 
 enum JSType {
-  /** cached types */
+  /** Cached types */
   kNone,
   kUndefined,
   kNull,
   kBoolean,
 
-  /** non cached types */
+  /** Non cached types */
   kValue,
   kArray,
   kObject,
@@ -29,12 +29,18 @@ enum JSType {
   kError,
 };
 
-class NodeRuntime {
+class Noko {
 
 private:
-  jobject jThis_ = nullptr;
   jmethodID jAttach_ = nullptr;
   jmethodID jDetach_ = nullptr;
+
+  static jmethodID jConstructorId;
+  static jfieldID jSharedNullId;
+  static jfieldID jSharedUndefinedId;
+  static jfieldID jSharedTrueId;
+  static jfieldID jSharedFalseId;
+  static jfieldID jPtrId;
 
   bool running_ = false;
   std::thread::id threadId_;
@@ -68,22 +74,24 @@ private:
 
   void Detach();
 
+
 public:
-  jobject jContext_ = nullptr;
-  jobject jNull_ = nullptr;
-  jobject jUndefined_ = nullptr;
-  jobject jTrue_ = nullptr;
-  jobject jFalse_ = nullptr;
+  jobject jSharedGlobal_ = nullptr;
+  jobject jSharedNull_ = nullptr;
+  jobject jSharedUndefined_ = nullptr;
+  jobject jSharedTrue_ = nullptr;
+  jobject jSharedFalse_ = nullptr;
   JavaVM *vm_ = nullptr;
+  jobject jThis_ = nullptr;
 
   v8::Isolate *isolate_ = nullptr;
   v8::Persistent<v8::Object> global_;
   v8::Persistent<v8::Context> context_;
   v8::Persistent<v8::Function> require_;
 
-  NodeRuntime(JNIEnv *env, jobject jThis, jmethodID jAttach, jmethodID jDetach, bool keepAlive, bool strict);
+  Noko(JNIEnv *env, jobject jThis, jmethodID jAttach, jmethodID jDetach, bool keepAlive, bool strict);
 
-  ~NodeRuntime();
+  ~Noko();
 
   int Start(std::vector<std::string> &args);
 
@@ -108,6 +116,10 @@ public:
   bool IsRunning() {
     return running_;
   }
+
+  void Eval(const char* code, const char* source, int line);
+
+  static jint OnLoad(JNIEnv *env);
 };
 
 #endif //NODE_NODE_RUNTIME_H

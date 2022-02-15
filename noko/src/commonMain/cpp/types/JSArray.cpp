@@ -14,8 +14,8 @@ jint JSArray::Size(JNIEnv *env, jobject jThis) {
 
 void JSArray::New(JNIEnv *env, jobject jThis) {
   V8_SCOPE(env, jThis)
-  auto value = v8::Array::New(runtime->isolate_);
-  auto result = new v8::Persistent<v8::Value>(runtime->isolate_, value);
+  auto value = v8::Array::New(noko->isolate_);
+  auto result = new v8::Persistent<v8::Value>(noko->isolate_, value);
   JSValue::SetReference(env, jThis, (jlong) result);
 }
 
@@ -28,7 +28,7 @@ jboolean JSArray::AddAll(JNIEnv *env, jobject jThis, jobjectArray jElements) {
     env->DeleteLocalRef(jElement);
   }
   SETUP(env, jThis, v8::Array)
-  v8::TryCatch tryCatch(runtime->isolate_);
+  v8::TryCatch tryCatch(noko->isolate_);
   auto index = that->Length();
   for (int i = 0; i < size; ++i) {
     auto element = elements[i]->Get(isolate);
@@ -36,7 +36,7 @@ jboolean JSArray::AddAll(JNIEnv *env, jobject jThis, jobjectArray jElements) {
       return false;
     }
     if (tryCatch.HasCaught()) {
-      runtime->Throw(env, tryCatch.Exception());
+      noko->Throw(env, tryCatch.Exception());
       return false;
     }
   }
@@ -66,22 +66,22 @@ jint JSArray::OnLoad(JNIEnv *env) {
 
 jobject JSArray::Get(JNIEnv *env, jobject jThis, jint jIndex) {
   SETUP(env, jThis, v8::Array)
-  v8::TryCatch tryCatch(runtime->isolate_);
+  v8::TryCatch tryCatch(noko->isolate_);
   auto value = that->Get(context, jIndex).ToLocalChecked();
   if (tryCatch.HasCaught()) {
-    runtime->Throw(env, tryCatch.Exception());
+    noko->Throw(env, tryCatch.Exception());
     return nullptr;
   }
-  return runtime->ToJava(env, value);
+  return noko->ToJava(env, value);
 }
 
 jboolean JSArray::Add(JNIEnv *env, jobject jThis, jobject jElement) {
   auto element = JSValue::Unwrap(env, jElement);
   SETUP(env, jThis, v8::TypedArray)
-  v8::TryCatch tryCatch(runtime->isolate_);
+  v8::TryCatch tryCatch(noko->isolate_);
   auto success = that->Set(context, that->Length(), element->Get(isolate)).ToChecked();
   if (tryCatch.HasCaught()) {
-    runtime->Throw(env, tryCatch.Exception());
+    noko->Throw(env, tryCatch.Exception());
     return 0;
   }
   return static_cast<jboolean>(success);

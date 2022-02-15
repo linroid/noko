@@ -1,6 +1,7 @@
 package com.linroid.noko.types
 
 import com.linroid.noko.JSException
+import com.linroid.noko.Noko
 import com.linroid.noko.annotation.ForNative
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
@@ -18,26 +19,26 @@ class JSPromise : JSObject {
   private var resolverPtr: Long = 0
 
   @ForNative
-  private constructor(context: JSContext, reference: Long) : super(context, reference)
+  private constructor(noko: Noko, nPtr: Long) : super(noko, nPtr)
 
-  constructor(context: JSContext) : super(context, 0) {
+  constructor(noko: Noko) : super(noko, 0) {
     nativeNew()
   }
 
   fun reject(error: String) {
-    context.node.post {
-      nativeReject(JSError(context, error))
+    noko.post {
+      nativeReject(JSError(noko, error))
     }
   }
 
   fun resolve(value: Any?) {
-    context.node.post {
-      nativeResolve(from(context, value))
+    noko.post {
+      nativeResolve(from(noko, value))
     }
   }
 
   fun then(callback: (JSValue) -> Unit): JSPromise {
-    val then = JSFunction(context, "then") { _, argv ->
+    val then = JSFunction(noko, "then") { _, argv ->
       check(argv.isNotEmpty()) { "then() should receive a JSValue argument" }
       val result: JSValue = argv[0]
       callback.invoke(result)
@@ -48,7 +49,7 @@ class JSPromise : JSObject {
   }
 
   fun catch(callback: (JSObject) -> Unit): JSPromise {
-    val then = JSFunction(context, "catch") { _, argv ->
+    val then = JSFunction(noko, "catch") { _, argv ->
       val result: JSValue = argv[0]
       check(result is JSObject) { "catch() should receive an JSObject parameter not ${result.javaClass.simpleName}(${result.typeOf()})}: ${result.toJson()}" }
       callback.invoke(result)
@@ -60,7 +61,7 @@ class JSPromise : JSObject {
 
   suspend fun await(): JSValue {
     return suspendCancellableCoroutine { continuation ->
-      if (!context.node.post {
+      if (!noko.post {
           then {
             continuation.resume(it)
           }.catch {

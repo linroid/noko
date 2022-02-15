@@ -1,3 +1,5 @@
 package com.linroid.noko.types
 
-class JSInteger(context: JSContext, value: Int) : JSNumber(context, value)
+import com.linroid.noko.Noko
+
+class JSInteger(noko: Noko, value: Int) : JSNumber(noko, value)

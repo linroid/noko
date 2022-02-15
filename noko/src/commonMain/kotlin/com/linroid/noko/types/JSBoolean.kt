@@ -1,11 +1,12 @@
 package com.linroid.noko.types
 
+import com.linroid.noko.Noko
 import com.linroid.noko.annotation.ForNative
 
 class JSBoolean @ForNative private constructor(
-  context: JSContext, reference: Long,
+  noko: Noko, nPtr: Long,
   private val data: Boolean,
-) : JSPrimitive(context, reference) {
+) : JSPrimitive(noko, nPtr) {
 
   fun get(): Boolean = data
 

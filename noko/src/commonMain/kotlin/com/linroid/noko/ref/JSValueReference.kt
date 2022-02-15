@@ -7,7 +7,7 @@ import java.util.concurrent.CopyOnWriteArraySet
 class JSValueReference(value: JSValue, private val cleaner: (Long) -> Unit) : PhantomReference<JSValue>(value,
   ReferenceWatcher.queue
 ) {
-  private val ref = value.reference
+  private val ref = value.nPtr
 
   init {
     references.add(this)

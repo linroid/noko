@@ -4,9 +4,8 @@ set(NODE_LIB_DIR ${PROJECT_SOURCE_DIR}/prebuilts/${ANDROID_ABI})
 set(SOURCES
         __onload.cpp
         EnvHelper.cpp
-        NodeRuntime.cpp
+        Noko.cpp
         observable/PropertiesObserver.cpp
-        types/JSContext.cpp
         types/JSValue.cpp
         types/JSObject.cpp
         types/JSUndefined.cpp

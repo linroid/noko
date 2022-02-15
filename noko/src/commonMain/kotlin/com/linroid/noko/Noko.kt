@@ -2,12 +2,9 @@ package com.linroid.noko
 
 import com.google.gson.Gson
 import com.linroid.noko.fs.FileMode
-import com.linroid.noko.types.JSContext
-import com.linroid.noko.types.JSFunction
-import com.linroid.noko.types.JSObject
-import com.linroid.noko.types.JSValue
 import com.linroid.noko.fs.FileSystem
 import com.linroid.noko.fs.RealFileSystem
+import com.linroid.noko.types.*
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.Closeable
 import java.io.File
@@ -34,15 +31,26 @@ class Noko(
 ) : Closeable {
 
   @Native
-  private var ptr: Long = nativeNew(keepAlive, strictMode)
+  internal var nPtr: Long = nativeNew(keepAlive, strictMode)
   private val listeners = HashSet<LifecycleListener>()
 
   @Volatile
   private var running = false
-  private lateinit var context: JSContext
+  private var global: JSObject? = null
   private var sequence = 0
   private val environmentVariables = HashMap(customEnvs)
   private val versions = HashMap(customVersions)
+
+  internal val cleaner: (Long) -> Unit = { ref: Long ->
+    check(ref != 0L) { "The reference has been already cleared" }
+    // check(runtimePtr != 0L) { "The Node.js runtime is not active anymore" }
+    nativeClearReference(ref)
+  }
+
+  internal lateinit var sharedNull: JSNull
+  internal lateinit var sharedUndefined: JSUndefined
+  internal lateinit var sharedTrue: JSBoolean
+  internal lateinit var sharedFalse: JSBoolean
 
   /**
    * The thread that running node
@@ -94,7 +102,7 @@ class Noko(
    * @return true if active, false otherwise
    */
   private fun isRunning(): Boolean {
-    return running && ptr != 0L
+    return running && nPtr != 0L
   }
 
   fun addEnv(key: String, value: String) {
@@ -149,13 +157,12 @@ class Noko(
   }
 
   @Suppress("unused")
-  private fun attach(context: JSContext) {
-    this.context = context
+  private fun attach(global: JSObject) {
+    this.global = global
     running = true
-    context.node = this
     check(isRunning()) { "isActive() doesn't match the current state" }
-    attachStdOutput(context)
-    eventOnBeforeStart(context)
+    attachStdOutput(global)
+    eventOnBeforeStart(global)
     val setupCode = StringBuilder()
     if (output.supportsColor) {
       setupCode.append(
@@ -190,17 +197,17 @@ process.stdout.isRaw = true;
     }
     if (setupCode.isNotEmpty()) {
       try {
-        context.eval(setupCode.toString())
+        eval(setupCode.toString())
       } catch (error: JSException) {
         eventOnError(error)
       }
     }
-    eventOnStart(context)
+    eventOnStart(global)
   }
 
   @Suppress("unused")
-  private fun detach(context: JSContext) {
-    eventOnDetach(context)
+  private fun detach(global: JSObject) {
+    eventOnDetach(global)
   }
 
   internal fun checkThread() {
@@ -210,20 +217,20 @@ process.stdout.isRaw = true;
   }
 
   internal fun isInNodeThread(): Boolean {
-    return Thread.currentThread() == thread
+    return Thread.currentThread() === thread
   }
 
-  private fun attachStdOutput(context: JSContext) {
-    val process: JSObject = context.get("process")
+  private fun attachStdOutput(global: JSObject) {
+    val process: JSObject = global.get("process")
     val stdout: JSObject = process.get("stdout")
-    stdout.set("write", object : JSFunction(context, "write") {
+    stdout.set("write", object : JSFunction(this@Noko, "write") {
       override fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
         output.stdout(parameters[0].toString())
         return null
       }
     })
     val stderr: JSObject = process.get("stderr")
-    stderr.set("write", object : JSFunction(context, "write") {
+    stderr.set("write", object : JSFunction(this@Noko, "write") {
       override fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
         output.stderr(parameters[0].toString())
         return null
@@ -231,22 +238,22 @@ process.stdout.isRaw = true;
     })
   }
 
-  private fun eventOnBeforeStart(context: JSContext) {
+  private fun eventOnBeforeStart(global: JSObject) {
     fs.link(this)
     listeners.forEach {
-      it.onNodeBeforeStart(context)
+      it.onNodeBeforeStart(this, global)
     }
   }
 
-  private fun eventOnStart(context: JSContext) {
+  private fun eventOnStart(global: JSObject) {
     listeners.forEach {
-      it.onNodeStart(context)
+      it.onNodeStart(this, global)
     }
   }
 
-  private fun eventOnDetach(context: JSContext) {
+  private fun eventOnDetach(global: JSObject) {
     listeners.forEach {
-      it.onNodeBeforeExit(context)
+      it.onNodeBeforeExit(this, global)
     }
   }
 
@@ -271,17 +278,37 @@ process.stdout.isRaw = true;
     nativeMountFile(src.absolutePath, dst, mode.flags)
   }
 
+  @Throws(JSException::class)
+  fun eval(code: String, source: String = "", line: Int = 0): JSValue {
+    return nativeEval(code, source, line)
+  }
+
+  @Throws(JSException::class)
+  fun parseJson(json: String): JSValue {
+    return nativeParseJson(json)
+  }
+
+  fun throwError(message: String): JSError {
+    return nativeThrowError(message)
+  }
+
+  @Throws(JSException::class)
+  @Deprecated("Not working")
+  fun require(path: String): JSValue {
+    return nativeRequire(path)
+  }
+
   private external fun nativeNew(keepAlive: Boolean, strict: Boolean): Long
-
   private external fun nativeExit(exitCode: Int)
-
   private external fun nativeStart(args: Array<out String>): Int
-
   private external fun nativePost(action: Runnable): Boolean
-
   private external fun nativeMountFile(src: String, dst: String, mode: Int)
-
   private external fun nativeChroot(path: String)
+  private external fun nativeEval(code: String, source: String, line: Int): JSValue
+  private external fun nativeParseJson(json: String): JSValue
+  private external fun nativeThrowError(message: String): JSError
+  private external fun nativeRequire(path: String): JSObject
+  private external fun nativeClearReference(ref: Long)
 
   companion object {
     private val counter = AtomicInteger(0)

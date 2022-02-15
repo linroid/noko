@@ -42,13 +42,13 @@ void JSError::New(JNIEnv *env, jobject jThis, jstring jMessage) {
   V8_SCOPE(env, jThis)
   auto message = V8_STRING(isolate, messageChars, messageLen);
   auto value = v8::Exception::Error(message);
-  auto result = new v8::Persistent<v8::Value>(runtime->isolate_, value);
+  auto result = new v8::Persistent<v8::Value>(noko->isolate_, value);
   env->ReleaseStringChars(jMessage, messageChars);
   JSValue::SetReference(env, jThis, (jlong) result);
 }
 
-jthrowable JSError::ToException(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> error) {
-  auto reference = new v8::Persistent<v8::Value>(runtime->isolate_, error);
-  auto jError = env->NewObject(jClazz, jConstructor, runtime->jContext_, (jlong) reference);
+jthrowable JSError::ToException(JNIEnv *env, jobject jNoko, v8::Local<v8::Value> error) {
+  auto reference = new v8::Persistent<v8::Value>(noko->isolate_, error);
+  auto jError = env->NewObject(jClazz, jConstructor, jNoko, (jlong) reference);
   return (jthrowable) env->NewObject(jExceptionClazz, jExceptionConstructor, jError);
 }

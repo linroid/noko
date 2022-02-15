@@ -2,7 +2,7 @@
 #define DORA_JS_PROPERTIESOBSERVER_H
 
 #include <jni.h>
-#include "../NodeRuntime.h"
+#include "../Noko.h"
 
 class PropertiesObserver {
 private:
@@ -10,9 +10,9 @@ private:
   jmethodID methodId_;
   jobject that_;
 public:
-  NodeRuntime *runtime = nullptr;
+  Noko *runtime = nullptr;
 
-  PropertiesObserver(NodeRuntime *runtime, JNIEnv *env, jobject that, jmethodID methodId);
+  PropertiesObserver(Noko *runtime, JNIEnv *env, jobject that, jmethodID methodId);
 
   ~PropertiesObserver();
 

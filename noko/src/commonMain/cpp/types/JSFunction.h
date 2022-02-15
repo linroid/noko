@@ -2,7 +2,7 @@
 #define DORA_JSFUNCTION_H
 
 #include <jni.h>
-#include "../NodeRuntime.h"
+#include "../Noko.h"
 
 class JSFunction {
 private:
@@ -11,8 +11,8 @@ private:
   static jmethodID jCall;
 
 public:
-  inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
-    return env->NewObject(jClazz, jConstructor, runtime->jContext_, (jlong) value);
+  inline static jobject Wrap(JNIEnv *env, jobject jNoko, v8::Persistent<v8::Value> *value) {
+    return env->NewObject(jClazz, jConstructor, jNoko, (jlong) value);
   }
 
   static jint OnLoad(JNIEnv *env);

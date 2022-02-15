@@ -20,7 +20,7 @@ void staticCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
 static void WeakCallback(const v8::WeakCallbackInfo<JavaCallback> &data) {
   LOGW("ObserverWeakCallback");
   JavaCallback *callback = data.GetParameter();
-  EnvHelper env(callback->runtime->vm_);
+  EnvHelper env(callback->noko->vm_);
   JSValue::SetReference(*env, callback->that, 0);
   delete callback;
 }
@@ -29,9 +29,9 @@ void JSFunction::New(JNIEnv *env, jobject jThis, jstring jName) {
   const uint16_t *name = env->GetStringChars(jName, nullptr);
   const jint nameLen = env->GetStringLength(jName);
   V8_SCOPE(env, jThis)
-  auto callback = new JavaCallback(runtime, env, jThis, JSValue::jClazz, jCall);
+  auto callback = new JavaCallback(noko, env, jThis, JSValue::jClazz, jCall);
   auto data = v8::External::New(isolate, callback);
-  auto context = runtime->context_.Get(isolate);
+  auto context = noko->context_.Get(isolate);
   auto func = v8::FunctionTemplate::New(isolate, staticCallback, data)->GetFunction(context).ToLocalChecked();
   func->SetName(V8_STRING(isolate, name, nameLen));
 
@@ -60,10 +60,10 @@ jobject JSFunction::Call(JNIEnv *env, jobject jThis, jobject jReceiver, jobjectA
   v8::TryCatch tryCatch(isolate);
   auto result = that->Call(context, receiver->Get(isolate), argc, argv);
   if (result.IsEmpty()) {
-    runtime->Throw(env, tryCatch.Exception());
+    noko->Throw(env, tryCatch.Exception());
     return nullptr;
   }
-  return runtime->ToJava(env, result.ToLocalChecked());
+  return noko->ToJava(env, result.ToLocalChecked());
 }
 
 jint JSFunction::OnLoad(JNIEnv *env) {

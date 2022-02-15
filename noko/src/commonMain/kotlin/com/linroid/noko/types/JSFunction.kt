@@ -1,5 +1,6 @@
 package com.linroid.noko.types
 
+import com.linroid.noko.Noko
 import com.linroid.noko.annotation.ForNative
 import java.lang.reflect.InvocationTargetException
 
@@ -9,14 +10,14 @@ open class JSFunction : JSObject {
 
   private val callable: Callable?
 
-  @ForNative
-  private constructor(context: JSContext, reference: Long) : super(context, reference) {
-    this.callable = null
-  }
+//  @ForNative
+//  private constructor(noko: Noko, nPtr: Long) : super(noko, nPtr) {
+//    this.callable = null
+//  }
 
-  constructor(context: JSContext, name: String, callable: Callable? = null) : super(context, 0) {
+  constructor(noko: Noko, name: String, callable: Callable? = null) : super(noko, 0) {
     this.callable = callable
-    context.node.checkThread()
+    noko.checkThread()
     nativeNew(name)
   }
 
@@ -25,9 +26,9 @@ open class JSFunction : JSObject {
       return try {
         callable.invoke(receiver, parameters)
       } catch (error: InvocationTargetException) {
-        context.throwError("A unexpected error occurs during call native function: ${error.targetException.message}")
+        noko.throwError("An unexpected error occurred during call native function: ${error.targetException.message}")
       } catch (error: Exception) {
-        // context.throwError(error.message ?: "An error occurred when calling native function")
+        // noko.throwError(error.message ?: "An error occurred when calling native function")
         throw error
       }
     }
@@ -35,16 +36,12 @@ open class JSFunction : JSObject {
   }
 
   fun call(receiver: JSValue, vararg parameters: Any?): JSValue {
-    context.node.checkThread()
-    check(context.runtimePtr != 0L) { "node has been disposed" }
-    val v8Parameters = Array(parameters.size) { from(context, parameters[it]) }
+    noko.checkThread()
+    check(noko.nPtr != 0L) { "node has been disposed" }
+    val v8Parameters = Array(parameters.size) { from(noko, parameters[it]) }
     return nativeCall(receiver, v8Parameters)
   }
 
   private external fun nativeCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue
   private external fun nativeNew(name: String)
-
-  companion object {
-    private const val TAG = "JSFunction"
-  }
 }

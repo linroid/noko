@@ -28,7 +28,7 @@ JNICALL jobject JSObject::Get(JNIEnv *env, jobject jThis, jstring jKey) {
   SETUP(env, jThis, v8::Object)
   auto value = that->Get(context, V8_STRING(isolate, key, keyLen)).ToLocalChecked();
   env->ReleaseStringChars(jKey, key);
-  return runtime->ToJava(env, value);
+  return noko->ToJava(env, value);
 }
 
 jboolean JSObject::Has(JNIEnv *env, jobject jThis, jstring jKey) {
@@ -45,7 +45,7 @@ jobjectArray JSObject::Keys(JNIEnv *env, jobject jThis) {
   v8::TryCatch tryCatch(isolate);
   auto names = that->GetPropertyNames(context);
   if (names.IsEmpty()) {
-    runtime->Throw(env, tryCatch.Exception());
+    noko->Throw(env, tryCatch.Exception());
     return nullptr;
   }
   auto array = names.ToLocalChecked();
@@ -54,7 +54,7 @@ jobjectArray JSObject::Keys(JNIEnv *env, jobject jThis) {
   for (int i = 0; i < length; i++) {
     auto element = array->Get(context, i);
     if (element.IsEmpty()) {
-      runtime->Throw(env, tryCatch.Exception());
+      noko->Throw(env, tryCatch.Exception());
       return nullptr;
     }
     v8::String::Value unicodeString(isolate, element.ToLocalChecked());
@@ -66,8 +66,8 @@ jobjectArray JSObject::Keys(JNIEnv *env, jobject jThis) {
 
 void JSObject::New(JNIEnv *env, jobject jThis) {
   V8_SCOPE(env, jThis)
-  auto value = v8::Object::New(runtime->isolate_);
-  auto result = new v8::Persistent<v8::Value>(runtime->isolate_, value);
+  auto value = v8::Object::New(noko->isolate_);
+  auto result = new v8::Persistent<v8::Value>(noko->isolate_, value);
   JSValue::SetReference(env, jThis, (jlong) result);
 }
 
@@ -101,9 +101,9 @@ static void SetterCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
   v8::String::Value unicodeString(isolate, key);
 
   auto observer = reinterpret_cast<PropertiesObserver *>(v8Observer->Value());
-  EnvHelper env(observer->runtime->vm_);
+  EnvHelper env(observer->noko->vm_);
   jstring jKey = env->NewString(*unicodeString, unicodeString.length());
-  jobject jValue = observer->runtime->ToJava(*env, newValue);
+  jobject jValue = observer->noko->ToJava(*env, newValue);
   observer->onPropertyChanged(*env, jKey, jValue);
 }
 
@@ -153,7 +153,7 @@ void JSObject::Watch(JNIEnv *env, jobject jThis, jobjectArray jKeys, jobject jOb
       UNUSED(holder->Set(context, 1, v8::Undefined(isolate)));
     }
 
-    auto observer = new PropertiesObserver(runtime, env, jObserver, methodId);
+    auto observer = new PropertiesObserver(noko, env, jObserver, methodId);
     auto v8Observer = v8::External::New(isolate, observer);
     auto weakRef = new v8::Persistent<v8::Value>(isolate, v8Observer);
     weakRef->SetWeak(observer, ObserverWeakCallback, v8::WeakCallbackType::kParameter);
@@ -174,14 +174,14 @@ jint JSObject::OnLoad(JNIEnv *env) {
   JNINativeMethod methods[] = {
     {"nativeGet",    "(Ljava/lang/String;)Lcom/linroid/noko/types/JSValue;",                      (void *) (JSObject::Get)},
     {"nativeSet",    "(Ljava/lang/String;Lcom/linroid/noko/types/JSValue;)V",                     (void *) (JSObject::Set)},
-    {"nativeNew",    "()V",                                                                     (void *) (JSObject::New)},
-    {"nativeHas",    "(Ljava/lang/String;)Z",                                                   (void *) (JSObject::Has)},
-    {"nativeDelete", "(Ljava/lang/String;)V",                                                   (void *) (JSObject::Delete)},
-    {"nativeKeys",   "()[Ljava/lang/String;",                                                   (void *) (JSObject::Keys)},
-    {"nativeWatch",  "([Ljava/lang/String;Lcom/linroid/noko/observable/PropertiesObserver;)V", (void *) (JSObject::Watch)},
+    {"nativeNew",    "()V",                                                                       (void *) (JSObject::New)},
+    {"nativeHas",    "(Ljava/lang/String;)Z",                                                     (void *) (JSObject::Has)},
+    {"nativeDelete", "(Ljava/lang/String;)V",                                                     (void *) (JSObject::Delete)},
+    {"nativeKeys",   "()[Ljava/lang/String;",                                                     (void *) (JSObject::Keys)},
+    {"nativeWatch",  "([Ljava/lang/String;Lcom/linroid/noko/observable/PropertiesObserver;)V",    (void *) (JSObject::Watch)},
   };
   jClazz = (jclass) env->NewGlobalRef(clazz);
-  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/types/JSContext;J)V");
+  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Noko;L)V");
   env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
   return JNI_OK;
 }

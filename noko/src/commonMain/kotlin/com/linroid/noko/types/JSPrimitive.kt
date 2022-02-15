@@ -1,3 +1,5 @@
 package com.linroid.noko.types
 
-open class JSPrimitive(context: JSContext, reference: Long) : JSValue(context, reference)
+import com.linroid.noko.Noko
+
+open class JSPrimitive(noko: Noko, nPtr: Long) : JSValue(noko, nPtr)

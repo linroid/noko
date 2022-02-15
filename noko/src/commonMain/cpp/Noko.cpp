@@ -3,7 +3,7 @@
 #include <uv.h>
 #include <v8.h>
 #include <libplatform/libplatform.h>
-#include "NodeRuntime.h"
+#include "Noko.h"
 #include "types/JSContext.h"
 #include "types/JSValue.h"
 #include "types/JSUndefined.h"
@@ -18,14 +18,14 @@
 #include "types/JSError.h"
 #include "EnvHelper.h"
 
-int NodeRuntime::instanceCount_ = 0;
-std::mutex NodeRuntime::sharedMutex_;
-int NodeRuntime::seq_ = 0;
+int Noko::instanceCount_ = 0;
+std::mutex Noko::sharedMutex_;
+int Noko::seq_ = 0;
 
 bool nodeInitialized = false;
 std::unique_ptr<node::MultiIsolatePlatform> platform;
 
-NodeRuntime::NodeRuntime(
+Noko::Noko(
   JNIEnv *env,
   jobject jThis,
   jmethodID jAttach,
@@ -48,26 +48,25 @@ NodeRuntime::NodeRuntime(
   }
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat"
-  LOGD("new NodeRuntime: thread_id=%d, id=%d, this=%p", std::this_thread::get_id(), id_, this);
+  LOGD("new Noko: thread_id=%d, id=%d, this=%p", std::this_thread::get_id(), id_, this);
 #pragma clang diagnostic pop
 }
 
-NodeRuntime::~NodeRuntime() {
+Noko::~Noko() {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat"
-  LOGE("~NodeRuntime(): thread_id=%d, id=%d, this=%p", std::this_thread::get_id(), id_, this);
+  LOGE("~Noko(): thread_id=%d, id=%d, this=%p", std::this_thread::get_id(), id_, this);
 #pragma clang diagnostic pop
   std::lock_guard<std::mutex> sharedLock(sharedMutex_);
   std::lock_guard<std::mutex> asyncLock(asyncMutex_);
   {
     EnvHelper env(vm_);
+    env->DeleteGlobalRef(jSharedUndefined_);
+    env->DeleteGlobalRef(jSharedNull_);
+    env->DeleteGlobalRef(jSharedTrue_);
+    env->DeleteGlobalRef(jSharedFalse_);
+    env->SetLongField(jThis_, jPtrId, 0l);
     env->DeleteGlobalRef(jThis_);
-    env->DeleteGlobalRef(jUndefined_);
-    env->DeleteGlobalRef(jNull_);
-    env->DeleteGlobalRef(jTrue_);
-    env->DeleteGlobalRef(jFalse_);
-    JSContext::ClearPtr(*env, jContext_);
-    env->DeleteGlobalRef(jContext_);
   }
 
   isolate_ = nullptr;
@@ -75,10 +74,10 @@ NodeRuntime::~NodeRuntime() {
   LOGI("set running=false");
 
   --instanceCount_;
-  LOGE("~NodeRuntime() finished, instanceCount=%d", instanceCount_);
+  LOGE("~Noko() finished, instanceCount=%d", instanceCount_);
 }
 
-void NodeRuntime::Attach() {
+void Noko::Attach() {
   LOGI("Attach: %p", this);
   v8::Local<v8::Context> context = context_.Get(isolate_);
   v8::HandleScope handleScope(isolate_);
@@ -89,21 +88,26 @@ void NodeRuntime::Attach() {
   auto undefinedValue = new v8::Persistent<v8::Value>(isolate_, v8::Undefined(isolate_));
   auto trueValue = new v8::Persistent<v8::Value>(isolate_, v8::True(isolate_));
   auto falseValue = new v8::Persistent<v8::Value>(isolate_, v8::False(isolate_));
-  this->jContext_ = env->NewGlobalRef(JSContext::Wrap(*env, this));
-  this->jNull_ = env->NewGlobalRef(JSNull::Wrap(*env, this, nullValue));
-  this->jUndefined_ = env->NewGlobalRef(JSUndefined::Wrap(*env, this, undefinedValue));
-  this->jTrue_ = env->NewGlobalRef(JSBoolean::Wrap(*env, this, trueValue, true));
-  this->jFalse_ = env->NewGlobalRef(JSBoolean::Wrap(*env, this, falseValue, false));
-  JSContext::SetShared(*env, this);
-  env->CallVoidMethod(jThis_, jAttach_, jContext_);
+  // this->jGlobal_ = env->NewGlobalRef(JSObject::Wrap(*env, jThis_, this));
+  this->jSharedNull_ = env->NewGlobalRef(JSNull::Wrap(*env, jThis_, nullValue));
+  this->jSharedUndefined_ = env->NewGlobalRef(JSUndefined::Wrap(*env, jThis_, undefinedValue));
+  this->jSharedTrue_ = env->NewGlobalRef(JSBoolean::Wrap(*env, jThis_, trueValue, true));
+  this->jSharedFalse_ = env->NewGlobalRef(JSBoolean::Wrap(*env, jThis_, falseValue, false));
+
+  env->SetObjectField(jThis_, jSharedNullId, jSharedNull_);
+  env->SetObjectField(jThis_, jSharedUndefinedId, jSharedUndefined_);
+  env->SetObjectField(jThis_, jSharedTrueId, jSharedTrue_);
+  env->SetObjectField(jThis_, jSharedFalseId, jSharedFalse_);
+
+  env->CallVoidMethod(jThis_, jAttach_, (jlong) &global_);
 }
 
-void NodeRuntime::Detach() {
+void Noko::Detach() {
   EnvHelper env(vm_);
-  env->CallVoidMethod(jThis_, jDetach_, jContext_);
+  env->CallVoidMethod(jThis_, jDetach_, jThis_);
 }
 
-int NodeRuntime::Start(std::vector<std::string> &args) {
+int Noko::Start(std::vector<std::string> &args) {
   threadId_ = std::this_thread::get_id();
 
   int exitCode = 0;
@@ -179,7 +183,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
 }
 
 
-void NodeRuntime::CloseLoop() {
+void Noko::CloseLoop() {
   LOGW("closing uv loop");
   // Unregister the Isolate with the platform and add a listener that is called
   // when the Platform is done cleaning up any state it had associated with
@@ -201,7 +205,7 @@ void NodeRuntime::CloseLoop() {
   // assert(err == 0);
 }
 
-void NodeRuntime::RunLoop(node::Environment *env) {
+void Noko::RunLoop(node::Environment *env) {
   v8::SealHandleScope seal(isolate_);
 
   int more;
@@ -228,7 +232,7 @@ void NodeRuntime::RunLoop(node::Environment *env) {
 }
 
 
-void NodeRuntime::Exit(int code) {
+void Noko::Exit(int code) {
   LOGI("Exit(%d)", code);
   if (keepAlive_) {
     uv_async_send(keepAliveHandle_);
@@ -244,7 +248,7 @@ void NodeRuntime::Exit(int code) {
   });
 }
 
-bool NodeRuntime::InitLoop() {
+bool Noko::InitLoop() {
   eventLoop_ = uv_loop_new();
   int ret = uv_loop_init(eventLoop_);
   if (ret != 0) {
@@ -270,41 +274,41 @@ bool NodeRuntime::InitLoop() {
   return true;
 }
 
-jobject NodeRuntime::ToJava(JNIEnv *env, v8::Local<v8::Value> value) {
+jobject Noko::ToJava(JNIEnv *env, v8::Local<v8::Value> value) {
   if (value->IsNull()) {
-    return this->jNull_;
+    return this->jSharedNull_;
   } else if (value->IsUndefined()) {
-    return this->jUndefined_;
+    return this->jSharedUndefined_;
   } else if (value->IsBoolean()) {
     v8::Local<v8::Boolean> target = value->ToBoolean(isolate_);
     if (target->Value()) {
-      return this->jTrue_;
+      return this->jSharedTrue_;
     } else {
-      return this->jFalse_;
+      return this->jSharedFalse_;
     }
   } else {
     auto reference = new v8::Persistent<v8::Value>(isolate_, value);
     if (value->IsNumber()) {
-      return JSNumber::Wrap(env, this, reference);
+      return JSNumber::Wrap(env, jThis_, reference);
     } else if (value->IsObject()) {
       if (value->IsFunction()) {
-        return JSFunction::Wrap(env, this, reference);
+        return JSFunction::Wrap(env, jThis_, reference);
       } else if (value->IsPromise()) {
-        return JSPromise::Wrap(env, this, reference);
+        return JSPromise::Wrap(env, jThis_, reference);
       } else if (value->IsNativeError()) {
-        return JSError::Wrap(env, this, reference);
+        return JSError::Wrap(env, jThis_, reference);
       } else if (value->IsArray()) {
-        return JSArray::Wrap(env, this, reference);
+        return JSArray::Wrap(env, jThis_, reference);
       }
-      return JSObject::Wrap(env, this, reference);
+      return JSObject::Wrap(env, jThis_, reference);
     } else if (value->IsString()) {
-      return JSString::Wrap(env, this, reference);
+      return JSString::Wrap(env, jThis_, reference);
     }
-    return JSValue::Wrap(env, this, reference);
+    return JSValue::Wrap(env, jThis_, reference);
   }
 }
 
-void NodeRuntime::TryLoop() {
+void Noko::TryLoop() {
   if (!eventLoop_) {
     LOGE("TryLoop but eventLoop is null");
     return;
@@ -313,14 +317,14 @@ void NodeRuntime::TryLoop() {
     callbackHandle_ = new uv_async_t();
     callbackHandle_->data = this;
     uv_async_init(eventLoop_, callbackHandle_, [](uv_async_t *handle) {
-      auto *runtime = reinterpret_cast<NodeRuntime *>(handle->data);
+      auto *runtime = reinterpret_cast<Noko *>(handle->data);
       runtime->Handle(handle);
     });
     uv_async_send(callbackHandle_);
   }
 }
 
-bool NodeRuntime::Await(const std::function<void()> &runnable) {
+bool Noko::Await(const std::function<void()> &runnable) {
   assert(isolate_ != nullptr);
   if (std::this_thread::get_id() == threadId_) {
     runnable();
@@ -355,7 +359,7 @@ bool NodeRuntime::Await(const std::function<void()> &runnable) {
   }
 }
 
-bool NodeRuntime::Post(const std::function<void()> &runnable) {
+bool Noko::Post(const std::function<void()> &runnable) {
   if (!running_) {
     return false;
   }
@@ -373,7 +377,7 @@ bool NodeRuntime::Post(const std::function<void()> &runnable) {
   }
 }
 
-void NodeRuntime::Handle(uv_async_t *handle) {
+void Noko::Handle(uv_async_t *handle) {
   asyncMutex_.lock();
   while (!callbacks_.empty()) {
     auto callback = callbacks_.front();
@@ -392,7 +396,7 @@ void NodeRuntime::Handle(uv_async_t *handle) {
   asyncMutex_.unlock();
 }
 
-// v8::Local<v8::Value> NodeRuntime::Require(const char *path) {
+// v8::Local<v8::Value> Noko::Require(const char *path) {
 //     v8::EscapableHandleScope handleScope(isolate_);
 //     auto context = context_.Get(isolate_);
 //     auto global = global_->Get(isolate_);
@@ -406,7 +410,7 @@ void NodeRuntime::Handle(uv_async_t *handle) {
 //     return handleScope.Escape(result->ToObject(context).ToLocalChecked());
 // }
 
-v8::Local<v8::Value> NodeRuntime::Require(const char *path) {
+v8::Local<v8::Value> Noko::Require(const char *path) {
   CheckThread();
   v8::EscapableHandleScope scope(isolate_);
   auto context = context_.Get(isolate_);
@@ -421,7 +425,7 @@ v8::Local<v8::Value> NodeRuntime::Require(const char *path) {
   return scope.Escape(result);
 }
 
-void NodeRuntime::MountFile(const char *src, const char *dst, const int mode) {
+void Noko::MountFile(const char *src, const char *dst, const int mode) {
   CheckThread();
   v8::Locker _locker(isolate_);
   v8::HandleScope _handleScope(isolate_);
@@ -430,7 +434,7 @@ void NodeRuntime::MountFile(const char *src, const char *dst, const int mode) {
   node::Mount(env, src, dst, mode);
 }
 
-void NodeRuntime::Chroot(const char *path) {
+void Noko::Chroot(const char *path) {
   CheckThread();
   v8::Locker _locker(isolate_);
   v8::HandleScope _handleScope(isolate_);
@@ -439,13 +443,13 @@ void NodeRuntime::Chroot(const char *path) {
   node::Chroot(env, path);
 }
 
-void NodeRuntime::Throw(JNIEnv *env, v8::Local<v8::Value> exception) {
+void Noko::Throw(JNIEnv *env, v8::Local<v8::Value> exception) {
   CheckThread();
-  auto jException = JSError::ToException(env, this, exception);
+  auto jException = JSError::ToException(env, jThis_, exception);
   env->Throw((jthrowable) jException);
 }
 
-void NodeRuntime::CheckThread() {
+void Noko::CheckThread() {
   if (std::this_thread::get_id() != threadId_) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat"
@@ -453,6 +457,10 @@ void NodeRuntime::CheckThread() {
 #pragma clang diagnostic pop
     std::abort();
   }
+}
+
+void Noko::Eval(const char* code, const char* source, int line) {
+
 }
 
 int init_node() {
@@ -496,3 +504,25 @@ int init_node() {
 //     v8::V8::Dispose();
 //     v8::V8::ShutdownPlatform();
 // }
+
+jmethodID Noko::jConstructorId;
+jfieldID  Noko::jSharedNullId;
+jfieldID  Noko::jSharedUndefinedId;
+jfieldID  Noko::jSharedTrueId;
+jfieldID  Noko::jSharedFalseId;
+jfieldID  Noko::jPtrId;
+
+jint Noko::OnLoad(JNIEnv *env) {
+  jclass clazz = env->FindClass("com/linroid/noko/Noko");
+  if (clazz == nullptr) {
+    return JNI_ERR;
+  }
+  jConstructorId  = env->GetMethodID(clazz, "<init>", "(JJ)V");
+  jSharedNullId         = env->GetFieldID(clazz, "sharedNull", "Lcom/linroid/noko/types/JSNull;");
+  jSharedUndefinedId    = env->GetFieldID(clazz, "sharedUndefined", "Lcom/linroid/noko/types/JSUndefined;");
+  jSharedTrueId         = env->GetFieldID(clazz, "sharedTrue", "Lcom/linroid/noko/types/JSBoolean;");
+  jSharedFalseId        = env->GetFieldID(clazz, "sharedFalse", "Lcom/linroid/noko/types/JSBoolean;");
+  jPtrId                = env->GetFieldID(clazz, "nPtr", "J");
+
+  return JNI_OK;
+}

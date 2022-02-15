@@ -2,7 +2,7 @@
 #define DORA_JNICALLBACK_H
 
 #include <jni.h>
-#include "../NodeRuntime.h"
+#include "../Noko.h"
 #include "JSValue.h"
 
 class JavaCallback {
@@ -11,10 +11,10 @@ private:
   jclass clazz_;
   jmethodID methodId_;
 public:
-  NodeRuntime *runtime = nullptr;
+  Noko *noko = nullptr;
   jobject that;
 
-  JavaCallback(NodeRuntime *runtime, JNIEnv *env, jobject that, jclass clazz, jmethodID methodId);
+  JavaCallback(Noko *noko, JNIEnv *env, jobject that, jclass clazz, jmethodID methodId);
 
   ~JavaCallback();
 

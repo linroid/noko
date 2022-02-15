@@ -4,40 +4,37 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonSyntaxException
-import com.linroid.noko.ref.JSValueReference
 import com.linroid.noko.Noko
 import com.linroid.noko.Platform
+import com.linroid.noko.ref.JSValueReference
 import kotlinx.coroutines.runBlocking
 import java.io.Closeable
 import java.lang.annotation.Native
 import java.net.URI
 
-open class JSValue(context: JSContext? = null, @Native internal val reference: Long) : Closeable {
-
-  @Suppress("LeakingThis")
-  lateinit var context: JSContext
-
+open class JSValue(
+  protected val noko: Noko,
+  @Native internal val nPtr: Long
+) : Closeable {
   init {
-    if (context != null) {
-      this.context = context
-      if (reference != 0L) {
-        // The object is just a wrapper for js object
-        JSValueReference(this, context.cleaner)
-      }
+    if (nPtr != 0L) {
+      // The object is just a wrapper for js object
+      JSValueReference(this, noko.cleaner)
     }
-    //TODO: Monitor js object is collected if the object is created by java side
   }
 
   /** For native access runtime ptr */
   private fun runtimePtr(): Long {
-    return context.runtimePtr
+    return noko.nPtr
   }
 
   override fun toString(): String {
-    if (Platform.isDebuggerConnected() && !context.node.isInNodeThread()) {
-      return runBlocking { context.node.await { nativeToString() } }
+    if (Platform.isDebuggerConnected() && !noko.isInNodeThread()) {
+      return runBlocking {
+        noko.await { nativeToString() }
+      }
     }
-    context.node.checkThread()
+    noko.checkThread()
     return nativeToString()
   }
 
@@ -109,7 +106,7 @@ open class JSValue(context: JSContext? = null, @Native internal val reference: L
 
   override fun equals(other: Any?): Boolean {
     if (other is JSValue) {
-      if (other.reference == reference) {
+      if (other.nPtr == nPtr) {
         return true
       }
       return nativeEquals(other)
@@ -118,11 +115,11 @@ open class JSValue(context: JSContext? = null, @Native internal val reference: L
   }
 
   fun sameReference(other: JSValue): Boolean {
-    return other.reference == reference
+    return other.nPtr == nPtr
   }
 
   override fun hashCode(): Int {
-    return reference.hashCode()
+    return nPtr.hashCode()
   }
 
   private external fun nativeEquals(other: JSValue): Boolean
@@ -134,36 +131,36 @@ open class JSValue(context: JSContext? = null, @Native internal val reference: L
 
   companion object {
 
-    fun from(context: JSContext, value: Any?): JSValue {
+    fun from(noko: Noko, value: Any?): JSValue {
       return when (value) {
-        null -> context.sharedNull
+        null -> noko.sharedNull
         is JSValue -> value
-        is Boolean -> if (value) context.sharedTrue else context.sharedFalse
-        is String -> JSString(context, value)
-        is Number -> JSNumber(context, value)
-        is Iterator<*> -> JSArray(context, value)
-        is List<*> -> JSArray(context, value.iterator())
-        is Array<*> -> JSArray(context, value.iterator())
+        is Boolean -> if (value) noko.sharedTrue else noko.sharedFalse
+        is String -> JSString(noko, value)
+        is Number -> JSNumber(noko, value)
+        is Iterator<*> -> JSArray(noko, value)
+        is List<*> -> JSArray(noko, value.iterator())
+        is Array<*> -> JSArray(noko, value.iterator())
         is JsonElement -> {
-          context.parseJson(value.toString())
+          noko.parseJson(value.toString())
         }
         else -> {
-          context.parseJson(Noko.gson.toJson(value))
+          noko.parseJson(Noko.gson.toJson(value))
         }
       }
     }
 
-    // fun from(context: JSContext, value: JsonElement): JSValue {
+    // fun from(noko: Noko, value: JsonElement): JSValue {
     //     return when {
-    //         value.isJsonNull -> JSNull(context)
-    //         value.isJsonObject -> JSObject(context, value.asJsonObject)
-    //         value.isJsonArray -> JSArray(context, value as Iterator<*>)
+    //         value.isJsonNull -> JSNull(noko)
+    //         value.isJsonObject -> JSObject(noko, value.asJsonObject)
+    //         value.isJsonArray -> JSArray(noko, value as Iterator<*>)
     //         value.isJsonPrimitive -> {
     //             value as JsonPrimitive
     //             when {
-    //                 value.isBoolean -> JSBoolean(context, value.asBoolean)
-    //                 value.isNumber -> JSNumber(context, value.asNumber)
-    //                 value.isString -> JSString(context, value.asString)
+    //                 value.isBoolean -> JSBoolean(noko, value.asBoolean)
+    //                 value.isNumber -> JSNumber(noko, value.asNumber)
+    //                 value.isString -> JSString(noko, value.asString)
     //                 else -> throw IllegalStateException("Not support JsonPrimitive: ${value.javaClass}")
     //             }
     //         }

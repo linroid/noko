@@ -1,17 +1,18 @@
 package com.linroid.noko.types
 
+import com.linroid.noko.Noko
 import com.linroid.noko.annotation.ForNative
 
 class JSArray : JSObject, MutableList<JSValue> {
 
   @ForNative
-  private constructor(context: JSContext, reference: Long) : super(context, reference)
+  private constructor(noko: Noko, nPtr: Long) : super(noko, nPtr)
 
-  constructor(context: JSContext, data: Iterator<*>) : super(context, 0) {
+  constructor(noko: Noko, data: Iterator<*>) : super(noko, 0) {
     nativeNew()
     val array = ArrayList<JSValue>()
     data.forEach {
-      array.add(from(context, it))
+      array.add(from(noko, it))
     }
     addAll(array)
   }

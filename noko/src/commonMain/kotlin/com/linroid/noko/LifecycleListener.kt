@@ -1,6 +1,6 @@
 package com.linroid.noko
 
-import com.linroid.noko.types.JSContext
+import com.linroid.noko.types.JSObject
 
 /**
  * Listening lifecycle event from Node.js instance
@@ -9,17 +9,17 @@ interface LifecycleListener {
   /**
    * Node.js is starting, do environment initialization work in this callback
    */
-  fun onNodeBeforeStart(context: JSContext) {}
+  fun onNodeBeforeStart(noko: Noko, global: JSObject) {}
 
   /**
    * The environment of Node.js is ready, this is called before executing the main script
    */
-  fun onNodeStart(context: JSContext) {}
+  fun onNodeStart(noko: Noko, global: JSObject) {}
 
   /**
    * Node.js is going to exit
    */
-  fun onNodeBeforeExit(context: JSContext) {}
+  fun onNodeBeforeExit(noko: Noko, global: JSObject) {}
 
   /**
    * Node.js is already exited, it's time to cleanup resources

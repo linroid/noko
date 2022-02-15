@@ -1,5 +1,5 @@
 #include <jni.h>
-#include "../NodeRuntime.h"
+#include "../Noko.h"
 #include "JSValue.h"
 #include "JSString.h"
 #include "JSContext.h"
@@ -8,7 +8,7 @@
 jmethodID JSValue::jConstructor;
 jclass JSValue::jClazz;
 jfieldID JSValue::jReference;
-jmethodID JSValue::jGetRuntime;
+jmethodID JSValue::jGetNoko;
 
 jint JSValue::OnLoad(JNIEnv *env) {
   jclass clazz = env->FindClass("com/linroid/noko/types/JSValue");
@@ -18,7 +18,7 @@ jint JSValue::OnLoad(JNIEnv *env) {
   jClazz = (jclass) env->NewGlobalRef(clazz);
   jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/types/JSContext;J)V");
   jReference = env->GetFieldID(clazz, "reference", "J");
-  jGetRuntime = env->GetMethodID(clazz, "runtimePtr", "()J");
+  jGetNoko = env->GetMethodID(clazz, "nokoPtr", "()J");
 
   JNINativeMethod methods[] = {
     {"nativeToString", "()Ljava/lang/String;", (void *) JSValue::ToString},
@@ -44,7 +44,7 @@ jstring JSValue::ToString(JNIEnv *env, jobject jThis) {
   }
   auto str = that->ToString(context);
   if (str.IsEmpty()) {
-    runtime->Throw(env, tryCatch.Exception());
+    noko->Throw(env, tryCatch.Exception());
     return nullptr;
   }
   v8::String::Value unicodeString(isolate, str.ToLocalChecked());
@@ -61,11 +61,11 @@ jstring JSValue::TypeOf(JNIEnv *env, jobject jThis) {
 
 jstring JSValue::ToJson(JNIEnv *env, jobject jThis) {
   SETUP(env, jThis, v8::Value)
-  v8::TryCatch tryCatch(runtime->isolate_);
+  v8::TryCatch tryCatch(noko->isolate_);
   auto str = v8::JSON::Stringify(context, that);
   if (str.IsEmpty()) {
     if (tryCatch.HasCaught()) {
-      runtime->Throw(env, tryCatch.Exception());
+      noko->Throw(env, tryCatch.Exception());
       return nullptr;
     }
     return env->NewString(new uint16_t[0], 0);
@@ -78,10 +78,10 @@ jstring JSValue::ToJson(JNIEnv *env, jobject jThis) {
 
 jdouble JSValue::ToNumber(JNIEnv *env, jobject jThis) {
   SETUP(env, jThis, v8::Value)
-  v8::TryCatch tryCatch(runtime->isolate_);
+  v8::TryCatch tryCatch(noko->isolate_);
   auto number = that->ToNumber(context);
   if (number.IsEmpty()) {
-    runtime->Throw(env, tryCatch.Exception());
+    noko->Throw(env, tryCatch.Exception());
     return 0.0;
   }
   v8::Local<v8::Number> checked = number.ToLocalChecked();

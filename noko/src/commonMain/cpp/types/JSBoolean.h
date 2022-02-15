@@ -2,7 +2,7 @@
 #define NODE_JSBOOLEAN_H
 
 #include <jni.h>
-#include "../NodeRuntime.h"
+#include "../Noko.h"
 #include "JSValue.h"
 
 class JSBoolean {
@@ -11,8 +11,8 @@ private:
   static jmethodID jConstructor;
 
 public:
-  inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value, bool data) {
-    return env->NewObject(jClazz, jConstructor, runtime->jContext_, (jlong) value, data);
+  inline static jobject Wrap(JNIEnv *env, jobject jNoko, v8::Persistent<v8::Value> *value, bool data) {
+    return env->NewObject(jClazz, jConstructor, jNoko, (jlong) value, data);
   }
 
   static jint OnLoad(JNIEnv *env);

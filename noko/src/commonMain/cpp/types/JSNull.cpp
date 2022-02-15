@@ -18,6 +18,6 @@ jint JSNull::OnLoad(JNIEnv *env) {
 void JSNull::New(JNIEnv *env, jobject jThis) {
   V8_SCOPE(env, jThis)
   auto value = v8::Null(isolate);
-  auto result = new v8::Persistent<v8::Value>(runtime->isolate_, value);
+  auto result = new v8::Persistent<v8::Value>(noko->isolate_, value);
   JSValue::SetReference(env, jThis, (jlong) result);
 }

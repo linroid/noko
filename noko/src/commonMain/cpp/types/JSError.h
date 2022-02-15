@@ -12,14 +12,14 @@ private:
   static jmethodID jExceptionConstructor;
 
 public:
-  inline static jobject Wrap(JNIEnv *env, NodeRuntime *runtime, v8::Persistent<v8::Value> *value) {
+  inline static jobject Wrap(JNIEnv *env, jobject jNoko, v8::Persistent<v8::Value> *value) {
     LOGE("Wrap new JSError");
-    return env->NewObject(jClazz, jConstructor, runtime->jContext_, (jlong) value);
+    return env->NewObject(jClazz, jConstructor, jNoko, (jlong) value);
   }
 
   JNICALL static void New(JNIEnv *env, jobject jThis, jstring jMessage);
 
-  static jthrowable ToException(JNIEnv *env, NodeRuntime *runtime, v8::Local<v8::Value> error);
+  static jthrowable ToException(JNIEnv *env, jobject jNoko, v8::Local<v8::Value> error);
 
   static jint OnLoad(JNIEnv *env);
 };

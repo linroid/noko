@@ -27,7 +27,7 @@ jint JSPromise::OnLoad(JNIEnv *env) {
 
 void JSPromise::New(JNIEnv *env, jobject jThis) {
   V8_SCOPE(env, jThis)
-  auto context = runtime->context_.Get(isolate);
+  auto context = noko->context_.Get(isolate);
   auto resolver = v8::Promise::Resolver::New(context).ToLocalChecked();
   auto promise = resolver->GetPromise();
   auto resolverResult = new v8::Persistent<v8::Value>(isolate, resolver);
@@ -41,10 +41,10 @@ void JSPromise::Reject(JNIEnv *env, jobject jThis, jobject jError) {
   jlong resolverPtr = env->GetLongField(jThis, jResolver);
   auto resolver = reinterpret_cast<v8::Persistent<v8::Promise::Resolver> *>(resolverPtr);
   SETUP(env, jThis, v8::Promise)
-  v8::TryCatch tryCatch(runtime->isolate_);
+  v8::TryCatch tryCatch(noko->isolate_);
   UNUSED(resolver->Get(isolate)->Reject(context, value->Get(isolate)));
   if (tryCatch.HasCaught()) {
-    runtime->Throw(env, tryCatch.Exception());
+    noko->Throw(env, tryCatch.Exception());
     return;
   }
 }
@@ -54,22 +54,22 @@ void JSPromise::Resolve(JNIEnv *env, jobject jThis, jobject jValue) {
   jlong resolverPtr = env->GetLongField(jThis, jResolver);
   auto resolver = reinterpret_cast<v8::Persistent<v8::Promise::Resolver> *>(resolverPtr);
   SETUP(env, jThis, v8::Promise)
-  v8::TryCatch tryCatch(runtime->isolate_);
+  v8::TryCatch tryCatch(noko->isolate_);
   UNUSED(resolver->Get(isolate)->Resolve(context, value->Get(isolate)));
   if (tryCatch.HasCaught()) {
-    runtime->Throw(env, tryCatch.Exception());
+    noko->Throw(env, tryCatch.Exception());
     return;
   }
-  // runtime->isolate_->RunMicrotasks();
+  // noko->isolate_->RunMicrotasks();
 }
 
 void JSPromise::Then(JNIEnv *env, jobject jThis, jobject jCallback) {
   auto callback = reinterpret_cast<v8::Persistent<v8::Function> *>(JSValue::GetReference(env, jCallback));
   SETUP(env, jThis, v8::Promise)
-  v8::TryCatch tryCatch(runtime->isolate_);
+  v8::TryCatch tryCatch(noko->isolate_);
   auto ret = that->Then(context, callback->Get(isolate));
   if (ret.IsEmpty()) {
-    runtime->Throw(env, tryCatch.Exception());
+    noko->Throw(env, tryCatch.Exception());
     return;
   }
 }
@@ -77,10 +77,10 @@ void JSPromise::Then(JNIEnv *env, jobject jThis, jobject jCallback) {
 void JSPromise::Catch(JNIEnv *env, jobject jThis, jobject jCallback) {
   auto callback = reinterpret_cast<v8::Persistent<v8::Function> *>(JSValue::GetReference(env, jCallback));
   SETUP(env, jThis, v8::Promise)
-  v8::TryCatch tryCatch(runtime->isolate_);
+  v8::TryCatch tryCatch(noko->isolate_);
   auto ret = that->Catch(context, callback->Get(isolate));
   if (ret.IsEmpty()) {
-    runtime->Throw(env, tryCatch.Exception());
+    noko->Throw(env, tryCatch.Exception());
     return;
   }
 }

@@ -1,12 +1,14 @@
 package com.linroid.noko.types
 
+import com.linroid.noko.Noko
 import com.linroid.noko.annotation.ForNative
 
 open class JSNumber : JSValue {
-  @ForNative
-  private constructor(context: JSContext, reference: Long) : super(context, reference)
 
-  constructor(context: JSContext, number: Number) : super(context, 0) {
+  @ForNative
+  private constructor(noko: Noko, nPtr: Long) : super(noko, nPtr)
+
+  constructor(noko: Noko, number: Number) : super(noko, 0) {
     nativeNew(number.toDouble())
   }
 

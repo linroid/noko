@@ -1,6 +1,7 @@
 package com.linroid.noko.types
 
 import com.google.gson.JsonObject
+import com.linroid.noko.Noko
 import com.linroid.noko.annotation.JSName
 import com.linroid.noko.annotation.ForNative
 import com.linroid.noko.observable.PropertiesObserver
@@ -9,13 +10,13 @@ import java.lang.reflect.InvocationTargetException
 open class JSObject : JSValue {
 
   @ForNative
-  protected constructor(context: JSContext?, reference: Long) : super(context, reference)
+  protected constructor(noko: Noko, nPtr: Long) : super(noko, nPtr)
 
-  constructor(context: JSContext, data: JsonObject? = null) : super(context, 0) {
-    context.node.checkThread()
+  constructor(noko: Noko, data: JsonObject? = null) : super(noko, 0) {
+    noko.checkThread()
     nativeNew()
     data?.entrySet()?.forEach {
-      set(it.key, from(context, it.value))
+      set(it.key, from(noko, it.value))
     }
     addBinds()
   }
@@ -31,16 +32,16 @@ open class JSObject : JSValue {
         method.isAccessible = true
         val bind = method.getAnnotation(JSName::class.java)!!
         val name = bind.name.ifEmpty { method.name }
-        set(name, object : JSFunction(context, name) {
+        set(name, object : JSFunction(noko, name) {
           override fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue {
             val result = try {
               method.invoke(this@JSObject, *convertParameters(parameters, method.parameterTypes))
             } catch (error: InvocationTargetException) {
-              context.throwError("Unexpected error occurred during call '${className}#$name()': ${error.targetException.message}")
+              noko.throwError("Unexpected error occurred during call '${className}#$name()': ${error.targetException.message}")
             } catch (error: Exception) {
-              context.throwError("Unexpected error occurred during call '${className}#$name()': ${error.message}")
+              noko.throwError("Unexpected error occurred during call '${className}#$name()': ${error.message}")
             }
-            return from(context, result)
+            return from(noko, result)
           }
         })
       }
@@ -63,7 +64,7 @@ open class JSObject : JSValue {
   }
 
   fun set(key: String, value: Any?) {
-    nativeSet(key, from(context, value))
+    nativeSet(key, from(noko, value))
   }
 
   inline fun <reified T> get(key: String): T {
@@ -76,7 +77,7 @@ open class JSObject : JSValue {
   }
 
   fun <T> get(key: String, clazz: Class<T>): T? {
-    context.node.checkThread()
+    noko.checkThread()
     val value = nativeGet(key)
     return value.toType(clazz)
   }

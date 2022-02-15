@@ -1,5 +1,6 @@
-package com.linroid.noko.js
+package com.linroid.noko.type
 
+import com.linroid.noko.annotation.NativeConstructor
 import java.lang.reflect.InvocationTargetException
 
 /**

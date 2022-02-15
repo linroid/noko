@@ -1,4 +1,4 @@
-package com.linroid.noko.path
+package com.linroid.noko.fs
 
 import com.linroid.noko.Noko
 import java.io.File

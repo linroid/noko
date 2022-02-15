@@ -22,23 +22,23 @@ jfieldID JSContext::jFalseId;
 jfieldID JSContext::jPtr;
 
 jint JSContext::OnLoad(JNIEnv *env) {
-  jclass clazz = env->FindClass("com/linroid/noko/js/JSContext");
+  jclass clazz = env->FindClass("com/linroid/noko/type/JSContext");
   if (clazz == nullptr) {
     return JNI_ERR;
   }
   jClazz = (jclass) (env->NewGlobalRef(clazz));
   jConstructor = env->GetMethodID(clazz, "<init>", "(JJ)V");
-  jNullId = env->GetFieldID(clazz, "sharedNull", "Lcom/linroid/noko/js/JSNull;");
-  jUndefinedId = env->GetFieldID(clazz, "sharedUndefined", "Lcom/linroid/noko/js/JSUndefined;");
-  jTrueId = env->GetFieldID(clazz, "sharedTrue", "Lcom/linroid/noko/js/JSBoolean;");
-  jFalseId = env->GetFieldID(clazz, "sharedFalse", "Lcom/linroid/noko/js/JSBoolean;");
+  jNullId = env->GetFieldID(clazz, "sharedNull", "Lcom/linroid/noko/type/JSNull;");
+  jUndefinedId = env->GetFieldID(clazz, "sharedUndefined", "Lcom/linroid/noko/type/JSUndefined;");
+  jTrueId = env->GetFieldID(clazz, "sharedTrue", "Lcom/linroid/noko/type/JSBoolean;");
+  jFalseId = env->GetFieldID(clazz, "sharedFalse", "Lcom/linroid/noko/type/JSBoolean;");
   jPtr = env->GetFieldID(clazz, "runtimePtr", "J");
 
   JNINativeMethod methods[] = {
-    {"nativeEval",           "(Ljava/lang/String;Ljava/lang/String;I)Lcom/linroid/noko/js/JSValue;", (void *) Eval},
-    {"nativeParseJson",      "(Ljava/lang/String;)Lcom/linroid/noko/js/JSValue;",                    (void *) ParseJson},
-    {"nativeThrowError",     "(Ljava/lang/String;)Lcom/linroid/noko/js/JSError;",                    (void *) ThrowError},
-    {"nativeRequire",        "(Ljava/lang/String;)Lcom/linroid/noko/js/JSObject;",                   (void *) Require},
+    {"nativeEval",           "(Ljava/lang/String;Ljava/lang/String;I)Lcom/linroid/noko/type/JSValue;", (void *) Eval},
+    {"nativeParseJson",      "(Ljava/lang/String;)Lcom/linroid/noko/type/JSValue;",                    (void *) ParseJson},
+    {"nativeThrowError",     "(Ljava/lang/String;)Lcom/linroid/noko/type/JSError;",                    (void *) ThrowError},
+    {"nativeRequire",        "(Ljava/lang/String;)Lcom/linroid/noko/type/JSObject;",                   (void *) Require},
     {"nativeClearReference", "(J)V",                                                                  (void *) ClearReference},
   };
 

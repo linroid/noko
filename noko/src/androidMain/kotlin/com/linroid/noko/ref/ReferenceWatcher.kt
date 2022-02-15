@@ -1,7 +1,7 @@
-package com.linroid.noko
+package com.linroid.noko.ref
 
 import android.util.Log
-import com.linroid.noko.js.JSValue
+import com.linroid.noko.type.JSValue
 import java.lang.ref.ReferenceQueue
 
 /**

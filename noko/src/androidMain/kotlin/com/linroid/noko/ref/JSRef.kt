@@ -1,6 +1,6 @@
-package com.linroid.noko
+package com.linroid.noko.ref
 
-import com.linroid.noko.js.JSObject
+import com.linroid.noko.type.JSObject
 
 /**
  * @author linroid

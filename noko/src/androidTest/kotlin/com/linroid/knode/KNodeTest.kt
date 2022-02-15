@@ -1,7 +1,7 @@
 package com.linroid.noko
 
 import androidx.test.platform.app.InstrumentationRegistry
-import com.linroid.noko.js.JSContext
+import com.linroid.noko.type.JSContext
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -57,7 +57,7 @@ abstract class nokoTest : Noko.LifecycleListener, StdOutput {
 
   protected fun runInNode(action: () -> Unit) {
     runBlocking {
-      node.await(action)
+      node.execute(action)
     }
   }
 

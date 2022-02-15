@@ -1,4 +1,4 @@
-package com.linroid.noko.js
+package com.linroid.noko.type
 
 import android.net.Uri
 import android.os.Debug
@@ -7,9 +7,9 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonSyntaxException
 import com.linroid.noko.BuildConfig
-import com.linroid.noko.JSValueReference
+import com.linroid.noko.ref.JSValueReference
 import com.linroid.noko.Noko
-import com.linroid.noko.await
+import com.linroid.noko.execute
 import kotlinx.coroutines.runBlocking
 import java.io.Closeable
 import java.lang.annotation.Native
@@ -45,7 +45,7 @@ open class JSValue(context: JSContext? = null, @Native internal val reference: L
       && !context.node.isInNodeThread()
     ) {
       return runBlocking {
-        context.node.await {
+        context.node.execute {
           nativeToString()
         }
       }

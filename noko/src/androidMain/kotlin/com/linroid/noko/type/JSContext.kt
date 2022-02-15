@@ -1,6 +1,7 @@
-package com.linroid.noko.js
+package com.linroid.noko.type
 
 import com.linroid.noko.JSException
+import com.linroid.noko.annotation.NativeConstructor
 import com.linroid.noko.Noko
 import java.lang.annotation.Native
 

@@ -13,12 +13,12 @@ jclass JSError::jExceptionClazz;
 jmethodID JSError::jExceptionConstructor;
 
 jint JSError::OnLoad(JNIEnv *env) {
-  jclass clazz = env->FindClass("com/linroid/noko/js/JSError");
+  jclass clazz = env->FindClass("com/linroid/noko/type/JSError");
   if (!clazz) {
     return JNI_ERR;
   }
   jClazz = (jclass) env->NewGlobalRef(clazz);
-  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/js/JSContext;J)V");
+  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/type/JSContext;J)V");
 
   JNINativeMethod methods[] = {
     {"nativeNew", "(Ljava/lang/String;)V", (void *) JSError::New},
@@ -29,12 +29,12 @@ jint JSError::OnLoad(JNIEnv *env) {
     return rc;
   }
 
-  clazz = env->FindClass("com/linroid/noko/JSException");
+  clazz = env->FindClass("com/linroid/noko/typeException");
   if (!clazz) {
     return JNI_ERR;
   }
   jExceptionClazz = (jclass) env->NewGlobalRef(clazz);
-  jExceptionConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/js/JSObject;)V");
+  jExceptionConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/type/JSObject;)V");
 
   return JNI_OK;
 }

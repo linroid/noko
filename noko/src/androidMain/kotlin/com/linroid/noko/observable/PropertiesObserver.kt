@@ -1,8 +1,8 @@
 package com.linroid.noko.observable
 
 import androidx.annotation.Keep
-import com.linroid.noko.js.JSObject
-import com.linroid.noko.js.JSValue
+import com.linroid.noko.type.JSObject
+import com.linroid.noko.type.JSValue
 
 /**
  * An observer to receive property update events from [JSObject]

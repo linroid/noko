@@ -1,9 +1,23 @@
-package com.linroid.noko.js
+package com.linroid.noko.type
+
+import com.linroid.noko.JSException
+import com.linroid.noko.annotation.NativeConstructor
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 /**
  * @author linroid
  * @since 2019/11/1
  */
+
+suspend fun JSValue.awaitIfPromise(): JSValue {
+  if (this is JSPromise) {
+    return this.await()
+  }
+  return this
+}
+
 class JSPromise : JSObject {
 
   private var resolverPtr: Long = 0
@@ -47,6 +61,20 @@ class JSPromise : JSObject {
     }
     nativeCatch(then)
     return this
+  }
+
+  suspend fun await(): JSValue {
+    return suspendCancellableCoroutine { continuation ->
+      if (!context.node.post {
+          then {
+            continuation.resume(it)
+          }.catch {
+            continuation.resumeWithException(JSException(it))
+          }
+        }) {
+        continuation.cancel()
+      }
+    }
   }
 
   private external fun nativeNew()

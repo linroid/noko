@@ -11,19 +11,19 @@ jmethodID JSPromise::jConstructor;
 jfieldID JSPromise::jResolver;
 
 jint JSPromise::OnLoad(JNIEnv *env) {
-  jclass clazz = env->FindClass("com/linroid/noko/js/JSPromise");
+  jclass clazz = env->FindClass("com/linroid/noko/type/JSPromise");
   if (!clazz) {
     return JNI_ERR;
   }
   JNINativeMethod methods[] = {
     {"nativeNew",     "()V",                                  (void *) JSPromise::New},
-    {"nativeReject",  "(Lcom/linroid/noko/js/JSError;)V",    (void *) JSPromise::Reject},
-    {"nativeResolve", "(Lcom/linroid/noko/js/JSValue;)V",    (void *) JSPromise::Resolve},
-    {"nativeThen",    "(Lcom/linroid/noko/js/JSFunction;)V", (void *) JSPromise::Then},
-    {"nativeCatch",   "(Lcom/linroid/noko/js/JSFunction;)V", (void *) JSPromise::Catch},
+    {"nativeReject",  "(Lcom/linroid/noko/type/JSError;)V",    (void *) JSPromise::Reject},
+    {"nativeResolve", "(Lcom/linroid/noko/type/JSValue;)V",    (void *) JSPromise::Resolve},
+    {"nativeThen",    "(Lcom/linroid/noko/type/JSFunction;)V", (void *) JSPromise::Then},
+    {"nativeCatch",   "(Lcom/linroid/noko/type/JSFunction;)V", (void *) JSPromise::Catch},
   };
   jClazz = (jclass) env->NewGlobalRef(clazz);
-  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/js/JSContext;J)V");
+  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/type/JSContext;J)V");
   jResolver = env->GetFieldID(clazz, "resolverPtr", "J");
   env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
   return JNI_OK;

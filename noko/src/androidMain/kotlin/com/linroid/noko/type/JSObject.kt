@@ -1,7 +1,9 @@
-package com.linroid.noko.js
+package com.linroid.noko.type
 
 import android.util.Log
 import com.google.gson.JsonObject
+import com.linroid.noko.annotation.BindJS
+import com.linroid.noko.annotation.NativeConstructor
 import com.linroid.noko.observable.PropertiesObserver
 import java.lang.reflect.InvocationTargetException
 

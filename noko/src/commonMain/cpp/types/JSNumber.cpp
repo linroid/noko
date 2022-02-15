@@ -9,12 +9,12 @@ jclass JSNumber::jClazz;
 jmethodID JSNumber::jConstructor;
 
 jint JSNumber::OnLoad(JNIEnv *env) {
-  jclass clazz = env->FindClass("com/linroid/noko/js/JSNumber");
+  jclass clazz = env->FindClass("com/linroid/noko/type/JSNumber");
   if (!clazz) {
     return JNI_ERR;
   }
   jClazz = (jclass) env->NewGlobalRef(clazz);
-  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/js/JSContext;J)V");
+  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/type/JSContext;J)V");
   JNINativeMethod methods[] = {
     {"nativeNew", "(D)V", (void *) JSNumber::New},
   };

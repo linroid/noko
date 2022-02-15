@@ -1,4 +1,4 @@
-package com.linroid.noko.js
+package com.linroid.noko.annotation
 
 /**
  * @author linroid

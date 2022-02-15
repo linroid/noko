@@ -10,17 +10,20 @@ import android.util.Log
 import androidx.annotation.IntDef
 import androidx.annotation.Keep
 import com.google.gson.Gson
-import com.linroid.noko.js.JSContext
-import com.linroid.noko.js.JSFunction
-import com.linroid.noko.js.JSObject
-import com.linroid.noko.js.JSValue
-import com.linroid.noko.path.FileSystem
-import com.linroid.noko.path.RealFileSystem
+import com.linroid.noko.type.JSContext
+import com.linroid.noko.type.JSFunction
+import com.linroid.noko.type.JSObject
+import com.linroid.noko.type.JSValue
+import com.linroid.noko.fs.FileSystem
+import com.linroid.noko.fs.RealFileSystem
+import com.linroid.noko.ref.ReferenceWatcher
+import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.Closeable
 import java.io.File
 import java.lang.annotation.Native
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
+import kotlin.coroutines.resume
 
 /**
  * Create a new Node.js instance
@@ -36,11 +39,11 @@ import kotlin.concurrent.thread
  */
 @Keep
 class Noko(
-    private val cwd: File? = null,
-    private val output: StdOutput,
-    private val fs: FileSystem = RealFileSystem(),
-    keepAlive: Boolean = false,
-    private val strictMode: Boolean = true,
+  private val cwd: File? = null,
+  private val output: StdOutput,
+  private val fs: FileSystem = RealFileSystem(),
+  keepAlive: Boolean = false,
+  private val strictMode: Boolean = true,
 ) : Closeable {
 
   @Native
@@ -123,6 +126,21 @@ class Noko(
     versions[key] = value
   }
 
+  suspend fun <T> execute(action: () -> T): T {
+    return suspendCancellableCoroutine { continuation ->
+      val success = post {
+        try {
+          continuation.resume(action())
+        } catch (error: Exception) {
+          continuation.cancel(error)
+        }
+      }
+      if (!success) {
+        continuation.cancel()
+      }
+    }
+  }
+
   /**
    * Instructs the VM to halt execution as quickly as possible
    * @param code The exit code
@@ -165,7 +183,8 @@ class Noko(
     eventOnBeforeStart(context)
     val setupCode = StringBuilder()
     if (output.supportsColor) {
-      setupCode.append("""
+      setupCode.append(
+        """
 process.stderr.isTTY = true;
 process.stderr.isRaw = true;
 process.stdout.isTTY = true;
@@ -418,18 +437,21 @@ process.stdout.isRaw = true;
       Log.i(TAG, "setup")
       ReferenceWatcher.start()
 
-      val connectionManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+      val connectionManager =
+        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
       setDnsEnv(connectionManager)
 
       val request = NetworkRequest.Builder()
-          .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
-          .build()
-      connectionManager.registerNetworkCallback(request, object : ConnectivityManager.NetworkCallback() {
-        override fun onAvailable(network: Network) {
-          Log.d(TAG, "network onAvailable: $network")
-          setDnsEnv(connectionManager)
-        }
-      })
+        .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+        .build()
+      connectionManager.registerNetworkCallback(
+        request,
+        object : ConnectivityManager.NetworkCallback() {
+          override fun onAvailable(network: Network) {
+            Log.d(TAG, "network onAvailable: $network")
+            setDnsEnv(connectionManager)
+          }
+        })
       nativeSetup(connectionManager)
     }
 
@@ -455,7 +477,7 @@ process.stdout.isRaw = true;
         }
       })
       node.start("-p", "process.versions")
-  }
+    }
 
     fun mountExecutable(context: Context, exec: File) {
       this.exec = exec

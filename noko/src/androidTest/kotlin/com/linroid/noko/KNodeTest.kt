@@ -53,7 +53,7 @@ abstract class nokoTest : Noko.LifecycleListener, StdOutput {
 
   protected fun runInNode(action: () -> Unit) {
     runBlocking {
-      node.execute(action)
+      node.await(action)
     }
   }
 

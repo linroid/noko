@@ -40,7 +40,7 @@ open class JSValue(context: JSContext? = null, @Native internal val reference: L
       && !context.node.isInNodeThread()
     ) {
       return runBlocking {
-        context.node.execute {
+        context.node.await {
           nativeToString()
         }
       }

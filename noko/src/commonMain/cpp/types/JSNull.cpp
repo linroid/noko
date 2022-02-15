@@ -5,12 +5,12 @@ jclass JSNull::jClazz;
 jmethodID JSNull::jConstructor;
 
 jint JSNull::OnLoad(JNIEnv *env) {
-  jclass clazz = env->FindClass("com/linroid/noko/type/JSNull");
+  jclass clazz = env->FindClass("com/linroid/noko/types/JSNull");
   if (!clazz) {
     return JNI_ERR;
   }
   jClazz = (jclass) env->NewGlobalRef(clazz);
-  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/type/JSContext;J)V");
+  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/types/JSContext;J)V");
 
   return JNI_OK;
 }

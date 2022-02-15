@@ -10,10 +10,10 @@ import android.util.Log
 import androidx.annotation.IntDef
 import androidx.annotation.Keep
 import com.google.gson.Gson
-import com.linroid.noko.type.JSContext
-import com.linroid.noko.type.JSFunction
-import com.linroid.noko.type.JSObject
-import com.linroid.noko.type.JSValue
+import com.linroid.noko.types.JSContext
+import com.linroid.noko.types.JSFunction
+import com.linroid.noko.types.JSObject
+import com.linroid.noko.types.JSValue
 import com.linroid.noko.fs.FileSystem
 import com.linroid.noko.fs.RealFileSystem
 import com.linroid.noko.ref.ReferenceWatcher

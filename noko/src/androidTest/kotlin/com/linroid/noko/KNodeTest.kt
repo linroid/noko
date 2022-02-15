@@ -1,7 +1,7 @@
 package com.linroid.noko
 
 import androidx.test.platform.app.InstrumentationRegistry
-import com.linroid.noko.type.JSContext
+import com.linroid.noko.types.JSContext
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before

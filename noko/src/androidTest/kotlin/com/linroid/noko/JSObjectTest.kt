@@ -1,10 +1,10 @@
 package com.linroid.noko
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.linroid.noko.type.JSNumber
-import com.linroid.noko.type.JSObject
-import com.linroid.noko.type.JSString
-import com.linroid.noko.type.JSValue
+import com.linroid.noko.types.JSNumber
+import com.linroid.noko.types.JSObject
+import com.linroid.noko.types.JSString
+import com.linroid.noko.types.JSValue
 import com.linroid.noko.observable.PropertiesObserver
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.eq

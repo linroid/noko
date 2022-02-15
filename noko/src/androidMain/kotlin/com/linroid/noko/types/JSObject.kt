@@ -1,4 +1,4 @@
-package com.linroid.noko.type
+package com.linroid.noko.types
 
 import android.util.Log
 import com.google.gson.JsonObject

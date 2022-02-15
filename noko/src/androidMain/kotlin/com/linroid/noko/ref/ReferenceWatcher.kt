@@ -1,7 +1,7 @@
 package com.linroid.noko.ref
 
 import android.util.Log
-import com.linroid.noko.type.JSValue
+import com.linroid.noko.types.JSValue
 import java.lang.ref.ReferenceQueue
 
 internal object ReferenceWatcher : Thread("js-object-watcher") {

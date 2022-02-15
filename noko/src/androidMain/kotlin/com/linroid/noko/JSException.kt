@@ -1,7 +1,7 @@
 package com.linroid.noko
 
-import com.linroid.noko.type.JSObject
-import com.linroid.noko.type.JSValue
+import com.linroid.noko.types.JSObject
+import com.linroid.noko.types.JSValue
 
 class JSException(val error: JSObject) : RuntimeException(error.toString()) {
   fun stack(): String {

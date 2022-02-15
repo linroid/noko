@@ -44,7 +44,7 @@ jboolean JSArray::AddAll(JNIEnv *env, jobject jThis, jobjectArray jElements) {
 }
 
 jint JSArray::OnLoad(JNIEnv *env) {
-  jclass clazz = env->FindClass("com/linroid/noko/type/JSArray");
+  jclass clazz = env->FindClass("com/linroid/noko/types/JSArray");
   if (!clazz) {
     return JNI_ERR;
   }
@@ -52,14 +52,14 @@ jint JSArray::OnLoad(JNIEnv *env) {
   JNINativeMethod methods[] = {
     {"nativeSize",   "()I",                                (void *) (Size)},
     {"nativeNew",    "()V",                                (void *) (New)},
-    {"nativeAddAll", "([Lcom/linroid/noko/type/JSValue;)Z", (void *) (AddAll)},
-    {"nativeGet",    "(I)Lcom/linroid/noko/type/JSValue;",  (void *) (Get)},
-    {"nativeAdd",    "(Lcom/linroid/noko/type/JSValue;)Z",  (void *) (Add)},
-    // {"nativeAddAllAt", "(I[Lcom/linroid/noko/type/JSValue;)Z",                             (void *) (AddAllAt)},
-    // {"nativeAddAt",    "(ILcom/linroid/noko/type/JSValue;)Lcom/linroid/noko/type/JSValue;", (void *) (AddAllAt)},
+    {"nativeAddAll", "([Lcom/linroid/noko/types/JSValue;)Z", (void *) (AddAll)},
+    {"nativeGet",    "(I)Lcom/linroid/noko/types/JSValue;",  (void *) (Get)},
+    {"nativeAdd",    "(Lcom/linroid/noko/types/JSValue;)Z",  (void *) (Add)},
+    // {"nativeAddAllAt", "(I[Lcom/linroid/noko/types/JSValue;)Z",                             (void *) (AddAllAt)},
+    // {"nativeAddAt",    "(ILcom/linroid/noko/types/JSValue;)Lcom/linroid/noko/types/JSValue;", (void *) (AddAllAt)},
   };
   jClazz = (jclass) env->NewGlobalRef(clazz);
-  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/type/JSContext;J)V");
+  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/types/JSContext;J)V");
   env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
   return JNI_OK;
 }

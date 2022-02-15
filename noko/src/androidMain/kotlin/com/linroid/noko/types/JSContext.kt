@@ -1,4 +1,4 @@
-package com.linroid.noko.type
+package com.linroid.noko.types
 
 import com.linroid.noko.JSException
 import com.linroid.noko.annotation.ForNative

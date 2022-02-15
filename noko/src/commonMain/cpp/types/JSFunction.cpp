@@ -67,18 +67,18 @@ jobject JSFunction::Call(JNIEnv *env, jobject jThis, jobject jReceiver, jobjectA
 }
 
 jint JSFunction::OnLoad(JNIEnv *env) {
-  jclass clazz = env->FindClass("com/linroid/noko/type/JSFunction");
+  jclass clazz = env->FindClass("com/linroid/noko/types/JSFunction");
   if (!clazz) {
     return JNI_ERR;
   }
 
   JNINativeMethod methods[] = {
-    {"nativeCall", "(Lcom/linroid/noko/type/JSValue;[Lcom/linroid/noko/type/JSValue;)Lcom/linroid/noko/type/JSValue;", (void *) JSFunction::Call},
+    {"nativeCall", "(Lcom/linroid/noko/types/JSValue;[Lcom/linroid/noko/types/JSValue;)Lcom/linroid/noko/types/JSValue;", (void *) JSFunction::Call},
     {"nativeNew",  "(Ljava/lang/String;)V",                                                                         (void *) JSFunction::New},
   };
   jClazz = (jclass) env->NewGlobalRef(clazz);
-  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/type/JSContext;J)V");
-  jCall = env->GetMethodID(clazz, "onCall", "(Lcom/linroid/noko/type/JSValue;[Lcom/linroid/noko/type/JSValue;)Lcom/linroid/noko/type/JSValue;");
+  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/types/JSContext;J)V");
+  jCall = env->GetMethodID(clazz, "onCall", "(Lcom/linroid/noko/types/JSValue;[Lcom/linroid/noko/types/JSValue;)Lcom/linroid/noko/types/JSValue;");
   env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
   return JNI_OK;
 }

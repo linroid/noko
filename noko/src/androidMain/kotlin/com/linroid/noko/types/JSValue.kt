@@ -1,4 +1,4 @@
-package com.linroid.noko.type
+package com.linroid.noko.types
 
 import android.net.Uri
 import android.os.Debug

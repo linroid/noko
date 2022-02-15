@@ -1,6 +1,6 @@
 package com.linroid.noko.ref
 
-import com.linroid.noko.type.JSValue
+import com.linroid.noko.types.JSValue
 import java.lang.ref.PhantomReference
 import java.util.concurrent.CopyOnWriteArraySet
 

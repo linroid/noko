@@ -11,12 +11,12 @@ jfieldID JSValue::jReference;
 jmethodID JSValue::jGetRuntime;
 
 jint JSValue::OnLoad(JNIEnv *env) {
-  jclass clazz = env->FindClass("com/linroid/noko/type/JSValue");
+  jclass clazz = env->FindClass("com/linroid/noko/types/JSValue");
   if (!clazz) {
     return JNI_ERR;
   }
   jClazz = (jclass) env->NewGlobalRef(clazz);
-  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/type/JSContext;J)V");
+  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/types/JSContext;J)V");
   jReference = env->GetFieldID(clazz, "reference", "J");
   jGetRuntime = env->GetMethodID(clazz, "runtimePtr", "()J");
 

@@ -117,7 +117,7 @@ void JSObject::Watch(JNIEnv *env, jobject jThis, jobjectArray jKeys, jobject jOb
   SETUP(env, jThis, v8::Object)
   auto length = env->GetArrayLength(jKeys);
 
-  jmethodID methodId = env->GetMethodID(env->GetObjectClass(jObserver), "onPropertyChanged", "(Ljava/lang/String;Lcom/linroid/noko/type/JSValue;)V");
+  jmethodID methodId = env->GetMethodID(env->GetObjectClass(jObserver), "onPropertyChanged", "(Ljava/lang/String;Lcom/linroid/noko/types/JSValue;)V");
 
   for (int i = 0; i < length; ++i) {
     auto jKey = (jstring) env->GetObjectArrayElement(jKeys, i);
@@ -166,14 +166,14 @@ void JSObject::Watch(JNIEnv *env, jobject jThis, jobjectArray jKeys, jobject jOb
 }
 
 jint JSObject::OnLoad(JNIEnv *env) {
-  jclass clazz = env->FindClass("com/linroid/noko/type/JSObject");
+  jclass clazz = env->FindClass("com/linroid/noko/types/JSObject");
   if (!clazz) {
     return JNI_ERR;
   }
 
   JNINativeMethod methods[] = {
-    {"nativeGet",    "(Ljava/lang/String;)Lcom/linroid/noko/type/JSValue;",                      (void *) (JSObject::Get)},
-    {"nativeSet",    "(Ljava/lang/String;Lcom/linroid/noko/type/JSValue;)V",                     (void *) (JSObject::Set)},
+    {"nativeGet",    "(Ljava/lang/String;)Lcom/linroid/noko/types/JSValue;",                      (void *) (JSObject::Get)},
+    {"nativeSet",    "(Ljava/lang/String;Lcom/linroid/noko/types/JSValue;)V",                     (void *) (JSObject::Set)},
     {"nativeNew",    "()V",                                                                     (void *) (JSObject::New)},
     {"nativeHas",    "(Ljava/lang/String;)Z",                                                   (void *) (JSObject::Has)},
     {"nativeDelete", "(Ljava/lang/String;)V",                                                   (void *) (JSObject::Delete)},
@@ -181,7 +181,7 @@ jint JSObject::OnLoad(JNIEnv *env) {
     {"nativeWatch",  "([Ljava/lang/String;Lcom/linroid/noko/observable/PropertiesObserver;)V", (void *) (JSObject::Watch)},
   };
   jClazz = (jclass) env->NewGlobalRef(clazz);
-  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/type/JSContext;J)V");
+  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/types/JSContext;J)V");
   env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
   return JNI_OK;
 }

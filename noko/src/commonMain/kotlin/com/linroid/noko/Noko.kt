@@ -33,7 +33,6 @@ import kotlin.coroutines.resume
  * @param fs
  * @param keepAlive If all the js code is executed completely, should we keep the node running
  * @param strictMode If true to do thread checking when doing operation on js objects
- *
  */
 @Keep
 class Noko(

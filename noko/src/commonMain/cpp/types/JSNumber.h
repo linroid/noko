@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2019-10-21.
-//
-
 #ifndef NODE_JSNUMBER_H
 #define NODE_JSNUMBER_H
 

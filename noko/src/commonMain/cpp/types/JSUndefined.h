@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2019-10-20.
-//
-
 #ifndef NODE_JSUNDEFINED_H
 #define NODE_JSUNDEFINED_H
 

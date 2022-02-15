@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2019/10/31.
-//
-
 #include "JSFunction.h"
 #include "JSValue.h"
 #include "JSContext.h"

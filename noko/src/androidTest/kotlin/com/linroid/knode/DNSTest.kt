@@ -6,10 +6,6 @@ import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * @author linroid
- * @since 2020/5/5
- */
 @RunWith(AndroidJUnit4::class)
 class DNSTest : nokoTest() {
 

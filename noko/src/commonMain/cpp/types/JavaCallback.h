@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2019/11/3.
-//
-
 #ifndef DORA_JNICALLBACK_H
 #define DORA_JNICALLBACK_H
 

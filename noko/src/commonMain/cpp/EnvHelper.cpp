@@ -1,7 +1,3 @@
-//
-// Created by Lin Zhang on 9/3/21.
-//
-
 #include "EnvHelper.h"
 
 EnvHelper::EnvHelper(JavaVM *vm) : vm_(vm) {

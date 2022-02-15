@@ -1,6 +1,3 @@
-//
-// Created by Lin Zhang on 9/3/21.
-//
 #include <jni.h>
 #include "log.h"
 

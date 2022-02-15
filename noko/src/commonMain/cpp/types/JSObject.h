@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2019-10-20.
-//
-
 #ifndef NODE_JSOBJECT_H
 #define NODE_JSOBJECT_H
 

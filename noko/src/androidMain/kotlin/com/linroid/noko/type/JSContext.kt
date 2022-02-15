@@ -1,15 +1,11 @@
 package com.linroid.noko.type
 
 import com.linroid.noko.JSException
-import com.linroid.noko.annotation.NativeConstructor
+import com.linroid.noko.annotation.ForNative
 import com.linroid.noko.Noko
 import java.lang.annotation.Native
 
-/**
- * @author linroid
- * @since 2019-10-19
- */
-class JSContext @NativeConstructor private constructor(
+class JSContext @ForNative private constructor(
   @Native internal var runtimePtr: Long,
   reference: Long,
 ) : JSObject(null, reference) {

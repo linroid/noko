@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2/26/21.
-//
-
 #ifndef DORA_JS_PROPERTIESOBSERVER_H
 #define DORA_JS_PROPERTIESOBSERVER_H
 

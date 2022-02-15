@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2019-10-22.
-//
-
 #ifndef NODE_MACROS_H
 #define NODE_MACROS_H
 

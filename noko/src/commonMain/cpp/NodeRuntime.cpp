@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2019-10-19.
-//
-
 #include <jni.h>
 #include <mutex>
 #include <uv.h>

@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2019-10-21.
-//
-
 #include "JSNumber.h"
 #include "JSValue.h"
 

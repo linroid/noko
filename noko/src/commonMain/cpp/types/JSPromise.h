@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2019/11/8.
-//
-
 #ifndef DORA_JSPROMISE_H
 #define DORA_JSPROMISE_H
 

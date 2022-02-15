@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2019/11/3.
-//
-
 #include "JavaCallback.h"
 #include "../EnvHelper.h"
 

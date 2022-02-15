@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2/26/21.
-//
-
 #include "PropertiesObserver.h"
 #include "../types/JSValue.h"
 #include "../EnvHelper.h"

@@ -1,15 +1,10 @@
 package com.linroid.noko.type
 
 import com.linroid.noko.JSException
-import com.linroid.noko.annotation.NativeConstructor
+import com.linroid.noko.annotation.ForNative
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-
-/**
- * @author linroid
- * @since 2019/11/1
- */
 
 suspend fun JSValue.awaitIfPromise(): JSValue {
   if (this is JSPromise) {
@@ -22,7 +17,7 @@ class JSPromise : JSObject {
 
   private var resolverPtr: Long = 0
 
-  @NativeConstructor
+  @ForNative
   private constructor(context: JSContext, reference: Long) : super(context, reference)
 
   constructor(context: JSContext) : super(context, 0) {

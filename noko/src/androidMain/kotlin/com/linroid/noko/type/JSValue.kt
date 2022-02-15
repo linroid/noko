@@ -9,15 +9,10 @@ import com.google.gson.JsonSyntaxException
 import com.linroid.noko.BuildConfig
 import com.linroid.noko.ref.JSValueReference
 import com.linroid.noko.Noko
-import com.linroid.noko.execute
 import kotlinx.coroutines.runBlocking
 import java.io.Closeable
 import java.lang.annotation.Native
 
-/**
- * @author linroid
- * @since 2019-10-19
- */
 open class JSValue(context: JSContext? = null, @Native internal val reference: Long) : Closeable {
 
   @Suppress("LeakingThis")

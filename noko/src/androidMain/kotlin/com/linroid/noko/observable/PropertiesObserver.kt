@@ -6,9 +6,6 @@ import com.linroid.noko.type.JSValue
 
 /**
  * An observer to receive property update events from [JSObject]
- *
- * @author linroid
- * @since 2/26/21
  */
 @Keep
 interface PropertiesObserver {

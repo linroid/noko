@@ -1,14 +1,10 @@
 package com.linroid.noko.type
 
-import com.linroid.noko.annotation.NativeConstructor
+import com.linroid.noko.annotation.ForNative
 
-/**
- * @author linroid
- * @since 2019-10-19
- */
 class JSError : JSObject {
 
-  @NativeConstructor
+  @ForNative
   private constructor (context: JSContext, reference: Long) : super(context, reference)
 
   constructor(context: JSContext, message: String) : this(context, 0) {

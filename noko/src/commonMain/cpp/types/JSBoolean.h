@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2019-10-21.
-//
-
 #ifndef NODE_JSBOOLEAN_H
 #define NODE_JSBOOLEAN_H
 

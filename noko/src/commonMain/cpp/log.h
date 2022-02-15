@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2020/4/18.
-//
-
 #ifndef DORA_JS_LOG_H
 #define DORA_JS_LOG_H
 

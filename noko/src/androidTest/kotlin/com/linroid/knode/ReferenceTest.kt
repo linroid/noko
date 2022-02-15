@@ -7,9 +7,6 @@ import java.lang.ref.PhantomReference
 import java.lang.ref.ReferenceQueue
 import java.util.*
 
-/**
- * Created by linroid on 1/29/21.
- */
 @RunWith(AndroidJUnit4::class)
 class ReferenceTest {
   @Test(timeout = 10000)

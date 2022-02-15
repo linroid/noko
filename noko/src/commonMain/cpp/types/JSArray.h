@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2019-10-23.
-//
-
 #ifndef NODE_JSARRAY_H
 #define NODE_JSARRAY_H
 

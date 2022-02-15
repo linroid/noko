@@ -2,18 +2,14 @@ package com.linroid.noko.type
 
 import android.util.Log
 import com.google.gson.JsonObject
-import com.linroid.noko.annotation.BindJS
-import com.linroid.noko.annotation.NativeConstructor
+import com.linroid.noko.annotation.JSName
+import com.linroid.noko.annotation.ForNative
 import com.linroid.noko.observable.PropertiesObserver
 import java.lang.reflect.InvocationTargetException
 
-/**
- * @author linroid
- * @since 2019-10-19
- */
 open class JSObject : JSValue {
 
-  @NativeConstructor
+  @ForNative
   protected constructor(context: JSContext?, reference: Long) : super(context, reference)
 
   constructor(context: JSContext, data: JsonObject? = null) : super(context, 0) {
@@ -31,11 +27,11 @@ open class JSObject : JSValue {
     }
     val className = javaClass.simpleName
     javaClass.methods
-      .filter { it.isAnnotationPresent(BindJS::class.java) }
+      .filter { it.isAnnotationPresent(JSName::class.java) }
       .forEach { method ->
         method.isAccessible = true
-        val bind = method.getAnnotation(BindJS::class.java)!!
-        val name = if (bind.name.isEmpty()) method.name else bind.name
+        val bind = method.getAnnotation(JSName::class.java)!!
+        val name = bind.name.ifEmpty { method.name }
         set(name, object : JSFunction(context, name) {
           override fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
             val result = try {

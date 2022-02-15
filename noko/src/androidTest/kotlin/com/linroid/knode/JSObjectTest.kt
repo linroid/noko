@@ -17,10 +17,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.internal.verification.AtLeast
 
-/**
- * @author linroid
- * @since 2019/11/27
- */
 @RunWith(AndroidJUnit4::class)
 class JSObjectTest : nokoTest() {
 

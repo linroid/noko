@@ -1,19 +1,15 @@
 package com.linroid.noko.type
 
-import com.linroid.noko.annotation.NativeConstructor
+import com.linroid.noko.annotation.ForNative
 import java.lang.reflect.InvocationTargetException
 
-/**
- * @author linroid
- * @since 2019-10-19
- */
 typealias Callable = (receiver: JSValue, parameters: Array<out JSValue>) -> JSValue?
 
 open class JSFunction : JSObject {
 
   private val callable: Callable?
 
-  @NativeConstructor
+  @ForNative
   private constructor(context: JSContext, reference: Long) : super(context, reference) {
     this.callable = null
   }

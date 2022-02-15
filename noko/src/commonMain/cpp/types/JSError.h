@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2019/11/5.
-//
-
 #ifndef DORA_JSERROR_H
 #define DORA_JSERROR_H
 

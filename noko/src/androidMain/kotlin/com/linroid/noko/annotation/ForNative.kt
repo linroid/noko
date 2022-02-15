@@ -1,8 +1,7 @@
 package com.linroid.noko.annotation
 
 /**
- * @author linroid
- * @since 2019/11/3
+ * Annotate this method is called from native only
  */
 @Retention(AnnotationRetention.SOURCE)
-annotation class NativeConstructor
+annotation class ForNative

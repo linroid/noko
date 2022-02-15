@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2019-10-20.
-//
-
 #include <jni.h>
 #include <node.h>
 #include "JSObject.h"

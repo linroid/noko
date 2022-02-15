@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2019-10-19.
-//
-
 #ifndef NODE_NODE_RUNTIME_H
 #define NODE_NODE_RUNTIME_H
 

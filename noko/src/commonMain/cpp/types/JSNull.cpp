@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2019-10-23.
-//
-
 #include "JSNull.h"
 #include "JSValue.h"
 

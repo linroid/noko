@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2019-10-20.
-//
-
 #include "JSUndefined.h"
 #include "JSContext.h"
 

@@ -1,12 +1,8 @@
 package com.linroid.noko.type
 
-import com.linroid.noko.annotation.NativeConstructor
+import com.linroid.noko.annotation.ForNative
 
-/**
- * @author linroid
- * @since 2019-10-21
- */
-class JSBoolean @NativeConstructor private constructor(
+class JSBoolean @ForNative private constructor(
   context: JSContext, reference: Long,
   private val data: Boolean,
 ) : JSPrimitive(context, reference) {

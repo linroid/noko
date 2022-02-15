@@ -11,10 +11,6 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
-/**
- * @author linroid
- * @since 2020/4/18
- */
 @RunWith(AndroidJUnit4::class)
 class ExecutableTest {
   private lateinit var file: File

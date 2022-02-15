@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2019/10/31.
-//
-
 #ifndef DORA_JSFUNCTION_H
 #define DORA_JSFUNCTION_H
 

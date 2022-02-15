@@ -9,10 +9,6 @@ import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
-/**
- * @author linroid
- * @since 2019/11/27
- */
 abstract class nokoTest : Noko.LifecycleListener, StdOutput {
 
   private lateinit var file: File

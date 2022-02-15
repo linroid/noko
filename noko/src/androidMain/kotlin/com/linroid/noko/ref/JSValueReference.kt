@@ -4,9 +4,6 @@ import com.linroid.noko.type.JSValue
 import java.lang.ref.PhantomReference
 import java.util.concurrent.CopyOnWriteArraySet
 
-/**
- * Created by linroid on 1/27/21.
- */
 class JSValueReference(value: JSValue, private val cleaner: (Long) -> Unit) : PhantomReference<JSValue>(value,
   ReferenceWatcher.queue
 ) {

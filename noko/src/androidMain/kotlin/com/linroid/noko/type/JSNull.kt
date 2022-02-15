@@ -1,12 +1,8 @@
 package com.linroid.noko.type
 
-import com.linroid.noko.annotation.NativeConstructor
+import com.linroid.noko.annotation.ForNative
 
-/**
- * @author linroid
- * @since 2019-10-23
- */
-class JSNull @NativeConstructor private constructor(context: JSContext, reference: Long) : JSPrimitive(context, reference) {
+class JSNull @ForNative private constructor(context: JSContext, reference: Long) : JSPrimitive(context, reference) {
 
   override fun toJson(): String {
     return ""

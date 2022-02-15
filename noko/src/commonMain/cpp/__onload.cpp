@@ -1,7 +1,4 @@
 #include <__bit_reference>
-//
-// Created by linroid on 2019-10-19.
-//
 #include <jni.h>
 #include <pthread.h>
 #include <unistd.h>

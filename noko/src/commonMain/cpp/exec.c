@@ -1,8 +1,6 @@
 //
 // Modified from https://github.com/termux/termux-exec/blob/master/termux-exec.c
 //
-// Created by linroid on 2020/4/18.
-//
 
 #include <dlfcn.h>
 #include <errno.h>

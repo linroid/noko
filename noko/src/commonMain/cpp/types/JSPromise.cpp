@@ -1,7 +1,3 @@
-//
-// Created by linroid on 2019/11/8.
-//
-
 #include "JSPromise.h"
 #include "JSValue.h"
 #include "JSError.h"

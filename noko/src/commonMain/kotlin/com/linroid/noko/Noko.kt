@@ -1,13 +1,5 @@
 package com.linroid.noko
 
-import android.content.Context
-import android.net.ConnectivityManager
-import android.net.Network
-import android.net.NetworkCapabilities
-import android.net.NetworkRequest
-import android.system.Os
-import android.util.Log
-import androidx.annotation.Keep
 import com.google.gson.Gson
 import com.linroid.noko.fs.FileMode
 import com.linroid.noko.types.JSContext
@@ -16,7 +8,6 @@ import com.linroid.noko.types.JSObject
 import com.linroid.noko.types.JSValue
 import com.linroid.noko.fs.FileSystem
 import com.linroid.noko.fs.RealFileSystem
-import com.linroid.noko.ref.ReferenceWatcher
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.Closeable
 import java.io.File
@@ -34,7 +25,6 @@ import kotlin.coroutines.resume
  * @param keepAlive If all the js code is executed completely, should we keep the node running
  * @param strictMode If true to do thread checking when doing operation on js objects
  */
-@Keep
 class Noko(
   private val cwd: File? = null,
   private val output: StdOutput,
@@ -74,14 +64,11 @@ class Noko(
 
   private fun startInternal(execArgs: Array<String>) {
     try {
-      Log.d(TAG, "exec ${execArgs.joinToString(" ")}")
       val exitCode = nativeStart(execArgs)
-      Log.i(TAG, "node exited: $exitCode")
       eventOnExit(exitCode)
     } catch (error: JSException) {
       eventOnError(error)
     } catch (error: Exception) {
-      Log.w(TAG, "unexpected exception", error)
       throw error
     }
   }
@@ -138,9 +125,7 @@ class Noko(
    * @param code The exit code
    */
   fun exit(code: Int) {
-    Log.w(TAG, "exit($code)", Exception())
     if (!isRunning()) {
-      Log.w(TAG, "The node is ")
       Thread.dumpStack()
       return
     }
@@ -154,7 +139,6 @@ class Noko(
 
   fun post(action: Runnable): Boolean {
     if (!isRunning()) {
-      Log.w(TAG, "Submit but not active: active=$running, ptr=$ptr, seq=$sequence", Exception())
       return false
     }
     if (isInNodeThread()) {
@@ -166,7 +150,6 @@ class Noko(
 
   @Suppress("unused")
   private fun attach(context: JSContext) {
-    Log.i(TAG, "attach")
     this.context = context
     running = true
     context.node = this
@@ -209,7 +192,6 @@ process.stdout.isRaw = true;
       try {
         context.eval(setupCode.toString())
       } catch (error: JSException) {
-        Log.e(TAG, "Execute failed: stack=${error.stack()}", error)
         eventOnError(error)
       }
     }
@@ -218,7 +200,6 @@ process.stdout.isRaw = true;
 
   @Suppress("unused")
   private fun detach(context: JSContext) {
-    Log.w(TAG, "detach()")
     eventOnDetach(context)
   }
 
@@ -233,7 +214,6 @@ process.stdout.isRaw = true;
   }
 
   private fun attachStdOutput(context: JSContext) {
-    Log.d(TAG, "attachStdOutput")
     val process: JSObject = context.get("process")
     val stdout: JSObject = process.get("stdout")
     stdout.set("write", object : JSFunction(context, "write") {
@@ -252,7 +232,6 @@ process.stdout.isRaw = true;
   }
 
   private fun eventOnBeforeStart(context: JSContext) {
-    Log.i(TAG, "eventOnBeforeStart()")
     fs.link(this)
     listeners.forEach {
       it.onNodeBeforeStart(context)
@@ -260,21 +239,18 @@ process.stdout.isRaw = true;
   }
 
   private fun eventOnStart(context: JSContext) {
-    Log.i(TAG, "eventOnPrepared()")
     listeners.forEach {
       it.onNodeStart(context)
     }
   }
 
   private fun eventOnDetach(context: JSContext) {
-    Log.i(TAG, "onDetach()")
     listeners.forEach {
       it.onNodeBeforeExit(context)
     }
   }
 
   private fun eventOnExit(code: Int) {
-    Log.w(TAG, "eventOnExit: code=$code")
     running = false
     listeners.forEach {
       it.onNodeExit(code)
@@ -282,7 +258,6 @@ process.stdout.isRaw = true;
   }
 
   private fun eventOnError(error: JSException) {
-    Log.e(TAG, "eventOnError")
     listeners.forEach {
       it.onNodeError(error)
     }
@@ -308,10 +283,7 @@ process.stdout.isRaw = true;
 
   private external fun nativeChroot(path: String)
 
-
   companion object {
-    private const val TAG = "Noko"
-
     private val counter = AtomicInteger(0)
 
     private val customVersions = HashMap<String, String>()
@@ -322,44 +294,6 @@ process.stdout.isRaw = true;
 
     init {
       System.loadLibrary("noko")
-    }
-
-    private fun setDnsEnv(connectionManager: ConnectivityManager) {
-      val network = connectionManager.activeNetwork
-
-      val properties = connectionManager.getLinkProperties(network) ?: return
-      if (properties.dnsServers.isNotEmpty()) {
-        Os.setenv("DNS_SERVERS", properties.dnsServers.joinToString(",") {
-          it.hostAddress ?: "8.8.8.8"
-        }, true)
-      } else {
-        Os.unsetenv("DNS_SERVERS")
-      }
-
-      val domains = properties.domains
-      Os.setenv("DNS_DOMAINS", domains ?: "", true)
-    }
-
-    fun setup(context: Context) {
-      Log.i(TAG, "setup")
-      ReferenceWatcher.start()
-
-      val connectionManager =
-        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-      setDnsEnv(connectionManager)
-
-      val request = NetworkRequest.Builder()
-        .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
-        .build()
-      connectionManager.registerNetworkCallback(
-        request,
-        object : ConnectivityManager.NetworkCallback() {
-          override fun onAvailable(network: Network) {
-            Log.d(TAG, "network onAvailable: $network")
-            setDnsEnv(connectionManager)
-          }
-        })
-      nativeSetup(connectionManager)
     }
 
     fun addEnv(key: String, value: String) {
@@ -380,13 +314,9 @@ process.stdout.isRaw = true;
         }
 
         override fun stderr(str: String) {
-          Log.e(TAG, str)
         }
       })
       node.start("-p", "process.versions")
     }
-
-    @JvmStatic
-    private external fun nativeSetup(connectionManager: ConnectivityManager)
   }
 }

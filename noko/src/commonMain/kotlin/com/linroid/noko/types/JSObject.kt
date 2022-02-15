@@ -1,6 +1,5 @@
 package com.linroid.noko.types
 
-import android.util.Log
 import com.google.gson.JsonObject
 import com.linroid.noko.annotation.JSName
 import com.linroid.noko.annotation.ForNative
@@ -33,14 +32,12 @@ open class JSObject : JSValue {
         val bind = method.getAnnotation(JSName::class.java)!!
         val name = bind.name.ifEmpty { method.name }
         set(name, object : JSFunction(context, name) {
-          override fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue? {
+          override fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue {
             val result = try {
               method.invoke(this@JSObject, *convertParameters(parameters, method.parameterTypes))
             } catch (error: InvocationTargetException) {
-              Log.e(TAG, "Exception when calling '${className}#$name()'", error.targetException)
               context.throwError("Unexpected error occurred during call '${className}#$name()': ${error.targetException.message}")
             } catch (error: Exception) {
-              Log.e(TAG, "Exception when calling '${className}#$name()'", error)
               context.throwError("Unexpected error occurred during call '${className}#$name()': ${error.message}")
             }
             return from(context, result)
@@ -49,7 +46,10 @@ open class JSObject : JSValue {
       }
   }
 
-  private fun convertParameters(parameters: Array<out JSValue>, parameterTypes: Array<Class<*>>): Array<Any?> {
+  private fun convertParameters(
+    parameters: Array<out JSValue>,
+    parameterTypes: Array<Class<*>>
+  ): Array<Any?> {
     val argc = parameterTypes.size
     return Array(argc) { i ->
       val value = parameters[i]
@@ -67,7 +67,8 @@ open class JSObject : JSValue {
   }
 
   inline fun <reified T> get(key: String): T {
-    return get(key, T::class.java) ?: throw IllegalStateException("get $key from $this shouldn't return null")
+    return get(key, T::class.java)
+      ?: throw IllegalStateException("get $key from $this shouldn't return null")
   }
 
   inline fun <reified T> opt(key: String): T? {
@@ -102,8 +103,4 @@ open class JSObject : JSValue {
   private external fun nativeDelete(key: String)
   private external fun nativeNew()
   private external fun nativeWatch(properties: Array<out String>, observer: PropertiesObserver)
-
-  companion object {
-    private const val TAG = "JSObject"
-  }
 }

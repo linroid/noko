@@ -51,17 +51,26 @@ kotlin {
   jvm {
     compilations.all {
       kotlinOptions.jvmTarget = "1.8"
+      kotlinOptions.noJdk = true
     }
     testRuns["test"].executionTask.configure {
       useJUnit()
     }
   }
+  jvm("desktop") {
+    compilations.all {
+      kotlinOptions.jvmTarget = "1.8"
+    }
+    testRuns["test"].executionTask.configure {
+      useJUnit()
+    }
+  }
+
   sourceSets {
     val commonMain by getting {
       dependencies {
         implementation(kotlin("test"))
         implementation(kotlin("stdlib"))
-        implementation("androidx.annotation:annotation:1.4.0-alpha02")
         implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
       }
@@ -74,7 +83,21 @@ kotlin {
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:$coroutinesVersion")
       }
     }
-    val jvmTest by getting
+    val jvmTest by getting {
+      dependsOn(jvmMain)
+      dependsOn(commonTest)
+    }
+
+    val desktopMain by getting {
+      dependsOn(commonMain)
+      dependencies {
+        implementation(kotlin("stdlib"))
+        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:$coroutinesVersion")
+      }
+    }
+    val desktopTest by getting {
+      dependsOn(desktopMain)
+    }
     val androidMain by getting {
       dependsOn(commonMain)
       dependencies {
@@ -82,6 +105,7 @@ kotlin {
       }
     }
     val androidTest by getting {
+      dependsOn(androidMain)
       dependencies {
         implementation("junit:junit:4.13.2")
       }
@@ -90,7 +114,7 @@ kotlin {
 }
 
 android {
-  compileSdk = 32
+  compileSdk = 31
   sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
   defaultConfig {
     minSdk = 24

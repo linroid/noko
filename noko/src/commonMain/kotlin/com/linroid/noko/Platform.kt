@@ -1,7 +1,5 @@
 package com.linroid.noko
 
-object Platform {
-  fun isDebuggerConnected(): Boolean {
-    return false
-  }
+expect object Platform {
+  fun isDebuggerConnected(): Boolean
 }

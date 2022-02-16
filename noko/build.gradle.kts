@@ -72,6 +72,16 @@ java {
 
 kotlin {
   android {}
+
+  jvm {
+    compilations.all {
+      kotlinOptions.jvmTarget = "1.8"
+    }
+    testRuns["test"].executionTask.configure {
+      useJUnit()
+    }
+  }
+
   jvm("desktop") {
     compilations.all {
       kotlinOptions.jvmTarget = "11"
@@ -85,6 +95,7 @@ kotlin {
     val commonMain by getting {
       dependencies {
         implementation(kotlin("stdlib"))
+        implementation("com.squareup.okio:okio:3.0.0")
         implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
       }
@@ -95,25 +106,28 @@ kotlin {
       }
     }
 
+    val jvmMain by getting
+    val jvmTest by getting
+
     val desktopMain by getting {
-      dependsOn(commonMain)
+      dependsOn(jvmMain)
       dependencies {
         implementation(kotlin("stdlib"))
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:$coroutinesVersion")
       }
     }
     val desktopTest by getting {
-      dependsOn(desktopMain)
+      dependsOn(jvmTest)
     }
 
     val androidMain by getting {
-      dependsOn(commonMain)
+      dependsOn(jvmMain)
       dependencies {
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion")
       }
     }
     val androidTest by getting {
-      dependsOn(androidMain)
+      dependsOn(jvmTest)
       dependencies {
         implementation("junit:junit:4.13.2")
       }

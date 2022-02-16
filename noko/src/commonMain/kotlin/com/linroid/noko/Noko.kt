@@ -4,6 +4,7 @@ import com.linroid.noko.fs.FileMode
 import com.linroid.noko.fs.FileSystem
 import com.linroid.noko.fs.RealFileSystem
 import com.linroid.noko.types.*
+import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.Closeable
 import java.lang.annotation.Native
@@ -316,7 +317,7 @@ process.stdout.isRaw = true;
     private var exec = "node"
 
     init {
-      System.loadLibrary("noko")
+      Platform.loadLibrary()
     }
 
     fun addEnv(key: String, value: String) {

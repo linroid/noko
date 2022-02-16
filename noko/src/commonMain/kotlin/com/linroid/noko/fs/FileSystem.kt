@@ -1,18 +1,17 @@
 package com.linroid.noko.fs
 
 import com.linroid.noko.Noko
-import java.io.File
 
 abstract class FileSystem {
   /**
    * Get the virtual path for [file]
    */
-  abstract fun path(file: File): String
+  abstract fun path(file: String): String
 
   /**
    * Get the real file from [path]
    */
-  abstract fun file(path: String): File
+  abstract fun file(path: String): String
 
   /**
    * Link this filesystem into runtime

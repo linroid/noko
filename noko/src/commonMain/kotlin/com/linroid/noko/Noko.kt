@@ -6,7 +6,6 @@ import com.linroid.noko.fs.RealFileSystem
 import com.linroid.noko.types.*
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.Closeable
-import java.io.File
 import java.lang.annotation.Native
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
@@ -22,7 +21,7 @@ import kotlin.coroutines.resume
  * @param strictMode If true to do thread checking when doing operation on js objects
  */
 class Noko(
-  private val cwd: File? = null,
+  private val cwd: String? = null,
   private val output: StdOutput,
   private val fs: FileSystem = RealFileSystem(),
   keepAlive: Boolean = false,
@@ -61,7 +60,7 @@ class Noko(
    */
   fun start(vararg args: String) {
     val execArgs = ArrayList<String>()
-    execArgs.add(exec.absolutePath)
+    execArgs.add(exec)
     execArgs.addAll(args)
     sequence = counter.incrementAndGet()
     thread = thread(isDaemon = true, name = "noko(${sequence})") {
@@ -269,12 +268,12 @@ process.stdout.isRaw = true;
     }
   }
 
-  internal fun chroot(dir: File) {
-    nativeChroot(dir.absolutePath)
+  internal fun chroot(dir: String) {
+    nativeChroot(dir)
   }
 
-  internal fun mountFile(dst: String, src: File, mode: FileMode) {
-    nativeMountFile(src.absolutePath, dst, mode.flags)
+  internal fun mountFile(dst: String, src: String, mode: FileMode) {
+    nativeMountFile(src, dst, mode.flags)
   }
 
   @Throws(JSException::class)
@@ -314,9 +313,7 @@ process.stdout.isRaw = true;
 
     private val customVersions = HashMap<String, String>()
     private val customEnvs = HashMap<String, String>()
-    private var exec = File("node")
-
-    var gson: Gson = Gson()
+    private var exec = "node"
 
     init {
       System.loadLibrary("noko")

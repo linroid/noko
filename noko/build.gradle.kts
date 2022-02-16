@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+
 plugins {
   kotlin("multiplatform") version "1.6.10"
   kotlin("plugin.serialization") version "1.6.10"
@@ -17,25 +19,23 @@ repositories {
 // Remove useless source sets
 // See https://discuss.kotlinlang.org/t/disabling-androidandroidtestrelease-source-set-in-gradle-kotlin-dsl-script/21448
 afterEvaluate {
-  extensions.findByType<org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension>()
-    ?.let { ext ->
-      ext.sourceSets.removeAll { sourceSet ->
-        setOf(
-          "androidAndroidTestRelease",
-          "androidTestFixtures",
-          "androidTestFixturesDebug",
-          "androidTestFixturesRelease",
-        ).contains(sourceSet.name)
-      }
-    }
+  extensions.getByType<KotlinMultiplatformExtension>().sourceSets.removeAll { sourceSet ->
+    setOf(
+      "androidAndroidTestRelease",
+      "androidTestFixtures",
+      "androidTestFixturesDebug",
+      "androidTestFixturesRelease",
+    ).contains(sourceSet.name)
+  }
 }
 
 android {
-  compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-  }
+  compileSdk = 31
+  sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
+
   defaultConfig {
+    minSdk = 24
+    targetSdk = 31
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     consumerProguardFiles(file("consumer-rules.pro"))
     externalNativeBuild {
@@ -45,12 +45,19 @@ android {
       }
     }
   }
+
+  compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+  }
+
   externalNativeBuild {
     cmake {
       path = file("src/commonMain/cpp/CMakeLists.txt")
       version = "3.10.2"
     }
   }
+
   packagingOptions {
     jniLibs {
       keepDebugSymbols += "**/*.so"
@@ -87,6 +94,7 @@ kotlin {
         implementation(kotlin("test"))
       }
     }
+
     val desktopMain by getting {
       dependsOn(commonMain)
       dependencies {
@@ -97,6 +105,7 @@ kotlin {
     val desktopTest by getting {
       dependsOn(desktopMain)
     }
+
     val androidMain by getting {
       dependsOn(commonMain)
       dependencies {
@@ -109,14 +118,5 @@ kotlin {
         implementation("junit:junit:4.13.2")
       }
     }
-  }
-}
-
-android {
-  compileSdk = 31
-  sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
-  defaultConfig {
-    minSdk = 24
-    targetSdk = 31
   }
 }

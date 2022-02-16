@@ -12,7 +12,6 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import java.io.Closeable
 import java.lang.annotation.Native
-import java.net.URI
 
 open class JSValue(
   protected val noko: Noko,
@@ -77,11 +76,6 @@ open class JSValue(
       type == Long::class.java -> toNumber().toLong()
       type == Float::class.java -> toNumber().toFloat()
       type == Double::class.java -> toNumber().toDouble()
-      type == URI::class.java -> try {
-        URI.create(toString())
-      } catch (error: Exception) {
-        null
-      }
       type == JsonObject::class.java ||
           type == JsonElement::class.java ||
           type == JsonArray::class.java -> Json.decodeFromString(toJson())

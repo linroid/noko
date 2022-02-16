@@ -116,13 +116,13 @@ class Noko(
 
   suspend fun <T> await(action: () -> T): T {
     return suspendCancellableCoroutine { continuation ->
-      val success = post(Runnable {
+      val success = post {
         try {
           continuation.resume(action())
         } catch (error: Exception) {
           continuation.cancel(error)
         }
-      })
+      }
       if (!success) {
         continuation.cancel()
       }
@@ -145,15 +145,15 @@ class Noko(
     exit(0)
   }
 
-  fun post(action: Runnable): Boolean {
+  fun post(action: () -> Unit): Boolean {
     if (!isRunning()) {
       return false
     }
     if (isInNodeThread()) {
-      action.run()
+      action()
       return true
     }
-    return nativePost(action)
+    return nativePost(Runnable(action))
   }
 
   @Suppress("unused")

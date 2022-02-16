@@ -3,7 +3,7 @@ package com.linroid.noko.types
 import com.linroid.noko.Noko
 import com.linroid.noko.Platform
 import com.linroid.noko.ref.JSValueReference
-import kotlinx.coroutines.runBlocking
+import com.linroid.noko.runBlocking
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -12,6 +12,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import java.io.Closeable
 import java.lang.annotation.Native
+import kotlin.reflect.KClass
 
 open class JSValue(
   protected val noko: Noko,
@@ -64,26 +65,26 @@ open class JSValue(
   }
 
   @Suppress("IMPLICIT_CAST_TO_ANY", "UNCHECKED_CAST")
-  fun <T> toType(type: Class<T>): T? {
-    if (JSValue::class.java != type && !this.hasValue()) {
+  fun <T : Any> toType(type: KClass<T>): T? {
+    if (JSValue::class != type && !this.hasValue()) {
       return null
     }
     val result = when {
-      type == String::class.java -> this.toString()
-      type == Any::class.java -> this
-      type == Int::class.java -> toNumber().toInt()
-      type == Boolean::class.java -> toBoolean()
-      type == Long::class.java -> toNumber().toLong()
-      type == Float::class.java -> toNumber().toFloat()
-      type == Double::class.java -> toNumber().toDouble()
-      type == JsonObject::class.java ||
-          type == JsonElement::class.java ||
-          type == JsonArray::class.java -> Json.decodeFromString(toJson())
-      JSValue::class.java.isAssignableFrom(type) -> this
-      type.isArray -> {
-        check(this is JSArray) { "$this is not an JSArray" }
-        this.map { it.toType(type.componentType as Class<out Any>) }.toTypedArray()
-      }
+      type == String::class -> this.toString()
+      type == Any::class -> this
+      type == Int::class -> toNumber().toInt()
+      type == Boolean::class -> toBoolean()
+      type == Long::class -> toNumber().toLong()
+      type == Float::class -> toNumber().toFloat()
+      type == Double::class -> toNumber().toDouble()
+      type == JsonObject::class ||
+          type == JsonElement::class ||
+          type == JsonArray::class -> Json.decodeFromString(toJson())
+      // JSValue::class.isAssignableFrom(type) -> this
+      // type.isArray -> {
+      //   check(this is JSArray) { "$this is not an JSArray" }
+      //   this.map { it.toType(type.componentType as Class<out Any>) }.toTypedArray()
+      // }
       else -> {
         val json = toJson()
         Json.decodeFromString(json)

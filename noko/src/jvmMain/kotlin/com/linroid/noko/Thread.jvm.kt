@@ -1,6 +1,8 @@
 package com.linroid.noko
 
+import kotlinx.coroutines.CoroutineScope
 import kotlin.concurrent.thread
+import kotlin.coroutines.CoroutineContext
 
 internal actual typealias Thread = java.lang.Thread
 
@@ -12,4 +14,7 @@ internal actual fun startThread(isDaemon: Boolean, name: String, block: () -> Un
   return thread(name = name, block = block)
 }
 
-
+actual fun <T> runBlocking(
+  context: CoroutineContext,
+  block: suspend CoroutineScope.() -> T
+) = kotlinx.coroutines.runBlocking(context, block)

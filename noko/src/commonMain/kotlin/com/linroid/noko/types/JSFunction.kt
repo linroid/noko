@@ -26,7 +26,7 @@ open class JSFunction : JSObject {
       return try {
         callable.invoke(receiver, parameters)
       } catch (error: InvocationTargetException) {
-        noko.throwError("An unexpected error occurred during call native function: ${error.targetException.message}")
+        noko.throwError("An unexpected error occurred during call native function: ${error.getTargetException().message}")
       } catch (error: Exception) {
         // noko.throwError(error.message ?: "An error occurred when calling native function")
         throw error

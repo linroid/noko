@@ -1,10 +1,9 @@
 package com.linroid.noko.types
 
 import com.linroid.noko.Noko
-import com.linroid.noko.annotation.JSName
 import com.linroid.noko.annotation.ForNative
 import com.linroid.noko.observable.PropertiesObserver
-import java.lang.reflect.InvocationTargetException
+import kotlin.reflect.KClass
 
 open class JSObject : JSValue {
 
@@ -18,34 +17,34 @@ open class JSObject : JSValue {
   }
 
   private fun addBinds() {
-    if (javaClass == JSObject::class.java) {
+    if (this::class == JSObject::class) {
       return
     }
-    val className = javaClass.simpleName
-    javaClass.methods
-      .filter { it.isAnnotationPresent(JSName::class.java) }
-      .forEach { method ->
-        method.isAccessible = true
-        val bind = method.getAnnotation(JSName::class.java)!!
-        val name = bind.name.ifEmpty { method.name }
-        set(name, object : JSFunction(noko, name) {
-          override fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue {
-            val result = try {
-              method.invoke(this@JSObject, *convertParameters(parameters, method.parameterTypes))
-            } catch (error: InvocationTargetException) {
-              noko.throwError("Unexpected error occurred during call '${className}#$name()': ${error.targetException.message}")
-            } catch (error: Exception) {
-              noko.throwError("Unexpected error occurred during call '${className}#$name()': ${error.message}")
-            }
-            return from(noko, result)
-          }
-        })
-      }
+    // val className = this::class.simpleName
+    // this::class.methods
+    //   .filter { it.isAnnotationPresent(JSName::class.java) }
+    //   .forEach { method ->
+    //     method.isAccessible = true
+    //     val bind = method.getAnnotation(JSName::class.java)!!
+    //     val name = bind.name.ifEmpty { method.name }
+    //     set(name, object : JSFunction(noko, name) {
+    //       override fun onCall(receiver: JSValue, parameters: Array<out JSValue>): JSValue {
+    //         val result = try {
+    //           method.invoke(this@JSObject, *convertParameters(parameters, method.parameterTypes))
+    //         } catch (error: InvocationTargetException) {
+    //           noko.throwError("Unexpected error occurred during call '${className}#$name()': ${error.targetException.message}")
+    //         } catch (error: Exception) {
+    //           noko.throwError("Unexpected error occurred during call '${className}#$name()': ${error.message}")
+    //         }
+    //         return from(noko, result)
+    //       }
+    //     })
+    //   }
   }
 
   private fun convertParameters(
     parameters: Array<out JSValue>,
-    parameterTypes: Array<Class<*>>
+    parameterTypes: Array<KClass<*>>
   ): Array<Any?> {
     val argc = parameterTypes.size
     return Array(argc) { i ->
@@ -63,16 +62,16 @@ open class JSObject : JSValue {
     nativeSet(key, from(noko, value))
   }
 
-  inline fun <reified T> get(key: String): T {
-    return get(key, T::class.java)
+  inline fun <reified T : Any> get(key: String): T {
+    return get(key, T::class)
       ?: throw IllegalStateException("get $key from $this shouldn't return null")
   }
 
-  inline fun <reified T> opt(key: String): T? {
-    return get(key, T::class.java)
+  inline fun <reified T : Any> opt(key: String): T? {
+    return get(key, T::class)
   }
 
-  fun <T> get(key: String, clazz: Class<T>): T? {
+  fun <T : Any> get(key: String, clazz: KClass<T>): T? {
     noko.checkThread()
     val value = nativeGet(key)
     return value.toType(clazz)

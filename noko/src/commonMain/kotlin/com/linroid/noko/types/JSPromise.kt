@@ -51,7 +51,7 @@ class JSPromise : JSObject {
   fun catch(callback: (JSObject) -> Unit): JSPromise {
     val then = JSFunction(noko, "catch") { _, argv ->
       val result: JSValue = argv[0]
-      check(result is JSObject) { "catch() should receive an JSObject parameter not ${result.javaClass.simpleName}(${result.typeOf()})}: ${result.toJson()}" }
+      check(result is JSObject) { "catch() should receive an JSObject parameter not ${result::class.simpleName}(${result.typeOf()})}: ${result.toJson()}" }
       callback.invoke(result)
       return@JSFunction null
     }

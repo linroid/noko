@@ -1,6 +1,5 @@
 package com.linroid.noko.types
 
-import com.google.gson.JsonObject
 import com.linroid.noko.Noko
 import com.linroid.noko.annotation.JSName
 import com.linroid.noko.annotation.ForNative
@@ -12,12 +11,9 @@ open class JSObject : JSValue {
   @ForNative
   protected constructor(noko: Noko, nPtr: Long) : super(noko, nPtr)
 
-  constructor(noko: Noko, data: JsonObject? = null) : super(noko, 0) {
+  constructor(noko: Noko) : super(noko, 0) {
     noko.checkThread()
     nativeNew()
-    data?.entrySet()?.forEach {
-      set(it.key, from(noko, it.value))
-    }
     addBinds()
   }
 

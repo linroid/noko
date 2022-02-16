@@ -1,13 +1,15 @@
 package com.linroid.noko.types
 
-import com.google.gson.JsonArray
-import com.google.gson.JsonElement
-import com.google.gson.JsonObject
-import com.google.gson.JsonSyntaxException
 import com.linroid.noko.Noko
 import com.linroid.noko.Platform
 import com.linroid.noko.ref.JSValueReference
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import java.io.Closeable
 import java.lang.annotation.Native
 import java.net.URI
@@ -82,7 +84,7 @@ open class JSValue(
       }
       type == JsonObject::class.java ||
           type == JsonElement::class.java ||
-          type == JsonArray::class.java -> Noko.gson.fromJson(toJson(), JsonElement::class.java)
+          type == JsonArray::class.java -> Json.decodeFromString(toJson())
       JSValue::class.java.isAssignableFrom(type) -> this
       type.isArray -> {
         check(this is JSArray) { "$this is not an JSArray" }
@@ -90,11 +92,7 @@ open class JSValue(
       }
       else -> {
         val json = toJson()
-        try {
-          Noko.gson.fromJson(json, type)
-        } catch (error: JsonSyntaxException) {
-          throw IllegalArgumentException("Unable to parse the json as $type: $json", error)
-        }
+        Json.decodeFromString(json)
       }
     }
     return result as T?
@@ -145,7 +143,7 @@ open class JSValue(
           noko.parseJson(value.toString())
         }
         else -> {
-          noko.parseJson(Noko.gson.toJson(value))
+          noko.parseJson(Json.encodeToString(value))
         }
       }
     }

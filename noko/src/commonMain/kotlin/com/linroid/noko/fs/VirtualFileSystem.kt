@@ -12,7 +12,7 @@ import kotlin.collections.HashMap
  * @param mode The file permissions in default
  */
 class VirtualFileSystem(
-  private val root: File,
+  private val root: String,
   private val mode: FileMode = FileMode.ReadWrite,
 ) : FileSystem() {
   private val points = HashMap<String, MountPoint>()
@@ -32,19 +32,20 @@ class VirtualFileSystem(
    * @param mapping If true, a placeholder file will be created if the [dst] path related to [root]
    * doesn't exists in real filesystem, this can make it visible when listing files
    */
-  fun mount(dst: String, src: File, mode: FileMode, mapping: Boolean = true) {
-    check(src.exists()) { "File doesn't exists: $src" }
+  fun mount(dst: String, src: String, mode: FileMode, mapping: Boolean = true) {
+    val srcFile = File(src)
+    check(srcFile.exists()) { "File doesn't exists: $src" }
     check(dst.startsWith("/")) { "The dst path must be an absolute path(starts with '/')" }
     points[dst] = MountPoint(dst, src, mode)
     generatePairs()
     if (mapping) {
-      if (src.isDirectory) {
+      if (srcFile.isDirectory) {
         val dir = File(root, dst.substring(0))
         if (!dir.exists()) {
           dir.mkdirs()
         }
       } else {
-        src.parentFile?.mkdirs()
+        srcFile.parentFile?.mkdirs()
         val file = File(root, dst.substring(0))
         if (!file.exists()) {
           file.createNewFile()
@@ -71,29 +72,33 @@ class VirtualFileSystem(
     src2dst.clear()
     dst2src.clear()
     points.values.forEach {
-      src2dst[it.src.absolutePath] = it.dst
-      src2dst[it.dst] = it.src.absolutePath
+      src2dst[it.src] = it.dst
+      src2dst[it.dst] = it.src
     }
   }
 
-  override fun path(file: File): String {
-    val baseFile = src2dst.keys.find { file.absolutePath.startsWith(it) }
+  override fun path(file: String): String {
+    val baseFile = src2dst.keys.find { file.startsWith(it) }
     if (baseFile != null) {
-      return "/" + file.relativeTo(File(baseFile)).absolutePath
+      return "/" + file.relativeTo(baseFile)
     }
     try {
-      return "/" + file.relativeTo(root).absolutePath
+      return "/" + file.relativeTo(root)
     } catch (error: IllegalArgumentException) {
       throw IllegalArgumentException("$file doesn't belong to any mount points")
     }
   }
 
-  override fun file(path: String): File {
+  override fun file(path: String): String {
     val basePath = dst2src.keys.find { path.startsWith(it) }
     if (basePath != null) {
-      return File(dst2src.getValue(basePath), File(path).relativeTo(File(basePath)).absolutePath)
+      return dst2src.getValue(basePath) + path.relativeTo(basePath)
     }
-    return File(root, File(path).relativeTo(File("/")).absolutePath)
+    return root + path.relativeTo("/")
+  }
+
+  private fun String.relativeTo(base: String): File {
+    return File(this).relativeTo(File(base))
   }
 
   override fun link(noko: Noko) {
@@ -105,7 +110,7 @@ class VirtualFileSystem(
 
   private data class MountPoint(
     val dst: String,
-    val src: File,
+    val src: String,
     val mode: FileMode,
   )
 }

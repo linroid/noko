@@ -1,5 +1,6 @@
 plugins {
   kotlin("multiplatform") version "1.6.10"
+  kotlin("plugin.serialization") version "1.6.10"
   id("com.android.library")
 }
 
@@ -61,7 +62,7 @@ kotlin {
         implementation(kotlin("test"))
         implementation(kotlin("stdlib"))
         implementation("androidx.annotation:annotation:1.4.0-alpha02")
-        implementation("com.google.code.gson:gson:2.8.6")
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
       }
     }

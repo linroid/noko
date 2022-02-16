@@ -1,6 +1,5 @@
 package com.linroid.noko
 
-import com.google.gson.Gson
 import com.linroid.noko.fs.FileMode
 import com.linroid.noko.fs.FileSystem
 import com.linroid.noko.fs.RealFileSystem

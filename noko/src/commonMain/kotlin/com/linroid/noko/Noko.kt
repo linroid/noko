@@ -1,15 +1,14 @@
 package com.linroid.noko
 
-import com.linroid.noko.fs.FileMode
 import com.linroid.noko.fs.FileSystem
 import com.linroid.noko.fs.RealFileSystem
 import com.linroid.noko.types.*
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.suspendCancellableCoroutine
+import okio.Path
 import java.io.Closeable
 import java.lang.annotation.Native
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.concurrent.thread
 import kotlin.coroutines.resume
 
 /**
@@ -33,7 +32,7 @@ class Noko(
   internal var nPtr: Long = nativeNew(keepAlive, strictMode)
   private val listeners = HashSet<LifecycleListener>()
 
-  @Volatile
+  //  @Volatile
   private var running = false
   private var global: JSObject? = null
   private var sequence = 0
@@ -61,10 +60,10 @@ class Noko(
    */
   fun start(vararg args: String) {
     val execArgs = ArrayList<String>()
-    execArgs.add(exec)
+    execArgs.add(EXEC_PATH)
     execArgs.addAll(args)
     sequence = counter.incrementAndGet()
-    thread = thread(isDaemon = true, name = "noko(${sequence})") {
+    thread = startThread(isDaemon = true, name = "Noko(${sequence})") {
       startInternal(execArgs.toTypedArray())
     }
   }
@@ -83,15 +82,15 @@ class Noko(
   /**
    * Add a listener to listen the state of node instance
    */
-  fun addListener(lifecycleListener: LifecycleListener) = synchronized(this) {
-    listeners.add(lifecycleListener)
+  fun addListener(listener: LifecycleListener) {
+    listeners.add(listener)
   }
 
   /**
    * Removes a listener from this node instance
    */
-  fun removeListener(lifecycleListener: LifecycleListener) = synchronized(this) {
-    listeners.remove(lifecycleListener)
+  fun removeListener(listener: LifecycleListener) {
+    listeners.remove(listener)
   }
 
   /**
@@ -114,13 +113,13 @@ class Noko(
 
   suspend fun <T> await(action: () -> T): T {
     return suspendCancellableCoroutine { continuation ->
-      val success = post {
+      val success = post(Runnable {
         try {
           continuation.resume(action())
         } catch (error: Exception) {
           continuation.cancel(error)
         }
-      }
+      })
       if (!success) {
         continuation.cancel()
       }
@@ -133,7 +132,6 @@ class Noko(
    */
   fun exit(code: Int) {
     if (!isRunning()) {
-      Thread.dumpStack()
       return
     }
     nativeExit(code)
@@ -181,8 +179,8 @@ process.stdout.isRaw = true;
     }
 
     cwd?.let {
-      setEnv("PWD", fs.path(cwd))
-      setupCode.append("process.chdir('${fs.path(cwd)}');\n")
+      setEnv("PWD", cwd.toString())
+      setupCode.append("process.chdir('${cwd}');\n")
     }
     if (output.supportsColor) {
       setEnv("COLORTERM", "truecolor")
@@ -190,7 +188,7 @@ process.stdout.isRaw = true;
     environmentVariables.entries.forEach {
       setEnv(it.key, it.value)
     }
-    setupCode.append("process.execPath = '${fs.path(exec)}'\n")
+    setupCode.append("process.execPath = '${EXEC_PATH}'\n")
     versions.forEach {
       setVersion(it.key, it.value)
     }
@@ -211,12 +209,12 @@ process.stdout.isRaw = true;
 
   internal fun checkThread() {
     if (strictMode) {
-      check(isInNodeThread()) { "Operating js object is only allowed in origin thread: current=${Thread.currentThread()}" }
+      check(isInNodeThread()) { "Operating js object is only allowed in origin thread: current=${currentThread()}" }
     }
   }
 
   internal fun isInNodeThread(): Boolean {
-    return Thread.currentThread() === thread
+    return currentThread() === thread
   }
 
   private fun attachStdOutput(global: JSObject) {
@@ -269,12 +267,12 @@ process.stdout.isRaw = true;
     }
   }
 
-  internal fun chroot(dir: String) {
-    nativeChroot(dir)
+  internal fun chroot(dir: Path) {
+    nativeChroot(dir.toString())
   }
 
-  internal fun mountFile(dst: String, src: String, mode: FileMode) {
-    nativeMountFile(src, dst, mode.flags)
+  internal fun mountFile(dst: Path, src: Path, mode: FileSystem.Mode) {
+    nativeMountFile(src.toString(), dst.toString(), mode.flags)
   }
 
   @Throws(JSException::class)
@@ -311,10 +309,9 @@ process.stdout.isRaw = true;
 
   companion object {
     private val counter = AtomicInteger(0)
-
     private val customVersions = HashMap<String, String>()
     private val customEnvs = HashMap<String, String>()
-    private var exec = "node"
+    private const val EXEC_PATH = "node"
 
     init {
       Platform.loadLibrary()
@@ -326,21 +323,6 @@ process.stdout.isRaw = true;
 
     fun addVersion(name: String, version: String) {
       customVersions[name] = version
-    }
-
-    fun versions(callback: (String) -> Unit) {
-      val node = Noko(null, object : StdOutput {
-        override fun stdout(str: String) {
-          val trimmed = str.trim()
-          if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-            callback(str)
-          }
-        }
-
-        override fun stderr(str: String) {
-        }
-      })
-      node.start("-p", "process.versions")
     }
   }
 }

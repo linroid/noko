@@ -2,9 +2,7 @@
 #include <mutex>
 #include <uv.h>
 #include <v8.h>
-#include <libplatform/libplatform.h>
 #include "Noko.h"
-#include "types/JSContext.h"
 #include "types/JSValue.h"
 #include "types/JSUndefined.h"
 #include "types/JSBoolean.h"
@@ -26,12 +24,12 @@ bool nodeInitialized = false;
 std::unique_ptr<node::MultiIsolatePlatform> platform;
 
 Noko::Noko(
-  JNIEnv *env,
-  jobject jThis,
-  jmethodID jAttach,
-  jmethodID jDetach,
-  bool keepAlive,
-  bool strict
+    JNIEnv *env,
+    jobject jThis,
+    jmethodID jAttach,
+    jmethodID jDetach,
+    bool keepAlive,
+    bool strict
 ) : jAttach_(jAttach),
     jDetach_(jDetach),
     keepAlive_(keepAlive),
@@ -445,7 +443,8 @@ void Noko::Chroot(const char *path) {
 
 void Noko::Throw(JNIEnv *env, v8::Local<v8::Value> exception) {
   CheckThread();
-  auto jException = JSError::ToException(env, jThis_, exception);
+  auto reference = new v8::Persistent<v8::Value>(isolate_, exception);
+  auto jException = JSError::ToException(env, JSError::Wrap(env, jThis_, reference));
   env->Throw((jthrowable) jException);
 }
 
@@ -453,15 +452,76 @@ void Noko::CheckThread() {
   if (std::this_thread::get_id() != threadId_) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat"
-    LOGE("js object can only be accessed from the Node.js thread: current=%ld, threadId=%ld", std::this_thread::get_id(), threadId_);
+    LOGE("js object can only be accessed from the Node.js thread: current=%ld, threadId=%ld",
+         std::this_thread::get_id(), threadId_);
 #pragma clang diagnostic pop
     std::abort();
   }
 }
 
-void Noko::Eval(const char* code, const char* source, int line) {
-
+jobject Noko::Eval(const uint16_t *code, int codeLen, const uint16_t *source, int sourceLen, int line) {
+  v8::TryCatch tryCatch(isolate_);
+  auto context = context_.Get(isolate_);
+  v8::ScriptOrigin scriptOrigin(V8_STRING(isolate_, source, sourceLen), v8::Integer::New(isolate_, line),
+                                v8::Integer::New(isolate_, 0));
+  auto script = v8::Script::Compile(context, V8_STRING(isolate_, code, codeLen), &scriptOrigin);
+  EnvHelper env(vm_);
+  if (script.IsEmpty()) {
+    LOGE("Compile script with an exception");
+    Throw(*env, tryCatch.Exception());
+    return nullptr;
+  }
+  auto result = script.ToLocalChecked()->Run(context);
+  if (result.IsEmpty()) {
+    LOGE("Run script with an exception");
+    Throw(*env, tryCatch.Exception());
+    return nullptr;
+  }
+  return ToJava(*env, result.ToLocalChecked());
 }
+
+jobject Noko::ParseJson(const uint16_t *json, int jsonLen) {
+  auto context = context_.Get(isolate_);
+  v8::Context::Scope contextScope(context);
+  v8::TryCatch tryCatch(isolate_);
+  auto result = v8::JSON::Parse(context, V8_STRING(isolate_, json, jsonLen));
+  EnvHelper env(vm_);
+  if (result.IsEmpty()) {
+    Throw(*env, tryCatch.Exception());
+    return nullptr;
+  }
+  return ToJava(*env, result.ToLocalChecked());
+}
+
+jobject Noko::ThrowError(const uint16_t *message, int messageLen) {
+  auto error = v8::Exception::Error(V8_STRING(isolate_, message, messageLen));
+  isolate_->ThrowException(error);
+  EnvHelper env(vm_);
+
+  return ToJava(*env, error);
+}
+
+jobject Noko::Require(const uint16_t *path, int pathLen) {
+  auto context = context_.Get(isolate_);
+  auto *argv = new v8::Local<v8::Value>[1];
+  argv[0] = V8_STRING(isolate_, path, pathLen);
+  auto global = global_.Get(isolate_);
+  v8::TryCatch tryCatch(isolate_);
+
+  auto require = global->Get(context, V8_UTF_STRING(isolate_, "require")).ToLocalChecked()->ToObject(
+      context).ToLocalChecked();
+  assert(require->IsFunction());
+
+  auto result = require->CallAsFunction(context, global, 1, argv);
+
+  EnvHelper env(vm_);
+  if (result.IsEmpty()) {
+    Throw(*env, tryCatch.Exception());
+    return nullptr;
+  }
+  return ToJava(*env, result.ToLocalChecked());
+}
+
 
 int init_node() {
   // Make argv memory adjacent
@@ -482,7 +542,7 @@ int init_node() {
   // Parse Node.js CLI options, and print any errors that have occurred while
   // trying to parse them.
   int exit_code = node::InitializeNodeWithArgs(&args, &exec_args, &errors);
-  for (const std::string &error : errors)
+  for (const std::string &error: errors)
     LOGE("%s: %s\n", args[0].c_str(), error.c_str());
   if (exit_code == 0) {
     nodeInitialized = true;
@@ -517,12 +577,12 @@ jint Noko::OnLoad(JNIEnv *env) {
   if (clazz == nullptr) {
     return JNI_ERR;
   }
-  jConstructorId  = env->GetMethodID(clazz, "<init>", "(JJ)V");
-  jSharedNullId         = env->GetFieldID(clazz, "sharedNull", "Lcom/linroid/noko/types/JSNull;");
-  jSharedUndefinedId    = env->GetFieldID(clazz, "sharedUndefined", "Lcom/linroid/noko/types/JSUndefined;");
-  jSharedTrueId         = env->GetFieldID(clazz, "sharedTrue", "Lcom/linroid/noko/types/JSBoolean;");
-  jSharedFalseId        = env->GetFieldID(clazz, "sharedFalse", "Lcom/linroid/noko/types/JSBoolean;");
-  jPtrId                = env->GetFieldID(clazz, "nPtr", "J");
+  jConstructorId = env->GetMethodID(clazz, "<init>", "(JJ)V");
+  jSharedNullId = env->GetFieldID(clazz, "sharedNull", "Lcom/linroid/noko/types/JSNull;");
+  jSharedUndefinedId = env->GetFieldID(clazz, "sharedUndefined", "Lcom/linroid/noko/types/JSUndefined;");
+  jSharedTrueId = env->GetFieldID(clazz, "sharedTrue", "Lcom/linroid/noko/types/JSBoolean;");
+  jSharedFalseId = env->GetFieldID(clazz, "sharedFalse", "Lcom/linroid/noko/types/JSBoolean;");
+  jPtrId = env->GetFieldID(clazz, "nPtr", "J");
 
   return JNI_OK;
 }

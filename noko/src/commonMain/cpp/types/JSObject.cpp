@@ -117,7 +117,8 @@ void JSObject::Watch(JNIEnv *env, jobject jThis, jobjectArray jKeys, jobject jOb
   SETUP(env, jThis, v8::Object)
   auto length = env->GetArrayLength(jKeys);
 
-  jmethodID methodId = env->GetMethodID(env->GetObjectClass(jObserver), "onPropertyChanged", "(Ljava/lang/String;Lcom/linroid/noko/types/JSValue;)V");
+  jmethodID methodId = env->GetMethodID(env->GetObjectClass(jObserver), "onPropertyChanged",
+                                        "(Ljava/lang/String;Lcom/linroid/noko/types/JSValue;)V");
 
   for (int i = 0; i < length; ++i) {
     auto jKey = (jstring) env->GetObjectArrayElement(jKeys, i);
@@ -172,13 +173,13 @@ jint JSObject::OnLoad(JNIEnv *env) {
   }
 
   JNINativeMethod methods[] = {
-    {"nativeGet",    "(Ljava/lang/String;)Lcom/linroid/noko/types/JSValue;",                      (void *) (JSObject::Get)},
-    {"nativeSet",    "(Ljava/lang/String;Lcom/linroid/noko/types/JSValue;)V",                     (void *) (JSObject::Set)},
-    {"nativeNew",    "()V",                                                                       (void *) (JSObject::New)},
-    {"nativeHas",    "(Ljava/lang/String;)Z",                                                     (void *) (JSObject::Has)},
-    {"nativeDelete", "(Ljava/lang/String;)V",                                                     (void *) (JSObject::Delete)},
-    {"nativeKeys",   "()[Ljava/lang/String;",                                                     (void *) (JSObject::Keys)},
-    {"nativeWatch",  "([Ljava/lang/String;Lcom/linroid/noko/observable/PropertiesObserver;)V",    (void *) (JSObject::Watch)},
+      {"nativeGet",    "(Ljava/lang/String;)Lcom/linroid/noko/types/JSValue;",                   (void *) (JSObject::Get)},
+      {"nativeSet",    "(Ljava/lang/String;Lcom/linroid/noko/types/JSValue;)V",                  (void *) (JSObject::Set)},
+      {"nativeNew",    "()V",                                                                    (void *) (JSObject::New)},
+      {"nativeHas",    "(Ljava/lang/String;)Z",                                                  (void *) (JSObject::Has)},
+      {"nativeDelete", "(Ljava/lang/String;)V",                                                  (void *) (JSObject::Delete)},
+      {"nativeKeys",   "()[Ljava/lang/String;",                                                  (void *) (JSObject::Keys)},
+      {"nativeWatch",  "([Ljava/lang/String;Lcom/linroid/noko/observable/PropertiesObserver;)V", (void *) (JSObject::Watch)},
   };
   jClazz = (jclass) env->NewGlobalRef(clazz);
   jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Noko;L)V");

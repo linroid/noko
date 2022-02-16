@@ -6,21 +6,21 @@
 #include "log.h"
 
 #define V8_SCOPE(env, jThis) \
-  auto runtime = JSValue::GetRuntime(env, jThis); \
-  if (runtime == nullptr) { \
-    LOGE("GetRuntime returns nullptr %s(%d)-<%s>", __FILE__, __LINE__, __FUNCTION__); \
+  auto noko = JSValue::GetNoko(env, jThis); \
+  if (noko == nullptr) { \
+    LOGE("GetNoko noko nullptr %s(%d)-<%s>", __FILE__, __LINE__, __FUNCTION__); \
     env->FatalError("GetRuntime returns nullptr"); \
   } \
-  auto isolate = runtime->isolate_; \
-  v8::Locker locker(runtime->isolate_); \
-  v8::HandleScope handleScope(runtime->isolate_); \
+  auto isolate = noko->isolate_; \
+  v8::Locker locker(noko->isolate_); \
+  v8::HandleScope handleScope(noko->isolate_); \
 
 #define SETUP(env, jThis, type) \
   V8_SCOPE(env, jThis) \
   auto reference = JSValue::Unwrap(env, jThis); \
-  auto context = runtime->context_.Get(isolate); \
+  auto context = noko->context_.Get(isolate); \
   auto persistent = reinterpret_cast<v8::Persistent<type> *>(reference); \
-  auto that = v8::Local<type>::New(runtime->isolate_, *persistent);
+  auto that = v8::Local<type>::New(noko->isolate_, *persistent);
 
 
 #define V8_UTF_STRING(isolate, str) v8::String::NewFromUtf8(isolate, str, v8::NewStringType::kNormal).ToLocalChecked()

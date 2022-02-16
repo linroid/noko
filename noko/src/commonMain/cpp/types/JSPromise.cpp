@@ -12,11 +12,11 @@ jint JSPromise::OnLoad(JNIEnv *env) {
     return JNI_ERR;
   }
   JNINativeMethod methods[] = {
-    {"nativeNew",     "()V",                                  (void *) JSPromise::New},
-    {"nativeReject",  "(Lcom/linroid/noko/types/JSError;)V",    (void *) JSPromise::Reject},
-    {"nativeResolve", "(Lcom/linroid/noko/types/JSValue;)V",    (void *) JSPromise::Resolve},
-    {"nativeThen",    "(Lcom/linroid/noko/types/JSFunction;)V", (void *) JSPromise::Then},
-    {"nativeCatch",   "(Lcom/linroid/noko/types/JSFunction;)V", (void *) JSPromise::Catch},
+      {"nativeNew",     "()V",                                    (void *) JSPromise::New},
+      {"nativeReject",  "(Lcom/linroid/noko/types/JSError;)V",    (void *) JSPromise::Reject},
+      {"nativeResolve", "(Lcom/linroid/noko/types/JSValue;)V",    (void *) JSPromise::Resolve},
+      {"nativeThen",    "(Lcom/linroid/noko/types/JSFunction;)V", (void *) JSPromise::Then},
+      {"nativeCatch",   "(Lcom/linroid/noko/types/JSFunction;)V", (void *) JSPromise::Catch},
   };
   jClazz = (jclass) env->NewGlobalRef(clazz);
   jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/types/JSContext;J)V");

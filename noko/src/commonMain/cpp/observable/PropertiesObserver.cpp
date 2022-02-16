@@ -3,7 +3,7 @@
 #include "../EnvHelper.h"
 
 PropertiesObserver::PropertiesObserver(Noko *runtime, JNIEnv *env, jobject that, jmethodID methodId)
-  : runtime(runtime), that_(env->NewGlobalRef(that)), methodId_(methodId) {
+  : noko(runtime), that_(env->NewGlobalRef(that)), methodId_(methodId) {
   env->GetJavaVM(&vm_);
 }
 

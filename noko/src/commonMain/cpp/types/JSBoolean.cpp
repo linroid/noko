@@ -1,5 +1,4 @@
 #include "JSBoolean.h"
-#include "JSContext.h"
 
 jclass JSBoolean::jClazz;
 jmethodID JSBoolean::jConstructor;

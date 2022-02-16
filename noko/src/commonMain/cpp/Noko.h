@@ -76,11 +76,11 @@ private:
 
 
 public:
-  jobject jSharedGlobal_ = nullptr;
   jobject jSharedNull_ = nullptr;
   jobject jSharedUndefined_ = nullptr;
   jobject jSharedTrue_ = nullptr;
   jobject jSharedFalse_ = nullptr;
+
   JavaVM *vm_ = nullptr;
   jobject jThis_ = nullptr;
 
@@ -105,7 +105,7 @@ public:
 
   v8::Local<v8::Value> Require(const char *path);
 
-  void MountFile(const char *src, const char *dst, const int mode);
+  void MountFile(const char *src, const char *dst, int mode);
 
   void Chroot(const char *path);
 
@@ -113,13 +113,19 @@ public:
 
   void CheckThread();
 
-  bool IsRunning() {
+  bool IsRunning() const {
     return running_;
   }
 
-  void Eval(const char* code, const char* source, int line);
+  jobject Eval(const uint16_t *code, int codeLen, const uint16_t *source, int sourceLen, int line);
+
+  jobject ParseJson(const uint16_t *json, int jsonLen);
+
+  jobject ThrowError(const uint16_t *message, int messageLen);
+
+  jobject Require(const uint16_t *path, int pathLen);
 
   static jint OnLoad(JNIEnv *env);
 };
 
-#endif //NODE_NODE_RUNTIME_H
+#endif //NODE_NOKO_H

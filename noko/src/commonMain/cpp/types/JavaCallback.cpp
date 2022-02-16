@@ -2,11 +2,11 @@
 #include "../EnvHelper.h"
 
 JavaCallback::JavaCallback(
-  Noko *noko,
-  JNIEnv *env,
-  jobject that,
-  jclass clazz,
-  jmethodID methodId
+    Noko *noko,
+    JNIEnv *env,
+    jobject that,
+    jclass clazz,
+    jmethodID methodId
 ) : noko(noko), that(env->NewGlobalRef(that)), clazz_(clazz), methodId_(methodId) {
   env->GetJavaVM(&vm_);
 }

@@ -2,7 +2,6 @@
 #define NODE_JSOBJECT_H
 
 #include <jni.h>
-#include "JSContext.h"
 
 class JSObject {
 private:

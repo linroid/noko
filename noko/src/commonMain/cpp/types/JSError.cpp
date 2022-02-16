@@ -1,4 +1,3 @@
-#include "JSContext.h"
 #include "JSValue.h"
 #include "JSString.h"
 #include "JSError.h"
@@ -17,7 +16,7 @@ jint JSError::OnLoad(JNIEnv *env) {
   jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/types/JSContext;J)V");
 
   JNINativeMethod methods[] = {
-    {"nativeNew", "(Ljava/lang/String;)V", (void *) JSError::New},
+      {"nativeNew", "(Ljava/lang/String;)V", (void *) JSError::New},
   };
 
   int rc = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
@@ -45,10 +44,4 @@ void JSError::New(JNIEnv *env, jobject jThis, jstring jMessage) {
   auto result = new v8::Persistent<v8::Value>(noko->isolate_, value);
   env->ReleaseStringChars(jMessage, messageChars);
   JSValue::SetReference(env, jThis, (jlong) result);
-}
-
-jthrowable JSError::ToException(JNIEnv *env, jobject jNoko, v8::Local<v8::Value> error) {
-  auto reference = new v8::Persistent<v8::Value>(noko->isolate_, error);
-  auto jError = env->NewObject(jClazz, jConstructor, jNoko, (jlong) reference);
-  return (jthrowable) env->NewObject(jExceptionClazz, jExceptionConstructor, jError);
 }

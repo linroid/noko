@@ -6,7 +6,6 @@
 #include <cmath>
 #include <ares.h>
 #include "Noko.h"
-#include "types/JSContext.h"
 #include "types/JSValue.h"
 #include "types/JSObject.h"
 #include "types/JSUndefined.h"
@@ -183,79 +182,45 @@ JNICALL void Setup(__unused JNIEnv *env, __unused jclass jThis, jobject connecti
 }
 
 JNICALL jobject Eval(JNIEnv *env, jobject jThis, jstring jCode, jstring jSource, jint jLine) {
+  auto noko = GetNoko(env, jThis);
+
   jint codeLen = env->GetStringLength(jCode);
   auto code = env->GetStringChars(jCode, nullptr);
-
   jint sourceLen = env->GetStringLength(jSource);
   auto source = env->GetStringChars(jSource, nullptr);
 
-  SETUP(env, jThis, v8::Object)
-  v8::TryCatch tryCatch(noko->isolate_);
-  v8::ScriptOrigin scriptOrigin(V8_STRING(isolate, source, sourceLen), v8::Integer::New(noko->isolate_, jLine), v8::Integer::New(noko->isolate_, 0));
-  auto script = v8::Script::Compile(context, V8_STRING(isolate, code, codeLen), &scriptOrigin);
-  if (script.IsEmpty()) {
-    LOGE("Compile script with an exception");
-    noko->Throw(env, tryCatch.Exception());
-    return nullptr;
-  }
-  auto result = script.ToLocalChecked()->Run(context);
-  if (result.IsEmpty()) {
-    LOGE("Run script with an exception");
-    noko->Throw(env, tryCatch.Exception());
-    return nullptr;
-  }
+  auto result = noko->Eval(code, codeLen, source, sourceLen, jLine);
   env->ReleaseStringChars(jCode, code);
   env->ReleaseStringChars(jSource, source);
-  return noko->ToJava(env, result.ToLocalChecked());
+  return result;
 }
-
 
 JNICALL jobject ParseJson(JNIEnv *env, jobject jThis, jstring jJson) {
   const uint16_t *json = env->GetStringChars(jJson, nullptr);
   const jint jsonLen = env->GetStringLength(jJson);
-  SETUP(env, jThis, v8::Object)
-  v8::Context::Scope contextScope(context);
-  v8::TryCatch tryCatch(isolate);
-  auto result = v8::JSON::Parse(context, V8_STRING(isolate, json, jsonLen));
-  if (result.IsEmpty()) {
-    noko->Throw(env, tryCatch.Exception());
-    return nullptr;
-  }
+  auto noko = GetNoko(env, jThis);
+  auto result = noko->ParseJson(json, jsonLen);
   env->ReleaseStringChars(jJson, json);
-  return noko->ToJava(env, result.ToLocalChecked());
+  return result;
 }
 
 JNICALL jobject ThrowError(JNIEnv *env, jobject jThis, jstring jMessage) {
   const uint16_t *message = env->GetStringChars(jMessage, nullptr);
   const jint messageLen = env->GetStringLength(jMessage);
-  SETUP(env, jThis, v8::Object)
-  auto error = v8::Exception::Error(V8_STRING(isolate, message, messageLen));
-  isolate->ThrowException(error);
+  auto noko = GetNoko(env, jThis);
+  auto result = noko->ThrowError(message, messageLen);
   env->ReleaseStringChars(jMessage, message);
-  return noko->ToJava(env, error);
+  return result;
 }
 
 // TODO: Not working, illegal context
 JNICALL jobject Require(JNIEnv *env, jobject jThis, jstring jPath) {
   jint pathLen = env->GetStringLength(jPath);
   auto path = env->GetStringChars(jPath, nullptr);
-
-  SETUP(env, jThis, v8::Object)
-  auto *argv = new v8::Local<v8::Value>[1];
-  argv[0] = V8_STRING(isolate, path, pathLen);
-  auto global = noko->global_.Get(isolate);
-  v8::TryCatch tryCatch(isolate);
-
-  auto require = global->Get(context, V8_UTF_STRING(isolate, "require")).ToLocalChecked()->ToObject(context).ToLocalChecked();
-  assert(require->IsFunction());
-
-  auto result = require->CallAsFunction(context, global, 1, argv);
-  if (result.IsEmpty()) {
-    noko->Throw(env, tryCatch.Exception());
-    return nullptr;
-  }
+  auto noko = GetNoko(env, jThis);
+  auto result = noko->Require(path, pathLen);
   env->ReleaseStringChars(jPath, path);
-  return noko->ToJava(env, result.ToLocalChecked());
+  return result;
 }
 
 JNICALL void ClearReference(JNIEnv *env, jobject jThis, jlong ref) {
@@ -289,18 +254,18 @@ JNICALL void ClearReference(JNIEnv *env, jobject jThis, jlong ref) {
 }
 
 static JNINativeMethod nodeMethods[] = {
-  {"nativeSetup",           "(Landroid/net/ConnectivityManager;)V",                                     (void *) Setup},
-  {"nativeNew",             "(ZZ)J",                                                                    (void *) New},
-  {"nativeExit",            "(I)V",                                                                     (void *) Exit},
-  {"nativeStart",           "([Ljava/lang/String;)I",                                                   (void *) Start},
-  {"nativeMountFile",       "(Ljava/lang/String;Ljava/lang/String;I)V",                                 (void *) MountFile},
-  {"nativeChroot",          "(Ljava/lang/String;)V",                                                    (void *) Chroot},
-  {"nativePost",            "(Ljava/lang/Runnable;)Z",                                                  (void *) Post},
-  {"nativeEval",            "(Ljava/lang/String;Ljava/lang/String;I)Lcom/linroid/noko/types/JSValue;",  (void *) Eval},
-  {"nativeParseJson",       "(Ljava/lang/String;)Lcom/linroid/noko/types/JSValue;",                     (void *) ParseJson},
-  {"nativeThrowError",      "(Ljava/lang/String;)Lcom/linroid/noko/types/JSError;",                     (void *) ThrowError},
-  {"nativeRequire",         "(Ljava/lang/String;)Lcom/linroid/noko/types/JSObject;",                    (void *) Require},
-  {"nativeClearReference",  "(J)V",                                                                     (void *) ClearReference},
+    {"nativeSetup",          "(Landroid/net/ConnectivityManager;)V",                                    (void *) Setup},
+    {"nativeNew",            "(ZZ)J",                                                                   (void *) New},
+    {"nativeExit",           "(I)V",                                                                    (void *) Exit},
+    {"nativeStart",          "([Ljava/lang/String;)I",                                                  (void *) Start},
+    {"nativeMountFile",      "(Ljava/lang/String;Ljava/lang/String;I)V",                                (void *) MountFile},
+    {"nativeChroot",         "(Ljava/lang/String;)V",                                                   (void *) Chroot},
+    {"nativePost",           "(Ljava/lang/Runnable;)Z",                                                 (void *) Post},
+    {"nativeEval",           "(Ljava/lang/String;Ljava/lang/String;I)Lcom/linroid/noko/types/JSValue;", (void *) Eval},
+    {"nativeParseJson",      "(Ljava/lang/String;)Lcom/linroid/noko/types/JSValue;",                    (void *) ParseJson},
+    {"nativeThrowError",     "(Ljava/lang/String;)Lcom/linroid/noko/types/JSError;",                    (void *) ThrowError},
+    {"nativeRequire",        "(Ljava/lang/String;)Lcom/linroid/noko/types/JSObject;",                   (void *) Require},
+    {"nativeClearReference", "(J)V",                                                                    (void *) ClearReference},
 };
 
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
@@ -329,8 +294,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
   NodeClass.attach = env->GetMethodID(clazz, "attach", "(Lcom/linroid/noko/types/JSContext;)V");
   NodeClass.detach = env->GetMethodID(clazz, "detach", "(Lcom/linroid/noko/types/JSContext;)V");
 
-  Noko::OnLoad(env);
-
+  LOAD_JNI_CLASS(Noko)
   LOAD_JNI_CLASS(JSValue)
   LOAD_JNI_CLASS(JSObject)
   LOAD_JNI_CLASS(JSBoolean)

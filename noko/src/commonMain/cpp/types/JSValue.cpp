@@ -1,8 +1,6 @@
 #include <jni.h>
 #include "../Noko.h"
 #include "JSValue.h"
-#include "JSString.h"
-#include "JSContext.h"
 #include "JSError.h"
 
 jmethodID JSValue::jConstructor;
@@ -21,11 +19,11 @@ jint JSValue::OnLoad(JNIEnv *env) {
   jGetNoko = env->GetMethodID(clazz, "nokoPtr", "()J");
 
   JNINativeMethod methods[] = {
-    {"nativeToString", "()Ljava/lang/String;", (void *) JSValue::ToString},
-    {"nativeTypeOf",   "()Ljava/lang/String;", (void *) JSValue::TypeOf},
-    {"nativeToJson",   "()Ljava/lang/String;", (void *) JSValue::ToJson},
-    {"nativeDispose",  "()V",                  (void *) JSValue::Dispose},
-    {"nativeToNumber", "()D",                  (void *) JSValue::ToNumber},
+      {"nativeToString", "()Ljava/lang/String;", (void *) JSValue::ToString},
+      {"nativeTypeOf",   "()Ljava/lang/String;", (void *) JSValue::TypeOf},
+      {"nativeToJson",   "()Ljava/lang/String;", (void *) JSValue::ToJson},
+      {"nativeDispose",  "()V",                  (void *) JSValue::Dispose},
+      {"nativeToNumber", "()D",                  (void *) JSValue::ToNumber},
   };
 
   int rc = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));

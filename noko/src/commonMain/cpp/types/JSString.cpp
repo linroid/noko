@@ -1,7 +1,6 @@
 #include <string>
 #include "JSString.h"
 #include "JSValue.h"
-#include "JSContext.h"
 
 jclass JSString::jClazz;
 jmethodID JSString::jConstructor;
@@ -15,7 +14,7 @@ jint JSString::OnLoad(JNIEnv *env) {
   jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/types/JSContext;J)V");
 
   JNINativeMethod methods[] = {
-    {"nativeNew", "(Ljava/lang/String;)V", (void *) JSString::New},
+      {"nativeNew", "(Ljava/lang/String;)V", (void *) JSString::New},
   };
 
   int rc = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));

@@ -14,7 +14,7 @@ private:
 public:
   JNICALL static void New(JNIEnv *env, jobject jThis, jstring jContent);
 
-  inline static jobject Wrap(JNIEnv *env, jobject jNoko, v8::Persistent <v8::Value> *value) {
+  inline static jobject Wrap(JNIEnv *env, jobject jNoko, v8::Persistent<v8::Value> *value) {
     return env->NewObject(jClazz, jConstructor, jNoko, (jlong) value);
   }
 

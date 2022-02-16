@@ -10,7 +10,7 @@ private:
   jmethodID methodId_;
   jobject that_;
 public:
-  Noko *runtime = nullptr;
+  Noko *noko = nullptr;
 
   PropertiesObserver(Noko *runtime, JNIEnv *env, jobject that, jmethodID methodId);
 

@@ -2,7 +2,7 @@
 #define NODE_JSNUMBER_H
 
 #include <jni.h>
-#include "JSContext.h"
+#include <v8.h>
 
 class JSNumber {
 private:

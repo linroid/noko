@@ -1,8 +1,9 @@
 package com.linroid.noko.fs
 
 import com.linroid.noko.Noko
-import java.io.File
-import java.util.*
+import com.linroid.noko.Platform
+import okio.Path
+import okio.Path.Companion.toPath
 import kotlin.collections.HashMap
 
 /**
@@ -12,105 +13,85 @@ import kotlin.collections.HashMap
  * @param mode The file permissions in default
  */
 class VirtualFileSystem(
-  private val root: String,
-  private val mode: FileMode = FileMode.ReadWrite,
+  private val root: Path,
+  private val mode: Mode = Mode.ReadWrite,
 ) : FileSystem() {
-  private val points = HashMap<String, MountPoint>()
+
+  private val destinationToPoint = HashMap<Path, MountPoint>()
+
+  private var sourceToPoint: Map<Path, MountPoint> = emptyMap()
+  private var sortedDestinations: List<Path> = emptyList()
+  private var sortedSources: List<Path> = emptyList()
 
   /**
-   * Longer path should be matched firstly
-   */
-  private val dst2src = TreeMap<String, String> { a, b -> b.compareTo(a) }
-  private val src2dst = TreeMap<String, String> { a, b -> b.compareTo(a) }
-
-  /**
-   * Mount a real [src] file/directory into the virtual filesystem as [dst] path
+   * Mount a real [source] file into the virtual filesystem as [destination] path
    *
-   * @param src The [File] in the real filesystem
-   * @param dst The destination path in the virtual filesystem
-   * @param mode The permissions for accessing this path, see [FileMode]
-   * @param mapping If true, a placeholder file will be created if the [dst] path related to [root]
-   * doesn't exists in real filesystem, this can make it visible when listing files
+   * @param source The file path in the real filesystem
+   * @param destination The destination path in the virtual filesystem
+   * @param mode The access permissions, see [FileSystem.Mode]
    */
-  fun mount(dst: String, src: String, mode: FileMode, mapping: Boolean = true) {
-    val srcFile = File(src)
-    check(srcFile.exists()) { "File doesn't exists: $src" }
-    check(dst.startsWith("/")) { "The dst path must be an absolute path(starts with '/')" }
-    points[dst] = MountPoint(dst, src, mode)
+  fun mount(destination: Path, source: Path, mode: Mode) {
+    check(Platform.fileSystem.exists(source)) { "File doesn't exists: $source" }
+    check(destination.isAbsolute) { "The dst path must be an absolute path(starts with '/')" }
+    destinationToPoint[destination] = MountPoint(destination, source, mode)
     generatePairs()
-    if (mapping) {
-      if (srcFile.isDirectory) {
-        val dir = File(root, dst.substring(0))
-        if (!dir.exists()) {
-          dir.mkdirs()
-        }
-      } else {
-        srcFile.parentFile?.mkdirs()
-        val file = File(root, dst.substring(0))
-        if (!file.exists()) {
-          file.createNewFile()
-          when (mode) {
-            FileMode.ReadOnly -> {
-              file.setReadOnly()
-            }
-            FileMode.WriteOnly -> {
-              file.setReadable(false)
-              file.setWritable(true)
-            }
-            FileMode.ReadWrite -> {
-              file.setReadable(true)
-              file.setWritable(true)
-            }
-            else -> {}
-          }
-        }
-      }
-    }
   }
 
+  /**
+   * Unmount the [destination] file from Node.js
+   */
+  fun unmount(destination: Path) {
+    destinationToPoint.remove(destination)
+    generatePairs()
+    // TODO: notify native
+  }
+
+  /**
+   * Sort the path to speed up matching
+   */
   private fun generatePairs() {
-    src2dst.clear()
-    dst2src.clear()
-    points.values.forEach {
-      src2dst[it.src] = it.dst
-      src2dst[it.dst] = it.src
-    }
+    sourceToPoint = destinationToPoint.entries.associate { it.value.source to it.value }
+
+    sortedDestinations = destinationToPoint.keys.sortedDescending()
+    sortedSources = sourceToPoint.keys.sortedDescending()
   }
 
-  override fun path(file: String): String {
-    val baseFile = src2dst.keys.find { file.startsWith(it) }
-    if (baseFile != null) {
-      return "/" + file.relativeTo(baseFile)
+  override fun mapping(source: Path): Path {
+    val baseSource = sortedSources.find { it.isChildOf(source) }
+    if (baseSource != null) {
+      val baseDestination = sourceToPoint.getValue(baseSource).destination
+      return baseDestination / source.relativeTo(baseSource)
     }
     try {
-      return "/" + file.relativeTo(root)
+      return "/".toPath() / source.relativeTo(root)
     } catch (error: IllegalArgumentException) {
-      throw IllegalArgumentException("$file doesn't belong to any mount points")
+      throw IllegalArgumentException("Couldn't find mount point for $source, have you mounted it before?")
     }
   }
 
-  override fun file(path: String): String {
-    val basePath = dst2src.keys.find { path.startsWith(it) }
-    if (basePath != null) {
-      return dst2src.getValue(basePath) + path.relativeTo(basePath)
+  override fun restore(destination: Path): Path {
+    val baseDestination = sortedDestinations.find { it.isChildOf(destination) }
+    if (baseDestination != null) {
+      val baseSource = destinationToPoint.getValue(baseDestination).source
+      return baseSource / destination.relativeTo(baseDestination)
     }
-    return root + path.relativeTo("/")
-  }
-
-  private fun String.relativeTo(base: String): File {
-    return File(this).relativeTo(File(base))
+    return root / destination.relativeTo(destination.root!!)
   }
 
   override fun link(noko: Noko) {
     noko.chroot(root)
-    points.values.forEach {
-      noko.mountFile(it.dst, it.src, it.mode)
+    destinationToPoint.values.forEach {
+      noko.mountFile(it.destination, it.source, it.mode)
     }
   }
 
+  private fun Path.isChildOf(base: Path): Boolean {
+    return this.toString().startsWith(base.toString())
+  }
+
   private data class MountPoint(
-    val dst: String,
-    val src: String,
-    val mode: FileMode,
+    val destination: Path,
+    val source: Path,
+    val mode: Mode,
   )
 }

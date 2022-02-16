@@ -1,12 +1,9 @@
 package com.linroid.noko.fs
 
+import okio.Path
+
 class RealFileSystem : FileSystem() {
+  override fun mapping(source: Path): Path = source
 
-  override fun path(file: String): String {
-    return file
-  }
-
-  override fun file(path: String): String {
-    return path
-  }
+  override fun restore(path: Path): Path = path
 }

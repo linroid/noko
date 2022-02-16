@@ -1,20 +1,28 @@
 package com.linroid.noko.fs
 
 import com.linroid.noko.Noko
+import okio.Path
 
 abstract class FileSystem {
   /**
-   * Get the virtual path for [file]
+   * Get the mapping path in Node.js by real path
    */
-  abstract fun path(file: String): String
+  abstract fun mapping(source: Path): Path
 
   /**
-   * Get the real file from [path]
+   * Restore the real path by the mapping path in Node.js
    */
-  abstract fun file(path: String): String
+  abstract fun restore(destination: Path): Path
 
   /**
    * Link this filesystem into runtime
    */
   internal open fun link(noko: Noko) {}
+
+  enum class Mode(internal val flags: Int) {
+    None(0),
+    ReadOnly(1),
+    WriteOnly(2),
+    ReadWrite(3),
+  }
 }

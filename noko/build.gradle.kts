@@ -14,6 +14,22 @@ repositories {
   mavenCentral()
 }
 
+// Remove useless source sets
+// See https://discuss.kotlinlang.org/t/disabling-androidandroidtestrelease-source-set-in-gradle-kotlin-dsl-script/21448
+afterEvaluate {
+  extensions.findByType<org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension>()
+    ?.let { ext ->
+      ext.sourceSets.removeAll { sourceSet ->
+        setOf(
+          "androidAndroidTestRelease",
+          "androidTestFixtures",
+          "androidTestFixturesDebug",
+          "androidTestFixturesRelease",
+        ).contains(sourceSet.name)
+      }
+    }
+}
+
 android {
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -41,6 +57,7 @@ android {
     }
   }
 }
+
 java {
   sourceCompatibility = JavaVersion.VERSION_1_8
   targetCompatibility = JavaVersion.VERSION_1_8
@@ -48,18 +65,9 @@ java {
 
 kotlin {
   android {}
-  jvm {
-    compilations.all {
-      kotlinOptions.jvmTarget = "1.8"
-      kotlinOptions.noJdk = true
-    }
-    testRuns["test"].executionTask.configure {
-      useJUnit()
-    }
-  }
   jvm("desktop") {
     compilations.all {
-      kotlinOptions.jvmTarget = "1.8"
+      kotlinOptions.jvmTarget = "11"
     }
     testRuns["test"].executionTask.configure {
       useJUnit()
@@ -69,25 +77,16 @@ kotlin {
   sourceSets {
     val commonMain by getting {
       dependencies {
-        implementation(kotlin("test"))
         implementation(kotlin("stdlib"))
         implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
       }
     }
-    val commonTest by getting
-    val jvmMain by getting {
-      dependsOn(commonMain)
+    val commonTest by getting {
       dependencies {
-        implementation(kotlin("stdlib"))
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:$coroutinesVersion")
+        implementation(kotlin("test"))
       }
     }
-    val jvmTest by getting {
-      dependsOn(jvmMain)
-      dependsOn(commonTest)
-    }
-
     val desktopMain by getting {
       dependsOn(commonMain)
       dependencies {

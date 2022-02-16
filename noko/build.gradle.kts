@@ -4,6 +4,7 @@ plugins {
   kotlin("multiplatform") version "1.6.10"
   kotlin("plugin.serialization") version "1.6.10"
   id("com.android.library")
+  // id("kotlinx-atomicfu")
 }
 
 group = "com.linroid.noko"
@@ -98,6 +99,7 @@ kotlin {
         implementation("com.squareup.okio:okio:3.0.0")
         implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+        implementation("org.jetbrains.kotlinx:atomicfu:0.17.1")
       }
     }
     val commonTest by getting {

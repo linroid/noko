@@ -3,6 +3,9 @@ package com.linroid.noko
 import com.linroid.noko.fs.FileSystem
 import com.linroid.noko.fs.RealFileSystem
 import com.linroid.noko.types.*
+import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.locks.SynchronizedObject
+import kotlinx.atomicfu.locks.synchronized
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.suspendCancellableCoroutine
 import okio.Path
@@ -32,8 +35,8 @@ class Noko(
   internal var nPtr: Long = nativeNew(keepAlive, strictMode)
   private val listeners = HashSet<LifecycleListener>()
 
-  //  @Volatile
-  private var running = false
+  private var running = atomic(false)
+  private val lock = SynchronizedObject()
   private var global: JSObject? = null
   private var sequence = 0
   private val environmentVariables = HashMap(customEnvs)
@@ -82,14 +85,14 @@ class Noko(
   /**
    * Add a listener to listen the state of node instance
    */
-  fun addListener(listener: LifecycleListener) {
+  fun addListener(listener: LifecycleListener) = synchronized(lock) {
     listeners.add(listener)
   }
 
   /**
    * Removes a listener from this node instance
    */
-  fun removeListener(listener: LifecycleListener) {
+  fun removeListener(listener: LifecycleListener) = synchronized(lock) {
     listeners.remove(listener)
   }
 
@@ -100,7 +103,7 @@ class Noko(
    * @return true if active, false otherwise
    */
   private fun isRunning(): Boolean {
-    return running && nPtr != 0L
+    return running.value && nPtr != 0L
   }
 
   fun addEnv(key: String, value: String) {
@@ -135,7 +138,7 @@ class Noko(
       return
     }
     nativeExit(code)
-    running = false
+    running.value = false
   }
 
   override fun close() {
@@ -156,7 +159,7 @@ class Noko(
   @Suppress("unused")
   private fun attach(global: JSObject) {
     this.global = global
-    running = true
+    check(running.compareAndSet(false, update = true))
     check(isRunning()) { "isActive() doesn't match the current state" }
     attachStdOutput(global)
     eventOnBeforeStart(global)
@@ -255,7 +258,7 @@ process.stdout.isRaw = true;
   }
 
   private fun eventOnExit(code: Int) {
-    running = false
+    running.value = false
     listeners.forEach {
       it.onNodeExit(code)
     }

@@ -102,7 +102,6 @@ tasks {
   val cmakeDir = File(buildDir, "$targetOs/cmake")
   cmakeDir.mkdirs()
 
-
   val downloadAndroidPrebuilt by registering(Download::class) {
     src("https://github.com/linroid/libnode/releases/download/$version/libnode-v16.14.0-android.zip")
     dest(File(downloadsDir, "libnode.android.zip"))
@@ -138,6 +137,18 @@ tasks {
     dependsOn(hostCmake)
     workingDir(cmakeDir)
     commandLine("make")
+    doLast {
+      val libNoko = cmakeDir.listFiles().find { it.name.startsWith("libnoko") }
+      checkNotNull(libNoko) { "Couldn't find file: libnoko" }
+      val libNode = File(targetHostPrebuiltDir, "lib").listFiles().find {
+        it.name.startsWith("libnode")
+      }
+      checkNotNull(libNode) { "Couldn't find file: libnode" }
+      project.tasks.withType(Jar::class).forEach {
+        it.from(libNoko)
+        it.from(libNode)
+      }
+    }
   }
 
   named("clean").configure {

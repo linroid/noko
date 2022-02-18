@@ -116,7 +116,20 @@ tasks {
   val prepareHostPrebuilt by registering(Copy::class) {
     dependsOn(downloadHostPrebuilt)
     from(zipTree(File(downloadsDir, "libnode.$targetOs.zip")))
-    into(File("src/jvmMain/cpp/prebuilt/$targetOs/$targetArch"))
+    into(file("src/jvmMain/cpp/prebuilt/$targetOs/$targetArch"))
+  }
+
+  val cmakeDir = File(buildDir, "$targetOs/cmake")
+  cmakeDir.mkdirs()
+  val cmake by registering(Exec::class) {
+    workingDir(cmakeDir)
+    commandLine("cmake", file("src/jvmMain/cpp/"))
+  }
+
+  val cmakeBuild by registering(Exec::class) {
+    dependsOn(cmake)
+    workingDir(cmakeDir)
+    commandLine("make")
   }
 }
 

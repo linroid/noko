@@ -2,9 +2,9 @@
 #include <jni.h>
 #include <pthread.h>
 #include <unistd.h>
-#include <android/log.h>
 #include <cmath>
 #include <ares.h>
+#include "EnvHelper.h"
 #include "Noko.h"
 #include "types/JSValue.h"
 #include "types/JSObject.h"
@@ -22,11 +22,6 @@
     return JNI_ERR; \
 }
 
-int pipe_stdout[2];
-int pipe_stderr[2];
-pthread_t thread_stdout;
-pthread_t thread_stderr;
-
 struct JvmNodeClass {
   JNIEnv *env;
   jfieldID ptr;
@@ -35,54 +30,6 @@ struct JvmNodeClass {
 } NodeClass;
 
 jmethodID jRunMethodId;
-
-void *thread_stderr_func(void *) {
-  ssize_t redirect_size;
-  char buf[2048];
-  while ((redirect_size = read(pipe_stderr[0], buf, sizeof buf - 1)) > 0) {
-    //__android_log will add a new line anyway.
-    if (buf[redirect_size - 1] == '\n')
-      --redirect_size;
-    buf[redirect_size] = 0;
-    __android_log_write(ANDROID_LOG_ERROR, "stderr", buf);
-  }
-  return nullptr;
-}
-
-void *thread_stdout_func(void *) {
-  ssize_t redirect_size;
-  char buf[2048];
-  while ((redirect_size = read(pipe_stdout[0], buf, sizeof buf - 1)) > 0) {
-    //__android_log will add a new line anyway.
-    if (buf[redirect_size - 1] == '\n')
-      --redirect_size;
-    buf[redirect_size] = 0;
-    __android_log_write(ANDROID_LOG_INFO, "stdout", buf);
-  }
-  return nullptr;
-}
-
-int start_redirecting_stdout_stderr() {
-  //set stdout as unbuffered.
-  setvbuf(stdout, nullptr, _IONBF, 0);
-  pipe(pipe_stdout);
-  dup2(pipe_stdout[1], STDOUT_FILENO);
-
-  //set stderr as unbuffered.
-  setvbuf(stderr, nullptr, _IONBF, 0);
-  pipe(pipe_stderr);
-  dup2(pipe_stderr[1], STDERR_FILENO);
-
-  if (pthread_create(&thread_stdout, nullptr, thread_stdout_func, nullptr) == -1)
-    return -1;
-  pthread_detach(thread_stdout);
-
-  if (pthread_create(&thread_stderr, nullptr, thread_stderr_func, nullptr) == -1)
-    return -1;
-  pthread_detach(thread_stderr);
-
-  return 0;
-}
 
 Noko *GetNoko(JNIEnv *env, jobject jThis) {
   jlong ptr = env->GetLongField(jThis, NodeClass.ptr);
@@ -124,16 +71,9 @@ JNICALL jboolean Post(JNIEnv *env, jobject jThis, jobject jRunnable) {
   message->noko = GetNoko(env, jThis);
   message->runnable = env->NewGlobalRef(jRunnable);
   auto success = message->noko->Post([message] {
-    JNIEnv *_env;
-    auto stat = message->noko->vm_->GetEnv((void **) (&_env), JNI_VERSION_1_6);
-    if (stat == JNI_EDETACHED) {
-      message->noko->vm_->AttachCurrentThread(&_env, nullptr);
-    }
+    EnvHelper _env(message->noko->vm_);
     _env->CallVoidMethod(message->runnable, jRunMethodId);
     _env->DeleteGlobalRef(message->runnable);
-    if (stat == JNI_EDETACHED) {
-      message->noko->vm_->DetachCurrentThread();
-    }
     delete message;
   });
   if (!success) {
@@ -174,8 +114,10 @@ JNICALL void Exit(JNIEnv *env, jobject jThis, jint exitCode) {
 }
 
 JNICALL void Setup(__unused JNIEnv *env, __unused jclass jThis, jobject connectivity_manager) {
+#if defined(__ANDROID__)
   ares_library_init_android(connectivity_manager);
   LOGI("ares_library_android_initialized: %d", ares_library_android_initialized());
+#endif
   // int max = 5;
   // size_t num = 0;
   // ares_get_server_list_from_env(max, &num);
@@ -269,11 +211,10 @@ static JNINativeMethod nodeMethods[] = {
 };
 
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
-  if (start_redirecting_stdout_stderr() == -1) {
-    LOGE("Couldn't start redirecting stdout and stderr to logcat.");
-  }
   JNIEnv *env = nullptr;
+#if defined(__ANDROID__)
   ares_library_init_jvm(vm);
+#endif
   if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
     return JNI_ERR;
   }

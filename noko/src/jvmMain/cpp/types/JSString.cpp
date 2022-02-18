@@ -11,7 +11,7 @@ jint JSString::OnLoad(JNIEnv *env) {
     return JNI_ERR;
   }
   jClazz = (jclass) env->NewGlobalRef(clazz);
-  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/types/JSContext;J)V");
+  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Noko;J)V");
 
   JNINativeMethod methods[] = {
       {"nativeNew", "(Ljava/lang/String;)V", (void *) JSString::New},

@@ -9,6 +9,6 @@ jint JSBoolean::OnLoad(JNIEnv *env) {
     return JNI_ERR;
   }
   jClazz = (jclass) env->NewGlobalRef(clazz);
-  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/types/JSContext;JZ)V");
+  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Noko;JZ)V");
   return JNI_OK;
 }

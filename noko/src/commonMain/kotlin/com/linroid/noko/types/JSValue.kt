@@ -2,6 +2,7 @@ package com.linroid.noko.types
 
 import com.linroid.noko.Noko
 import com.linroid.noko.Platform
+import com.linroid.noko.annotation.ForNative
 import com.linroid.noko.ref.JSValueReference
 import com.linroid.noko.runBlocking
 import kotlinx.serialization.decodeFromString
@@ -12,22 +13,24 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import java.io.Closeable
 import java.lang.annotation.Native
+import kotlin.jvm.JvmField
 import kotlin.reflect.KClass
 
 open class JSValue(
   protected val noko: Noko,
-  @Native internal val nPtr: Long
+  @JvmField
+  @Native internal val ptr: Long
 ) : Closeable {
   init {
-    if (nPtr != 0L) {
+    if (ptr != 0L) {
       // The object is just a wrapper for js object
       JSValueReference(this, noko.cleaner)
     }
   }
 
-  /** For native access runtime ptr */
+  @ForNative
   private fun runtimePtr(): Long {
-    return noko.nPtr
+    return noko.ptr
   }
 
   override fun toString(): String {
@@ -99,7 +102,7 @@ open class JSValue(
 
   override fun equals(other: Any?): Boolean {
     if (other is JSValue) {
-      if (other.nPtr == nPtr) {
+      if (other.ptr == ptr) {
         return true
       }
       return nativeEquals(other)
@@ -108,11 +111,11 @@ open class JSValue(
   }
 
   fun sameReference(other: JSValue): Boolean {
-    return other.nPtr == nPtr
+    return other.ptr == ptr
   }
 
   override fun hashCode(): Int {
-    return nPtr.hashCode()
+    return ptr.hashCode()
   }
 
   private external fun nativeEquals(other: JSValue): Boolean

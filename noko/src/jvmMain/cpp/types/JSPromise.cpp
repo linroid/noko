@@ -19,7 +19,7 @@ jint JSPromise::OnLoad(JNIEnv *env) {
       {"nativeCatch",   "(Lcom/linroid/noko/types/JSFunction;)V", (void *) JSPromise::Catch},
   };
   jClazz = (jclass) env->NewGlobalRef(clazz);
-  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/types/JSContext;J)V");
+  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Noko;J)V");
   jResolver = env->GetFieldID(clazz, "resolverPtr", "J");
   env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
   return JNI_OK;

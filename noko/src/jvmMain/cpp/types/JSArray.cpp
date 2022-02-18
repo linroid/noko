@@ -58,7 +58,7 @@ jint JSArray::OnLoad(JNIEnv *env) {
       // {"nativeAddAt",    "(ILcom/linroid/noko/types/JSValue;)Lcom/linroid/noko/types/JSValue;", (void *) (AddAllAt)},
   };
   jClazz = (jclass) env->NewGlobalRef(clazz);
-  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/types/JSContext;J)V");
+  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Noko;J)V");
   env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
   return JNI_OK;
 }

@@ -10,10 +10,10 @@ open class JSFunction : JSObject {
 
   private val callable: Callable?
 
-//  @ForNative
-//  private constructor(noko: Noko, nPtr: Long) : super(noko, nPtr) {
-//    this.callable = null
-//  }
+ @ForNative
+ private constructor(noko: Noko, ptr: Long) : super(noko, ptr) {
+   this.callable = null
+ }
 
   constructor(noko: Noko, name: String, callable: Callable? = null) : super(noko, 0) {
     this.callable = callable
@@ -37,7 +37,7 @@ open class JSFunction : JSObject {
 
   fun call(receiver: JSValue, vararg parameters: Any?): JSValue {
     noko.checkThread()
-    check(noko.nPtr != 0L) { "node has been disposed" }
+    check(noko.ptr != 0L) { "node has been disposed" }
     val v8Parameters = Array(parameters.size) { from(noko, parameters[it]) }
     return nativeCall(receiver, v8Parameters)
   }

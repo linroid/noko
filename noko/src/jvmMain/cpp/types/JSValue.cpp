@@ -14,9 +14,9 @@ jint JSValue::OnLoad(JNIEnv *env) {
     return JNI_ERR;
   }
   jClazz = (jclass) env->NewGlobalRef(clazz);
-  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/types/JSContext;J)V");
-  jReference = env->GetFieldID(clazz, "reference", "J");
-  jGetNoko = env->GetMethodID(clazz, "nokoPtr", "()J");
+  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Noko;J)V");
+  jReference = env->GetFieldID(clazz, "ptr", "J");
+  jGetNoko = env->GetMethodID(clazz, "runtimePtr", "()J");
 
   JNINativeMethod methods[] = {
       {"nativeToString", "()Ljava/lang/String;", (void *) JSValue::ToString},

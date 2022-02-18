@@ -565,7 +565,6 @@ int init_node() {
 //     v8::V8::ShutdownPlatform();
 // }
 
-jmethodID Noko::jConstructorId;
 jfieldID  Noko::jSharedNullId;
 jfieldID  Noko::jSharedUndefinedId;
 jfieldID  Noko::jSharedTrueId;
@@ -577,12 +576,11 @@ jint Noko::OnLoad(JNIEnv *env) {
   if (clazz == nullptr) {
     return JNI_ERR;
   }
-  jConstructorId = env->GetMethodID(clazz, "<init>", "(JJ)V");
   jSharedNullId = env->GetFieldID(clazz, "sharedNull", "Lcom/linroid/noko/types/JSNull;");
   jSharedUndefinedId = env->GetFieldID(clazz, "sharedUndefined", "Lcom/linroid/noko/types/JSUndefined;");
   jSharedTrueId = env->GetFieldID(clazz, "sharedTrue", "Lcom/linroid/noko/types/JSBoolean;");
   jSharedFalseId = env->GetFieldID(clazz, "sharedFalse", "Lcom/linroid/noko/types/JSBoolean;");
-  jPtrId = env->GetFieldID(clazz, "nPtr", "J");
+  jPtrId = env->GetFieldID(clazz, "ptr", "J");
 
   return JNI_OK;
 }

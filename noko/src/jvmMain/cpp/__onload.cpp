@@ -196,7 +196,9 @@ JNICALL void ClearReference(JNIEnv *env, jobject jThis, jlong ref) {
 }
 
 static JNINativeMethod nodeMethods[] = {
+#if defined(__ANDROID__)
     {"nativeSetup",          "(Landroid/net/ConnectivityManager;)V",                                    (void *) Setup},
+#endif
     {"nativeNew",            "(ZZ)J",                                                                   (void *) New},
     {"nativeExit",           "(I)V",                                                                    (void *) Exit},
     {"nativeStart",          "([Ljava/lang/String;)I",                                                  (void *) Start},
@@ -232,8 +234,8 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
   jRunMethodId = env->GetMethodID(jRunnableClass, "run", "()V");
 
   NodeClass.ptr = env->GetFieldID(clazz, "ptr", "J");
-  NodeClass.attach = env->GetMethodID(clazz, "attach", "(Lcom/linroid/noko/types/JSContext;)V");
-  NodeClass.detach = env->GetMethodID(clazz, "detach", "(Lcom/linroid/noko/types/JSContext;)V");
+  NodeClass.attach = env->GetMethodID(clazz, "attach", "(Lcom/linroid/noko/types/JSObject;)V");
+  NodeClass.detach = env->GetMethodID(clazz, "detach", "(Lcom/linroid/noko/types/JSObject;)V");
 
   LOAD_JNI_CLASS(Noko)
   LOAD_JNI_CLASS(JSValue)

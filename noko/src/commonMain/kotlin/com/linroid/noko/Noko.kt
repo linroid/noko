@@ -13,6 +13,7 @@ import java.io.Closeable
 import java.lang.annotation.Native
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.resume
+import kotlin.jvm.JvmField
 
 /**
  * Create a new Node.js instance
@@ -32,7 +33,8 @@ class Noko(
 ) : Closeable {
 
   @Native
-  internal var nPtr: Long = nativeNew(keepAlive, strictMode)
+  @JvmField
+  internal var ptr: Long = nativeNew(keepAlive, strictMode)
   private val listeners = HashSet<LifecycleListener>()
 
   private var running = atomic(false)
@@ -103,7 +105,7 @@ class Noko(
    * @return true if active, false otherwise
    */
   private fun isRunning(): Boolean {
-    return running.value && nPtr != 0L
+    return running.value && ptr != 0L
   }
 
   fun addEnv(key: String, value: String) {
@@ -160,7 +162,7 @@ class Noko(
   private fun attach(global: JSObject) {
     this.global = global
     check(running.compareAndSet(false, update = true))
-    check(isRunning()) { "isActive() doesn't match the current state" }
+    check(isRunning()) { "isRunning() doesn't match the current state" }
     attachStdOutput(global)
     eventOnBeforeStart(global)
     val setupCode = StringBuilder()

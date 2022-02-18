@@ -35,7 +35,6 @@ private:
   jmethodID jAttach_ = nullptr;
   jmethodID jDetach_ = nullptr;
 
-  static jmethodID jConstructorId;
   static jfieldID jSharedNullId;
   static jfieldID jSharedUndefinedId;
   static jfieldID jSharedTrueId;

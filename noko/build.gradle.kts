@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import de.undercouch.gradle.tasks.download.Download
+import com.android.build.gradle.tasks.ExternalNativeBuildTask
 
 plugins {
   kotlin("multiplatform") version "1.6.10"
@@ -82,18 +83,6 @@ java {
 tasks {
   val version = project.property("libnode.version")
   val downloadsDir = File(buildDir, "downloads")
-
-  val downloadAndroidPrebuilt by registering(Download::class) {
-    src("https://github.com/linroid/libnode/releases/download/v16.14.0/libnode-v16.14.0-android.zip")
-    dest(File(downloadsDir, "libnode.android.zip"))
-  }
-
-  val prepareAndroidPrebuilt by registering(Copy::class) {
-    dependsOn(downloadAndroidPrebuilt)
-    from(zipTree(File(downloadsDir, "libnode.android.zip")))
-    into(File("src/jvmMain/cpp/prebuilt/android"))
-  }
-
   val osName = System.getProperty("os.name")
   val targetOs = when {
     osName == "Mac OS X" -> "macos"
@@ -108,6 +97,24 @@ tasks {
     else -> error("Unsupported arch: $osArch")
   }
 
+  val prebuiltDir = file("src/jvmMain/cpp/prebuilt")
+  val targetHostPrebuiltDir = File(prebuiltDir, "$targetOs/$targetArch")
+  val cmakeDir = File(buildDir, "$targetOs/cmake")
+  cmakeDir.mkdirs()
+
+
+  val downloadAndroidPrebuilt by registering(Download::class) {
+    src("https://github.com/linroid/libnode/releases/download/$version/libnode-v16.14.0-android.zip")
+    dest(File(downloadsDir, "libnode.android.zip"))
+  }
+
+  val targetAndroidPrebuiltDir = file("src/jvmMain/cpp/prebuilt/android")
+  val prepareAndroidPrebuilt by registering(Copy::class) {
+    dependsOn(downloadAndroidPrebuilt)
+    from(zipTree(File(downloadsDir, "libnode.android.zip")))
+    into(targetAndroidPrebuiltDir)
+  }
+
   val downloadHostPrebuilt by registering(Download::class) {
     src("https://github.com/linroid/libnode/releases/download/$version/libnode-$version-$targetOs-$targetArch.zip")
     dest(File(downloadsDir, "libnode.$targetOs.zip"))
@@ -116,20 +123,38 @@ tasks {
   val prepareHostPrebuilt by registering(Copy::class) {
     dependsOn(downloadHostPrebuilt)
     from(zipTree(File(downloadsDir, "libnode.$targetOs.zip")))
-    into(file("src/jvmMain/cpp/prebuilt/$targetOs/$targetArch"))
+    into(targetHostPrebuiltDir)
   }
 
-  val cmakeDir = File(buildDir, "$targetOs/cmake")
-  cmakeDir.mkdirs()
-  val cmake by registering(Exec::class) {
+  val hostCmake by registering(Exec::class) {
     workingDir(cmakeDir)
     commandLine("cmake", file("src/jvmMain/cpp/"))
   }
 
-  val cmakeBuild by registering(Exec::class) {
-    dependsOn(cmake)
+  val hostCmakeBuild by registering(Exec::class) {
+    if (!targetHostPrebuiltDir.exists()) {
+      dependsOn(prepareHostPrebuilt)
+    }
+    dependsOn(hostCmake)
     workingDir(cmakeDir)
     commandLine("make")
+  }
+
+  named("clean").configure {
+    doLast {
+      delete(prebuiltDir)
+    }
+  }
+
+  afterEvaluate {
+    tasks.withType(Jar::class).forEach {
+      it.dependsOn(hostCmakeBuild)
+    }
+    if (!targetAndroidPrebuiltDir.exists()) {
+      tasks.withType(ExternalNativeBuildTask::class).forEach {
+        it.dependsOn(prepareAndroidPrebuilt)
+      }
+    }
   }
 }
 

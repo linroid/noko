@@ -1,9 +1,11 @@
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import de.undercouch.gradle.tasks.download.Download
 
 plugins {
   kotlin("multiplatform") version "1.6.10"
   kotlin("plugin.serialization") version "1.6.10"
   id("com.android.library")
+  id("de.undercouch.download") version "5.0.1"
   // id("kotlinx-atomicfu")
 }
 
@@ -69,6 +71,53 @@ android {
 java {
   sourceCompatibility = JavaVersion.VERSION_1_8
   targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+
+//val desktopJar by project.tasks.registering(Jar::class) {
+//  archiveBaseName.set("noko-desktop")
+//  from(kotlin.jvm("desktop").compilations["main"].output.allOutputs)
+//}
+
+tasks {
+  val version = project.property("libnode.version")
+  val downloadsDir = File(buildDir, "downloads")
+
+  val downloadAndroidPrebuilt by registering(Download::class) {
+    src("https://github.com/linroid/libnode/releases/download/v16.14.0/libnode-v16.14.0-android.zip")
+    dest(File(downloadsDir, "libnode.android.zip"))
+  }
+
+  val prepareAndroidPrebuilt by registering(Copy::class) {
+    dependsOn(downloadAndroidPrebuilt)
+    from(zipTree(File(downloadsDir, "libnode.android.zip")))
+    into(File("src/jvmMain/cpp/prebuilt/android"))
+  }
+
+  val osName = System.getProperty("os.name")
+  val targetOs = when {
+    osName == "Mac OS X" -> "macos"
+    osName.startsWith("Win") -> "windows"
+    osName.startsWith("Linux") -> "linux"
+    else -> error("Unsupported OS: $osName")
+  }
+
+  val targetArch = when (val osArch = System.getProperty("os.arch")) {
+    "x86_64", "amd64" -> "x86_64"
+    "aarch64" -> "arm64"
+    else -> error("Unsupported arch: $osArch")
+  }
+
+  val downloadHostPrebuilt by registering(Download::class) {
+    src("https://github.com/linroid/libnode/releases/download/$version/libnode-$version-$targetOs-$targetArch.zip")
+    dest(File(downloadsDir, "libnode.$targetOs.zip"))
+  }
+
+  val prepareHostPrebuilt by registering(Copy::class) {
+    dependsOn(downloadHostPrebuilt)
+    from(zipTree(File(downloadsDir, "libnode.$targetOs.zip")))
+    into(File("src/jvmMain/cpp/prebuilt/$targetOs/$targetArch"))
+  }
 }
 
 kotlin {

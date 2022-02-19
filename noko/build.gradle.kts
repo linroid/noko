@@ -158,9 +158,7 @@ tasks {
   }
 
   afterEvaluate {
-    tasks.withType(Jar::class).forEach {
-      it.dependsOn(hostCmakeBuild)
-    }
+    getByName("compileKotlinDesktop").dependsOn(hostCmakeBuild)
     if (!targetAndroidPrebuiltDir.exists()) {
       tasks.withType(ExternalNativeBuildTask::class).forEach {
         it.dependsOn(prepareAndroidPrebuilt)
@@ -217,7 +215,6 @@ kotlin {
       }
     }
     val desktopTest by getting {
-      dependsOn(jvmTest)
     }
 
     val androidMain by getting {

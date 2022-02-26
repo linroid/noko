@@ -43,5 +43,5 @@ void JsError::New(JNIEnv *env, jobject jThis, jstring jMessage) {
   auto value = v8::Exception::Error(message);
   auto result = new v8::Persistent<v8::Value>(node->isolate_, value);
   env->ReleaseStringChars(jMessage, messageChars);
-  JsValue::SetReference(env, jThis, (jlong) result);
+  JsValue::SetPointer(env, jThis, (jlong) result);
 }

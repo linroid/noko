@@ -20,7 +20,7 @@ jint JsPromise::OnLoad(JNIEnv *env) {
   };
   jClazz = (jclass) env->NewGlobalRef(clazz);
   jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;J)V");
-  jResolver = env->GetFieldID(clazz, "resolverPtr", "J");
+  jResolver = env->GetFieldID(clazz, "resolverPointer", "J");
   env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
   return JNI_OK;
 }
@@ -32,7 +32,7 @@ void JsPromise::New(JNIEnv *env, jobject jThis) {
   auto promise = resolver->GetPromise();
   auto resolverResult = new v8::Persistent<v8::Value>(isolate, resolver);
   auto promiseResult = new v8::Persistent<v8::Value>(isolate, promise);
-  JsValue::SetReference(env, jThis, (jlong) promiseResult);
+  JsValue::SetPointer(env, jThis, (jlong) promiseResult);
   env->SetLongField(jThis, jResolver, reinterpret_cast<jlong>(resolverResult));
 }
 
@@ -64,7 +64,8 @@ void JsPromise::Resolve(JNIEnv *env, jobject jThis, jobject jValue) {
 }
 
 void JsPromise::Then(JNIEnv *env, jobject jThis, jobject jCallback) {
-  auto callback = reinterpret_cast<v8::Persistent<v8::Function> *>(JsValue::GetReference(env, jCallback));
+  auto callback = reinterpret_cast<v8::Persistent<v8::Function> *>(JsValue::GetPointer(env,
+                                                                                       jCallback));
   SETUP(env, jThis, v8::Promise)
   v8::TryCatch tryCatch(node->isolate_);
   auto ret = that->Then(context, callback->Get(isolate));
@@ -75,7 +76,8 @@ void JsPromise::Then(JNIEnv *env, jobject jThis, jobject jCallback) {
 }
 
 void JsPromise::Catch(JNIEnv *env, jobject jThis, jobject jCallback) {
-  auto callback = reinterpret_cast<v8::Persistent<v8::Function> *>(JsValue::GetReference(env, jCallback));
+  auto callback = reinterpret_cast<v8::Persistent<v8::Function> *>(JsValue::GetPointer(env,
+                                                                                       jCallback));
   SETUP(env, jThis, v8::Promise)
   v8::TryCatch tryCatch(node->isolate_);
   auto ret = that->Catch(context, callback->Get(isolate));

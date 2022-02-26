@@ -14,8 +14,8 @@ private:
 public:
   JNICALL static void New(JNIEnv *env, jobject jThis, jstring jValue);
 
-  inline static jobject Wrap(JNIEnv *env, jobject jNode, v8::Persistent<v8::Value> *reference, jstring jValue) {
-    return env->NewObject(jClazz, jConstructor, jNode, (jlong) reference, jValue);
+  inline static jobject Wrap(JNIEnv *env, jobject jNode, v8::Persistent<v8::Value> *jPointer, jstring jValue) {
+    return env->NewObject(jClazz, jConstructor, jNode, (jlong) jPointer, jValue);
   }
 
   static jint OnLoad(JNIEnv *env);

@@ -289,26 +289,26 @@ jobject Node::ToJava(JNIEnv *env, v8::Local<v8::Value> value) const {
       return this->jSharedFalse_;
     }
   } else {
-    auto reference = new v8::Persistent<v8::Value>(isolate_, value);
+    auto pointer = new v8::Persistent<v8::Value>(isolate_, value);
     if (value->IsNumber()) {
-      return JsNumber::Wrap(env, jThis_, reference);
+      return JsNumber::Wrap(env, jThis_, pointer);
     } else if (value->IsObject()) {
       if (value->IsFunction()) {
-        return JsFunction::Wrap(env, jThis_, reference);
+        return JsFunction::Wrap(env, jThis_, pointer);
       } else if (value->IsPromise()) {
-        return JsPromise::Wrap(env, jThis_, reference);
+        return JsPromise::Wrap(env, jThis_, pointer);
       } else if (value->IsNativeError()) {
-        return JsError::Wrap(env, jThis_, reference);
+        return JsError::Wrap(env, jThis_, pointer);
       } else if (value->IsArray()) {
-        return JsArray::Wrap(env, jThis_, reference);
+        return JsArray::Wrap(env, jThis_, pointer);
       }
-      return JsObject::Wrap(env, jThis_, reference);
+      return JsObject::Wrap(env, jThis_, pointer);
     } else if (value->IsString()) {
       v8::String::Value unicodeString(isolate_, value);
       jstring jValue = env->NewString(*unicodeString, unicodeString.length());
-      return JsString::Wrap(env, jThis_, reference, jValue);
+      return JsString::Wrap(env, jThis_, pointer, jValue);
     }
-    return JsValue::Wrap(env, jThis_, reference);
+    return JsValue::Wrap(env, jThis_, pointer);
   }
 }
 

@@ -10,7 +10,7 @@ jint JsNumber::OnLoad(JNIEnv *env) {
     return JNI_ERR;
   }
   jClazz = (jclass) env->NewGlobalRef(clazz);
-  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;J)V");
+  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;JLjava/lang/Number;)V");
   JNINativeMethod methods[] = {
       {"nativeNew", "(D)V", (void *) JsNumber::New},
   };
@@ -26,5 +26,5 @@ void JsNumber::New(JNIEnv *env, jobject jThis, jdouble jData) {
   V8_SCOPE(env, jThis)
   auto value = v8::Number::New(node->isolate_, jData);
   auto result = new v8::Persistent<v8::Value>(node->isolate_, value);
-  JsValue::SetReference(env, jThis, (jlong) result);
+  JsValue::SetPointer(env, jThis, (jlong) result);
 }

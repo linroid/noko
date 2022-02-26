@@ -6,18 +6,18 @@
 
 class JsValue {
 private:
-  static jfieldID jReference;
+  static jfieldID jPointer;
   static jmethodID jConstructor;
-  static jmethodID jGetNode;
+  static jmethodID jNodePointer;
 public:
   static jclass jClazz;
 
-  inline static jlong GetReference(JNIEnv *env, jobject jObj) {
-    return env->GetLongField(jObj, jReference);
+  inline static jlong GetPointer(JNIEnv *env, jobject jObj) {
+    return env->GetLongField(jObj, jPointer);
   }
 
-  inline static void SetReference(JNIEnv *env, jobject jThis, jlong value) {
-    env->SetLongField(jThis, jReference, value);
+  inline static void SetPointer(JNIEnv *env, jobject jThis, jlong value) {
+    env->SetLongField(jThis, jPointer, value);
   }
 
   inline static jobject Wrap(JNIEnv *env, jobject jNode, v8::Persistent<v8::Value> *value) {
@@ -25,11 +25,11 @@ public:
   }
 
   inline static v8::Persistent<v8::Value> *Unwrap(JNIEnv *env, jobject jObj) {
-    return reinterpret_cast<v8::Persistent<v8::Value> *>(GetReference(env, jObj));
+    return reinterpret_cast<v8::Persistent<v8::Value> *>(GetPointer(env, jObj));
   }
 
   inline static Node *GetNode(JNIEnv *env, jobject jObj) {
-    auto ptr = env->CallLongMethod(jObj, jGetNode);
+    auto ptr = env->CallLongMethod(jObj, jNodePointer);
     if (ptr == 0) return nullptr;
     return reinterpret_cast<Node *>(ptr);
   }

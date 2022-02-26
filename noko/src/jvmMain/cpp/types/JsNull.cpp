@@ -19,5 +19,5 @@ void JsNull::New(JNIEnv *env, jobject jThis) {
   V8_SCOPE(env, jThis)
   auto value = v8::Null(isolate);
   auto result = new v8::Persistent<v8::Value>(node->isolate_, value);
-  JsValue::SetReference(env, jThis, (jlong) result);
+  JsValue::SetPointer(env, jThis, (jlong) result);
 }

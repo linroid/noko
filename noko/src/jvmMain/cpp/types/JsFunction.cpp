@@ -20,7 +20,7 @@ static void WeakCallback(const v8::WeakCallbackInfo<JavaCallback> &data) {
   LOGW("ObserverWeakCallback");
   JavaCallback *callback = data.GetParameter();
   EnvHelper env(callback->node->vm_);
-  JsValue::SetReference(*env, callback->that, 0);
+  JsValue::SetPointer(*env, callback->that, 0);
   delete callback;
 }
 
@@ -37,7 +37,7 @@ void JsFunction::New(JNIEnv *env, jobject jThis, jstring jName) {
   auto result = new v8::Persistent<v8::Value>(isolate, func);
   result->SetWeak(callback, WeakCallback, v8::WeakCallbackType::kParameter);
   env->ReleaseStringChars(jName, name);
-  JsValue::SetReference(env, jThis, (jlong) result);
+  JsValue::SetPointer(env, jThis, (jlong) result);
 }
 
 jobject JsFunction::Call(JNIEnv *env, jobject jThis, jobject jReceiver, jobjectArray jParameters) {

@@ -25,7 +25,7 @@ actual open class JsValue actual constructor(
   }
 
   @ForNative
-  private fun runtimepointer(): Long {
+  private fun nodePointer(): Long {
     return node.pointer
   }
 

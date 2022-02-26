@@ -99,7 +99,7 @@
 //   auto noko = JsValue::GetNode(env, jThis);
 //   auto reference = reinterpret_cast<v8::Persistent<v8::Value> *>(ref);
 //
-//   LOGV("clear reference: reference=%p, noko=%p", reference, noko);
+//   LOGV("clear reference: reference=%p, noko=%p", pointer, noko);
 //   if (noko == nullptr) {
 //     delete reference;
 //     return;
@@ -111,7 +111,7 @@
 //     return;
 //   }
 //
-//   bool submitted = node->Post([reference, noko] {
+//   bool submitted = node->Post([pointer, noko] {
 //     if (node->IsRunning()) {
 //       v8::Locker locker(node->isolate_);
 //       v8::HandleScope handleScope(node->isolate_);

@@ -31,5 +31,5 @@ void JsString::New(JNIEnv *env, jobject jThis, jstring jValue) {
   V8_SCOPE(env, jThis)
   auto result = new v8::Persistent<v8::Value>(isolate, V8_STRING(isolate, content, contentLen));
   env->ReleaseStringChars(jValue, content);
-  JsValue::SetReference(env, jThis, (jlong) result);
+  JsValue::SetPointer(env, jThis, (jlong) result);
 }

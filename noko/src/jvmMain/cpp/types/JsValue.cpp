@@ -5,8 +5,8 @@
 
 jmethodID JsValue::jConstructor;
 jclass JsValue::jClazz;
-jfieldID JsValue::jReference;
-jmethodID JsValue::jGetNode;
+jfieldID JsValue::jPointer;
+jmethodID JsValue::jNodePointer;
 
 jint JsValue::OnLoad(JNIEnv *env) {
   jclass clazz = env->FindClass("com/linroid/noko/types/JsValue");
@@ -15,8 +15,8 @@ jint JsValue::OnLoad(JNIEnv *env) {
   }
   jClazz = (jclass) env->NewGlobalRef(clazz);
   jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;J)V");
-  jReference = env->GetFieldID(clazz, "ptr", "J");
-  jGetNode = env->GetMethodID(clazz, "runtimePtr", "()J");
+  jPointer = env->GetFieldID(clazz, "pointer", "J");
+  jNodePointer = env->GetMethodID(clazz, "nodePointer", "()J");
 
   JNINativeMethod methods[] = {
       {"nativeToString", "()Ljava/lang/String;", (void *) JsValue::ToString},
@@ -89,5 +89,5 @@ void JsValue::Dispose(JNIEnv *env, jobject jThis) {
   auto value = JsValue::Unwrap(env, jThis);
   value->Reset();
   delete value;
-  JsValue::SetReference(env, jThis, 0);
+  JsValue::SetPointer(env, jThis, 0);
 }

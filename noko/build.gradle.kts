@@ -1,6 +1,8 @@
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import de.undercouch.gradle.tasks.download.Download
 import com.android.build.gradle.tasks.ExternalNativeBuildTask
+import com.android.build.gradle.LibraryExtension
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 
 plugins {
   kotlin("multiplatform") version "1.6.10"
@@ -192,6 +194,8 @@ kotlin {
     val jvmMain by creating {
       dependsOn(commonMain)
       dependencies {
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.3.2")
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.3.2")
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:$coroutinesVersion")
       }
     }
@@ -224,4 +228,46 @@ kotlin {
       }
     }
   }
+}
+
+fun configureSourceSets() {
+  val libraryExtension = project.extensions.findByType<LibraryExtension>()!!
+  // TODO: b/148416113: AGP doesn't know about Kotlin-MPP's sourceSets yet, so add
+  // them to its source directories (this fixes lint, and code completion in
+  // Android Studio on versions >= 4.0canary8)
+  libraryExtension.apply {
+    sourceSets.findByName("main")?.apply {
+      kotlin.srcDirs(
+        "src/commonMain/kotlin", "src/jvmMain/kotlin", "src/androidMain/kotlin"
+      )
+      res.srcDirs(
+        "src/commonMain/resources", "src/androidMain/res"
+      )
+      assets.srcDirs("src/androidMain/assets")
+      // Keep Kotlin files in java source sets so the source set is not empty when
+      // running unit tests which would prevent the tests from running in CI.
+      java.includes.add("**/*.kt")
+    }
+    sourceSets.findByName("test")?.apply {
+      java.srcDirs(
+        "src/commonTest/kotlin", "src/jvmTest/kotlin"
+      )
+      res.srcDirs("src/commonTest/res", "src/jvmTest/res")
+      // Keep Kotlin files in java source sets so the source set is not empty when
+      // running unit tests which would prevent the tests from running in CI.
+      java.includes.add("**/*.kt")
+    }
+    sourceSets.findByName("androidTest")?.apply {
+      java.srcDirs("src/androidAndroidTest/kotlin")
+      res.srcDirs("src/androidAndroidTest/res")
+      assets.srcDirs("src/androidAndroidTest/assets")
+      // Keep Kotlin files in java source sets so the source set is not empty when
+      // running unit tests which would prevent the tests from running in CI.
+      java.includes.add("**/*.kt")
+    }
+  }
+}
+
+afterEvaluate {
+  configureSourceSets()
 }

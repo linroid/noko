@@ -1,12 +1,12 @@
 package com.linroid.noko
 
-import com.linroid.noko.types.JsObject
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 
 class NodeTest {
+
   @Test
-  fun startNode() = runBlocking {
+  fun startNode(): Unit = runBlocking {
     val node = Node(null, object : StdOutput {
       override fun stdout(str: String) {
         println(str)
@@ -18,11 +18,8 @@ class NodeTest {
 
     }, keepAlive = true, strictMode = true)
     node.start("-p", "process.versions")
-    node.addListener(object : LifecycleListener {
-      override fun onNodeBeforeStart(node: Node, global: JsObject) {
-
-      }
-    })
-    delay(3000)
+    withTimeout(3000) {
+      node.awaitStarted()
+    }
   }
 }

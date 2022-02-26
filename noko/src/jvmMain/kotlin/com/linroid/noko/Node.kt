@@ -68,7 +68,7 @@ actual class Node actual constructor(
   private fun startInternal(execArgs: Array<String>) {
     try {
       val exitCode = nativeStart(execArgs)
-      eventOnExit(exitCode)
+      eventOnStop(exitCode)
     } catch (error: JSException) {
       eventOnError(error)
     } catch (error: Exception) {
@@ -152,7 +152,7 @@ actual class Node actual constructor(
     check(running.compareAndSet(false, update = true))
     check(isRunning()) { "isRunning() doesn't match the current state" }
     attachStdOutput(global)
-    eventOnBeforeStart(global)
+    eventOnAttach(global)
     val setupCode = StringBuilder()
     if (output.supportsColor) {
       setupCode.append(
@@ -228,35 +228,35 @@ process.stdout.isRaw = true;
     })
   }
 
-  private fun eventOnBeforeStart(global: JsObject) {
+  private fun eventOnAttach(global: JsObject) {
     fs.link(this)
     listeners.forEach {
-      it.onNodeBeforeStart(this, global)
+      it.onAttach(this, global)
     }
   }
 
   private fun eventOnStart(global: JsObject) {
     listeners.forEach {
-      it.onNodeStart(this, global)
+      it.onStart(this, global)
     }
   }
 
   private fun eventOnDetach(global: JsObject) {
     listeners.forEach {
-      it.onNodeBeforeExit(this, global)
+      it.onDetach(this, global)
     }
   }
 
-  private fun eventOnExit(code: Int) {
+  private fun eventOnStop(code: Int) {
     running.value = false
     listeners.forEach {
-      it.onNodeExit(code)
+      it.onStop(code)
     }
   }
 
   private fun eventOnError(error: JSException) {
     listeners.forEach {
-      it.onNodeError(error)
+      it.onError(error)
     }
   }
 

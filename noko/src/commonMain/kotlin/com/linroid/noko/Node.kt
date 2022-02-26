@@ -3,7 +3,10 @@ package com.linroid.noko
 import com.linroid.noko.fs.FileSystem
 import com.linroid.noko.fs.RealFileSystem
 import com.linroid.noko.types.JsError
+import com.linroid.noko.types.JsObject
 import com.linroid.noko.types.JsValue
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resumeWithException
 
 /**
  * Create a new Node.js instance
@@ -75,3 +78,19 @@ expect class Node(
   @Throws(JSException::class)
   fun require(path: String): JsValue
 }
+
+suspend fun Node.awaitStarted(): JsObject = suspendCancellableCoroutine { cont ->
+  val listener = object : LifecycleListener {
+    override fun onStart(node: Node, global: JsObject) {
+      cont.resumeWith(Result.success(global))
+      removeListener(this)
+    }
+
+    override fun onError(error: JSException) {
+      cont.resumeWithException(error)
+      removeListener(this)
+    }
+  }
+  addListener(listener)
+}
+

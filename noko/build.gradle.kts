@@ -2,7 +2,6 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import de.undercouch.gradle.tasks.download.Download
 import com.android.build.gradle.tasks.ExternalNativeBuildTask
 import com.android.build.gradle.LibraryExtension
-import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 
 plugins {
   kotlin("multiplatform") version "1.6.10"
@@ -76,30 +75,31 @@ java {
   targetCompatibility = JavaVersion.VERSION_1_8
 }
 
+val nodeVersion = project.property("libnode.version")
+val downloadsDir = File(buildDir, "downloads")
+val osName = System.getProperty("os.name")!!
+val targetOs = when {
+  osName == "Mac OS X" -> "macos"
+  osName.startsWith("Win") -> "windows"
+  osName.startsWith("Linux") -> "linux"
+  else -> error("Unsupported OS: $osName")
+}
+
+val targetArch = when (val osArch = System.getProperty("os.arch")) {
+  "x86_64", "amd64" -> "x86_64"
+  "aarch64" -> "arm64"
+  else -> error("Unsupported arch: $osArch")
+}
+
+val prebuiltDir = file("src/jvmMain/cpp/prebuilt")
+val hostPrebuiltDir = File(prebuiltDir, "$targetOs/$targetArch")
+val hostPrebuiltLibDir = File(hostPrebuiltDir, "lib")
+val cmakeDir = File(buildDir, "$targetOs/cmake")
+cmakeDir.mkdirs()
+
 tasks {
-  val version = project.property("libnode.version")
-  val downloadsDir = File(buildDir, "downloads")
-  val osName = System.getProperty("os.name")
-  val targetOs = when {
-    osName == "Mac OS X" -> "macos"
-    osName.startsWith("Win") -> "windows"
-    osName.startsWith("Linux") -> "linux"
-    else -> error("Unsupported OS: $osName")
-  }
-
-  val targetArch = when (val osArch = System.getProperty("os.arch")) {
-    "x86_64", "amd64" -> "x86_64"
-    "aarch64" -> "arm64"
-    else -> error("Unsupported arch: $osArch")
-  }
-
-  val prebuiltDir = file("src/jvmMain/cpp/prebuilt")
-  val targetHostPrebuiltDir = File(prebuiltDir, "$targetOs/$targetArch")
-  val cmakeDir = File(buildDir, "$targetOs/cmake")
-  cmakeDir.mkdirs()
-
   val downloadAndroidPrebuilt by registering(Download::class) {
-    src("https://github.com/linroid/libnode/releases/download/$version/libnode-v16.14.0-android.zip")
+    src("https://github.com/linroid/libnode/releases/download/$nodeVersion/libnode-v16.14.0-android.zip")
     dest(File(downloadsDir, "libnode.android.zip"))
   }
 
@@ -111,14 +111,14 @@ tasks {
   }
 
   val downloadHostPrebuilt by registering(Download::class) {
-    src("https://github.com/linroid/libnode/releases/download/$version/libnode-$version-$targetOs-$targetArch.zip")
+    src("https://github.com/linroid/libnode/releases/download/$nodeVersion/libnode-$nodeVersion-$targetOs-$targetArch.zip")
     dest(File(downloadsDir, "libnode.$targetOs.zip"))
   }
 
   val prepareHostPrebuilt by registering(Copy::class) {
     dependsOn(downloadHostPrebuilt)
     from(zipTree(File(downloadsDir, "libnode.$targetOs.zip")))
-    into(targetHostPrebuiltDir)
+    into(hostPrebuiltDir)
   }
 
   val hostCmakeConfigure by registering(Exec::class) {
@@ -127,7 +127,7 @@ tasks {
   }
 
   val hostCmakeBuild by registering(Exec::class) {
-    if (!targetHostPrebuiltDir.exists()) {
+    if (!hostPrebuiltDir.exists()) {
       dependsOn(prepareHostPrebuilt)
     }
     dependsOn(hostCmakeConfigure)
@@ -136,7 +136,7 @@ tasks {
     doLast {
       val libNoko = cmakeDir.listFiles()!!.find { it.name.startsWith("libnoko") }
       checkNotNull(libNoko) { "Couldn't find file: libnoko" }
-      val libNode = File(targetHostPrebuiltDir, "lib").listFiles()!!.find {
+      val libNode = hostPrebuiltLibDir.listFiles()!!.find {
         it.name.startsWith("libnode")
       }
       checkNotNull(libNode) { "Couldn't find file: libnode" }
@@ -172,6 +172,7 @@ kotlin {
     }
     testRuns["test"].executionTask.configure {
       useJUnit()
+      jvmArgs("-Djava.library.path=$cmakeDir:$hostPrebuiltLibDir")
     }
   }
 

@@ -74,5 +74,4 @@ expect class Node(
   @Deprecated("Not working")
   @Throws(JSException::class)
   fun require(path: String): JsValue
-
 }

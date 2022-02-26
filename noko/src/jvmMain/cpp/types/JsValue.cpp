@@ -37,7 +37,6 @@ jstring JsValue::ToString(JNIEnv *env, jobject jThis) {
   SETUP(env, jThis, v8::Value)
   v8::TryCatch tryCatch(isolate);
   if (that.IsEmpty()) {
-    LOGE("Call toString on null object!!!");
     return env->NewStringUTF("null");
   }
   auto str = that->ToString(context);

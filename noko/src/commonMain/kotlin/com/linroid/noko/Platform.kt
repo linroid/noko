@@ -5,5 +5,5 @@ import okio.FileSystem
 expect object Platform {
   val fileSystem: FileSystem
   fun isDebuggerConnected(): Boolean
-  fun loadNative()
+  fun loadNativeLibraries()
 }

@@ -11,9 +11,10 @@ actual object Platform {
     return false
   }
 
-  actual fun loadNative() {
-    val libDir = File.createTempFile("noko", "noko")
-    libDir.mkdirs()
-    println(libDir)
+  actual fun loadNativeLibraries() {
+    // val libDir = File.createTempFile("noko", "noko")
+    // libDir.mkdirs()
+    // println(libDir)
+    System.loadLibrary("noko")
   }
 }

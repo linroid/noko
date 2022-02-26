@@ -307,7 +307,7 @@ process.stdout.isRaw = true;
     private const val EXEC_PATH = "node"
 
     init {
-      Platform.loadNative()
+      Platform.loadNativeLibraries()
     }
 
     fun addEnv(key: String, value: String) {

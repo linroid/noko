@@ -1,7 +1,6 @@
 package com.linroid.noko
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.linroid.noko.types.JsArray
 import com.linroid.noko.types.JsObject
 import com.linroid.noko.types.JsUndefined
 import org.junit.Assert.*

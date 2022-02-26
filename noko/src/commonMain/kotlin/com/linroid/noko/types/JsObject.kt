@@ -1,9 +1,15 @@
 package com.linroid.noko.types
 
+import com.linroid.noko.NativePointer
+import com.linroid.noko.Node
 import com.linroid.noko.observable.PropertiesObserver
 import kotlin.reflect.KClass
 
 expect open class JsObject : JsValue {
+
+  constructor(node: Node)
+
+  internal constructor(node: Node, pointer: NativePointer)
 
   fun has(key: String): Boolean
 
@@ -22,8 +28,5 @@ expect open class JsObject : JsValue {
   /**
    * Watch [properties] to get value changed notifications
    */
-  fun watch(
-    observer: PropertiesObserver,
-    vararg properties: String
-  )
+  fun watch(vararg properties: String, observer: PropertiesObserver)
 }

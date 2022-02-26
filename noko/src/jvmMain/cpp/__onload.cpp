@@ -233,7 +233,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
   jclass jRunnableClass = env->FindClass("java/lang/Runnable");
   jRunMethodId = env->GetMethodID(jRunnableClass, "run", "()V");
 
-  NodeClass.ptr = env->GetFieldID(clazz, "ptr", "J");
+  NodeClass.ptr = env->GetFieldID(clazz, "pointer", "J");
   NodeClass.attach = env->GetMethodID(clazz, "attach", "(Lcom/linroid/noko/types/JsObject;)V");
   NodeClass.detach = env->GetMethodID(clazz, "detach", "(Lcom/linroid/noko/types/JsObject;)V");
 

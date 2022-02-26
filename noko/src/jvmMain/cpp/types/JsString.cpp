@@ -11,7 +11,7 @@ jint JsString::OnLoad(JNIEnv *env) {
     return JNI_ERR;
   }
   jClazz = (jclass) env->NewGlobalRef(clazz);
-  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;J)V");
+  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;JLjava/lang/String;)V");
 
   JNINativeMethod methods[] = {
       {"nativeNew", "(Ljava/lang/String;)V", (void *) JsString::New},
@@ -25,11 +25,11 @@ jint JsString::OnLoad(JNIEnv *env) {
   return JNI_OK;
 }
 
-void JsString::New(JNIEnv *env, jobject jThis, jstring jContent) {
-  const uint16_t *content = env->GetStringChars(jContent, nullptr);
-  const jint contentLen = env->GetStringLength(jContent);
+void JsString::New(JNIEnv *env, jobject jThis, jstring jValue) {
+  const uint16_t *content = env->GetStringChars(jValue, nullptr);
+  const jint contentLen = env->GetStringLength(jValue);
   V8_SCOPE(env, jThis)
   auto result = new v8::Persistent<v8::Value>(isolate, V8_STRING(isolate, content, contentLen));
-  env->ReleaseStringChars(jContent, content);
+  env->ReleaseStringChars(jValue, content);
   JsValue::SetReference(env, jThis, (jlong) result);
 }

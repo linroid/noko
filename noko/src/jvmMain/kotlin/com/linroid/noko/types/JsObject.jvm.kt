@@ -1,25 +1,26 @@
 package com.linroid.noko.types
 
+import com.linroid.noko.NativePointer
 import com.linroid.noko.Node
-import com.linroid.noko.annotation.ForNative
+import com.linroid.noko.NullNativePointer
 import com.linroid.noko.observable.PropertiesObserver
 import kotlin.reflect.KClass
 
 actual open class JsObject : JsValue {
 
-  @ForNative
-  protected constructor(node: Node, ptr: Long) : super(node, ptr)
+  internal actual constructor(node: Node, pointer: NativePointer) : super(node, pointer)
 
-  constructor(node: Node) : super(node, 0) {
+  actual constructor(node: Node) : super(node, NullNativePointer) {
     node.checkThread()
     nativeNew()
     addBinds()
   }
 
   private fun addBinds() {
-    if (this::class == JsObject::class) {
+    if (this::class === JsObject::class) {
       return
     }
+    // TODO: implement by ksp
     // val className = this::class.simpleName
     // this::class.methods
     //   .filter { it.isAnnotationPresent(JSName::class.java) }
@@ -85,7 +86,7 @@ actual open class JsObject : JsValue {
     return nativeKeys()
   }
 
-  actual fun watch(observer: PropertiesObserver, vararg properties: String) {
+  actual fun watch(vararg properties: String, observer: PropertiesObserver) {
     nativeWatch(properties, observer)
   }
 

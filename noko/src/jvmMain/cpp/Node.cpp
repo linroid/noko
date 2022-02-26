@@ -86,7 +86,6 @@ void Node::Attach() {
   auto undefinedValue = new v8::Persistent<v8::Value>(isolate_, v8::Undefined(isolate_));
   auto trueValue = new v8::Persistent<v8::Value>(isolate_, v8::True(isolate_));
   auto falseValue = new v8::Persistent<v8::Value>(isolate_, v8::False(isolate_));
-  // this->jGlobal_ = env->NewGlobalRef(JsObject::Wrap(*env, jThis_, this));
   this->jSharedNull_ = env->NewGlobalRef(JsNull::Wrap(*env, jThis_, nullValue));
   this->jSharedUndefined_ = env->NewGlobalRef(JsUndefined::Wrap(*env, jThis_, undefinedValue));
   this->jSharedTrue_ = env->NewGlobalRef(JsBoolean::Wrap(*env, jThis_, trueValue, true));
@@ -126,7 +125,8 @@ int Node::Start(std::vector<std::string> &args) {
     v8::Locker locker(isolate_);
     v8::Isolate::Scope isolateScope(isolate_);
 
-    auto isolateData = node::CreateIsolateData(isolate_, eventLoop_, platform.get(), allocator.get());
+    auto isolateData = node::CreateIsolateData(isolate_, eventLoop_, platform.get(),
+                                               allocator.get());
     v8::HandleScope handleScope(isolate_);
     v8::Local<v8::Context> context = node::NewContext(isolate_);
     if (context.IsEmpty()) {
@@ -136,8 +136,10 @@ int Node::Start(std::vector<std::string> &args) {
 
     v8::Context::Scope contextScope(context);
     auto flags = static_cast<node::EnvironmentFlags::Flags>(node::EnvironmentFlags::kOwnsEmbedded
-                                                            | node::EnvironmentFlags::kOwnsProcessState
-                                                            | node::EnvironmentFlags::kTrackUnmanagedFds);
+                                                            |
+                                                            node::EnvironmentFlags::kOwnsProcessState
+                                                            |
+                                                            node::EnvironmentFlags::kTrackUnmanagedFds);
     auto env = node::CreateEnvironment(isolateData, context, args, args, flags);
     node::SetProcessExitHandler(env, [](node::Environment *environment, int code) {
       LOGW("Node.js process is exiting: code=%d", code);
@@ -150,11 +152,12 @@ int Node::Start(std::vector<std::string> &args) {
     Attach();
 
     isolate_->SetMicrotasksPolicy(v8::MicrotasksPolicy::kAuto);
-    node::LoadEnvironment(env, [&](const node::StartExecutionCallbackInfo &info) -> v8::MaybeLocal<v8::Value> {
-      require_.Reset(isolate_, info.native_require);
-      process_.Reset(isolate_, info.process_object);
-      return v8::Null(isolate_);
-    });
+    node::LoadEnvironment(env,
+                          [&](const node::StartExecutionCallbackInfo &info) -> v8::MaybeLocal<v8::Value> {
+                            require_.Reset(isolate_, info.native_require);
+                            process_.Reset(isolate_, info.process_object);
+                            return v8::Null(isolate_);
+                          });
 
     RunLoop(env);
     Detach();
@@ -242,7 +245,8 @@ void Node::Exit(int code) {
     v8::Local<v8::Value> v8Code = v8::Number::New(isolate_, code);
     auto exitFunc = process->Get(context, V8_UTF_STRING(isolate_, "exit"));
     LOGI("Calling process.exit(%d)", code);
-    UNUSED(v8::Local<v8::Function>::Cast(exitFunc.ToLocalChecked())->Call(context, process, 1, &v8Code));
+    UNUSED(v8::Local<v8::Function>::Cast(exitFunc.ToLocalChecked())->Call(context, process, 1,
+                                                                          &v8Code));
   });
 }
 
@@ -272,7 +276,7 @@ bool Node::InitLoop() {
   return true;
 }
 
-jobject Node::ToJava(JNIEnv *env, v8::Local<v8::Value> value) {
+jobject Node::ToJava(JNIEnv *env, v8::Local<v8::Value> value) const {
   if (value->IsNull()) {
     return this->jSharedNull_;
   } else if (value->IsUndefined()) {
@@ -300,7 +304,9 @@ jobject Node::ToJava(JNIEnv *env, v8::Local<v8::Value> value) {
       }
       return JsObject::Wrap(env, jThis_, reference);
     } else if (value->IsString()) {
-      return JsString::Wrap(env, jThis_, reference);
+      v8::String::Value unicodeString(isolate_, value);
+      jstring jValue = env->NewString(*unicodeString, unicodeString.length());
+      return JsString::Wrap(env, jThis_, reference, jValue);
     }
     return JsValue::Wrap(env, jThis_, reference);
   }
@@ -459,10 +465,12 @@ void Node::CheckThread() {
   }
 }
 
-jobject Node::Eval(const uint16_t *code, int codeLen, const uint16_t *source, int sourceLen, int line) {
+jobject
+Node::Eval(const uint16_t *code, int codeLen, const uint16_t *source, int sourceLen, int line) {
   v8::TryCatch tryCatch(isolate_);
   auto context = context_.Get(isolate_);
-  v8::ScriptOrigin scriptOrigin(V8_STRING(isolate_, source, sourceLen), v8::Integer::New(isolate_, line),
+  v8::ScriptOrigin scriptOrigin(V8_STRING(isolate_, source, sourceLen),
+                                v8::Integer::New(isolate_, line),
                                 v8::Integer::New(isolate_, 0));
   auto script = v8::Script::Compile(context, V8_STRING(isolate_, code, codeLen), &scriptOrigin);
   EnvHelper env(vm_);
@@ -508,7 +516,8 @@ jobject Node::Require(const uint16_t *path, int pathLen) {
   auto global = global_.Get(isolate_);
   v8::TryCatch tryCatch(isolate_);
 
-  auto require = global->Get(context, V8_UTF_STRING(isolate_, "require")).ToLocalChecked()->ToObject(
+  auto require = global->Get(context,
+                             V8_UTF_STRING(isolate_, "require")).ToLocalChecked()->ToObject(
       context).ToLocalChecked();
   assert(require->IsFunction());
 
@@ -577,10 +586,11 @@ jint Node::OnLoad(JNIEnv *env) {
     return JNI_ERR;
   }
   jSharedNullId = env->GetFieldID(clazz, "sharedNull", "Lcom/linroid/noko/types/JsNull;");
-  jSharedUndefinedId = env->GetFieldID(clazz, "sharedUndefined", "Lcom/linroid/noko/types/JsUndefined;");
+  jSharedUndefinedId = env->GetFieldID(clazz, "sharedUndefined",
+                                       "Lcom/linroid/noko/types/JsUndefined;");
   jSharedTrueId = env->GetFieldID(clazz, "sharedTrue", "Lcom/linroid/noko/types/JsBoolean;");
   jSharedFalseId = env->GetFieldID(clazz, "sharedFalse", "Lcom/linroid/noko/types/JsBoolean;");
-  jPtrId = env->GetFieldID(clazz, "ptr", "J");
+  jPtrId = env->GetFieldID(clazz, "pointer", "J");
 
   return JNI_OK;
 }

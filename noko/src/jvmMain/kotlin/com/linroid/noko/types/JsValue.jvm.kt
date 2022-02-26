@@ -1,10 +1,8 @@
 package com.linroid.noko.types
 
-import com.linroid.noko.Node
-import com.linroid.noko.Platform
+import com.linroid.noko.*
 import com.linroid.noko.annotation.ForNative
 import com.linroid.noko.ref.JSValueReference
-import com.linroid.noko.runBlocking
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -14,20 +12,21 @@ import kotlinx.serialization.json.JsonObject
 import kotlin.jvm.JvmField
 import kotlin.reflect.KClass
 
-actual open class JsValue(
+actual open class JsValue actual constructor(
   protected actual val node: Node,
-  @JvmField internal val ptr: Long,
+  @JvmField
+  internal actual val pointer: NativePointer,
 ) {
   init {
-    if (ptr != 0L) {
+    if (pointer != 0L) {
       // The object is just a wrapper for js object
       JSValueReference(this, node.cleaner)
     }
   }
 
   @ForNative
-  private fun runtimePtr(): Long {
-    return node.ptr
+  private fun runtimepointer(): Long {
+    return node.pointer
   }
 
   actual override fun toString(): String {
@@ -40,7 +39,7 @@ actual open class JsValue(
     return nativeToString()
   }
 
-  actual open fun toJson(): String {
+  actual open fun toJson(): String? {
     return nativeToJson()
   }
 
@@ -53,6 +52,9 @@ actual open class JsValue(
   }
 
   actual fun typeOf(): String {
+    if (pointer == NullNativePointer) {
+      return "undefined"
+    }
     return nativeTypeOf()
   }
 
@@ -69,24 +71,24 @@ actual open class JsValue(
     if (JsValue::class != type && !this.hasValue()) {
       return null
     }
-    val result = when {
-      type == String::class -> this.toString()
-      type == Any::class -> this
-      type == Int::class -> toNumber().toInt()
-      type == Boolean::class -> toBoolean()
-      type == Long::class -> toNumber().toLong()
-      type == Float::class -> toNumber().toFloat()
-      type == Double::class -> toNumber().toDouble()
-      type == JsonObject::class || type == JsonElement::class || type == JsonArray::class -> Json.decodeFromString(
-        toJson()
-      )
+    val result = when (type) {
+      String::class -> this.toString()
+      Any::class -> this
+      Int::class -> toNumber().toInt()
+      Boolean::class -> toBoolean()
+      Long::class -> toNumber().toLong()
+      Float::class -> toNumber().toFloat()
+      Double::class -> toNumber().toDouble()
+      JsonObject::class,
+      JsonElement::class,
+      JsonArray::class -> Json.decodeFromString(toJson() ?: return null)
       // JsValue::class.isAssignableFrom(type) -> this
       // type.isArray -> {
       //   check(this is JsArray) { "$this is not an JsArray" }
       //   this.map { it.toType(type.componentType as Class<out Any>) }.toTypedArray()
       // }
       else -> {
-        val json = toJson()
+        val json = toJson() ?: return null
         Json.decodeFromString(json)
       }
     }
@@ -99,7 +101,7 @@ actual open class JsValue(
 
   actual override fun equals(other: Any?): Boolean {
     if (other is JsValue) {
-      if (other.ptr == ptr) {
+      if (other.pointer == pointer) {
         return true
       }
       return nativeEquals(other)
@@ -108,15 +110,15 @@ actual open class JsValue(
   }
 
   actual fun sameReference(other: JsValue): Boolean {
-    return other.ptr == ptr
+    return other.pointer == pointer
   }
 
   actual override fun hashCode(): Int {
-    return ptr.hashCode()
+    return pointer.hashCode()
   }
 
   private external fun nativeEquals(other: JsValue): Boolean
-  private external fun nativeToJson(): String
+  private external fun nativeToJson(): String?
   private external fun nativeToString(): String
   private external fun nativeToNumber(): Double
   private external fun nativeTypeOf(): String

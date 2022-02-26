@@ -1,14 +1,12 @@
 package com.linroid.noko.types
 
+import com.linroid.noko.NativePointer
 import com.linroid.noko.Node
-import com.linroid.noko.annotation.ForNative
+import com.linroid.noko.NullNativePointer
 
 actual class JsArray : JsObject, MutableList<JsValue> {
 
-  @ForNative
-  private constructor(node: Node, ptr: Long) : super(node, ptr)
-
-  constructor(node: Node, data: Iterator<*>) : super(node, 0) {
+  actual constructor(node: Node, data: Iterator<*>) : super(node, NullNativePointer) {
     nativeNew()
     val array = ArrayList<JsValue>()
     data.forEach {
@@ -16,6 +14,8 @@ actual class JsArray : JsObject, MutableList<JsValue> {
     }
     addAll(array)
   }
+
+  internal actual constructor(node: Node, pointer: NativePointer) : super(node, pointer)
 
   override val size: Int
     get() = nativeSize()
@@ -55,7 +55,6 @@ actual class JsArray : JsObject, MutableList<JsValue> {
       override fun remove() {
       }
     }
-
   }
 
   override fun listIterator(): MutableListIterator<JsValue> {
@@ -106,7 +105,7 @@ actual class JsArray : JsObject, MutableList<JsValue> {
   }
 
   override fun removeAt(index: Int): JsValue {
-    return nativeRemvoeAt(index)
+    return nativeRemoveAt(index)
   }
 
   override fun retainAll(elements: Collection<JsValue>): Boolean {
@@ -121,7 +120,7 @@ actual class JsArray : JsObject, MutableList<JsValue> {
     return nativeLastIndexOf(element)
   }
 
-  private external fun nativeRemvoeAt(index: Int): JsValue
+  private external fun nativeRemoveAt(index: Int): JsValue
   private external fun nativeRemove(element: JsValue): Boolean
   private external fun nativeGet(index: Int): JsValue
   private external fun nativeSetAt(index: Int, element: JsValue): JsValue

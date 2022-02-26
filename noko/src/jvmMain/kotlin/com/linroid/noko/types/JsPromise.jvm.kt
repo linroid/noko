@@ -1,7 +1,9 @@
 package com.linroid.noko.types
 
 import com.linroid.noko.JSException
+import com.linroid.noko.NativePointer
 import com.linroid.noko.Node
+import com.linroid.noko.NullNativePointer
 import com.linroid.noko.annotation.ForNative
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
@@ -10,12 +12,11 @@ import kotlin.coroutines.resumeWithException
 
 actual class JsPromise : JsObject {
 
-  private var resolverPtr: Long = 0
+  private var resolverPointer: NativePointer = 0
 
-  @ForNative
-  private constructor(node: Node, ptr: Long) : super(node, ptr)
+  internal actual constructor(node: Node, pointer: NativePointer) : super(node, pointer)
 
-  actual constructor(node: Node) : super(node, 0) {
+  actual constructor(node: Node) : super(node, NullNativePointer) {
     nativeNew()
   }
 

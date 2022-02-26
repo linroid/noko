@@ -12,10 +12,10 @@ private:
   static jmethodID jConstructor;
 
 public:
-  JNICALL static void New(JNIEnv *env, jobject jThis, jstring jContent);
+  JNICALL static void New(JNIEnv *env, jobject jThis, jstring jValue);
 
-  inline static jobject Wrap(JNIEnv *env, jobject jNode, v8::Persistent<v8::Value> *value) {
-    return env->NewObject(jClazz, jConstructor, jNode, (jlong) value);
+  inline static jobject Wrap(JNIEnv *env, jobject jNode, v8::Persistent<v8::Value> *reference, jstring jValue) {
+    return env->NewObject(jClazz, jConstructor, jNode, (jlong) reference, jValue);
   }
 
   static jint OnLoad(JNIEnv *env);

@@ -4,10 +4,12 @@ import com.linroid.noko.types.JsValue
 import java.lang.ref.PhantomReference
 import java.util.concurrent.CopyOnWriteArraySet
 
-class JSValueReference(value: JsValue, private val cleaner: (Long) -> Unit) : PhantomReference<JsValue>(value,
-  ReferenceWatcher.queue
-) {
-  private val ref = value.ptr
+class JSValueReference(
+  value: JsValue,
+  private val cleaner: (Long) -> Unit
+) : PhantomReference<JsValue>(value, ReferenceWatcher.queue) {
+  
+  private val ref = value.pointer
 
   init {
     references.add(this)

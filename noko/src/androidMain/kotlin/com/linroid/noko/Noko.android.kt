@@ -6,7 +6,6 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.system.Os
-import com.linroid.noko.ref.ReferenceWatcher
 
 class ExpectNoko {
   companion object {
@@ -27,7 +26,7 @@ class ExpectNoko {
     }
 
     fun setup(context: Context) {
-      ReferenceWatcher.start()
+      // ReferenceWatcher.start()
 
       val connectionManager =
         context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager

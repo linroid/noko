@@ -100,7 +100,7 @@ public:
 
   bool Post(const std::function<void()> &runnable);
 
-  jobject ToJava(JNIEnv *env, v8::Local<v8::Value> value);
+  jobject ToJava(JNIEnv *env, v8::Local<v8::Value> value) const;
 
   v8::Local<v8::Value> Require(const char *path);
 

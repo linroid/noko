@@ -1,16 +1,19 @@
 package com.linroid.noko.types
 
+import com.linroid.noko.NativePointer
 import com.linroid.noko.Node
-import com.linroid.noko.annotation.ForNative
 
-actual class JsString : JsValue {
+actual class JsString : JsPrimitive<String> {
 
-  @ForNative
-  private constructor (node: Node, ptr: Long) : super(node, ptr)
+  internal actual constructor(
+    node: Node,
+    pointer: NativePointer,
+    value: String,
+  ) : super(node, pointer, value)
 
-  actual constructor(node: Node, content: String) : this(node, 0) {
-    nativeNew(content)
+  actual constructor(node: Node, value: String) : super(node, value) {
+    nativeNew(value)
   }
 
-  actual external fun nativeNew(content: String)
+  private external fun nativeNew(value: String)
 }

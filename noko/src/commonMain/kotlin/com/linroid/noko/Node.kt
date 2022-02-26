@@ -22,7 +22,7 @@ expect class Node(
   strictMode: Boolean = true,
 ) {
 
-  internal var ptr: Long
+  internal var pointer: NativePointer
 
   internal val cleaner: (Long) -> Unit
 

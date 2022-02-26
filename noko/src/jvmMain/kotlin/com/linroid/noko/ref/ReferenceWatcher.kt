@@ -3,7 +3,7 @@ package com.linroid.noko.ref
 import com.linroid.noko.types.JsValue
 import java.lang.ref.ReferenceQueue
 
-internal object ReferenceWatcher : Thread("js-object-watcher") {
+internal object ReferenceWatcher : Thread("js-object-cleaner") {
 
   private const val TAG = "ReferenceWatcher"
 

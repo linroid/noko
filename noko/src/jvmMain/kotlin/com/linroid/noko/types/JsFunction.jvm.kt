@@ -1,7 +1,7 @@
 package com.linroid.noko.types
 
+import com.linroid.noko.NativePointer
 import com.linroid.noko.Node
-import com.linroid.noko.annotation.ForNative
 import java.lang.reflect.InvocationTargetException
 
 typealias Callable = (receiver: JsValue, parameters: Array<out JsValue>) -> JsValue?
@@ -10,10 +10,9 @@ actual open class JsFunction : JsObject {
 
   private val callable: Callable?
 
- @ForNative
- private constructor(node: Node, ptr: Long) : super(node, ptr) {
-   this.callable = null
- }
+  internal actual constructor(node: Node, pointer: NativePointer) : super(node, pointer) {
+    this.callable = null
+  }
 
   constructor(node: Node, name: String, callable: Callable? = null) : super(node, 0) {
     this.callable = callable
@@ -26,9 +25,8 @@ actual open class JsFunction : JsObject {
       return try {
         callable.invoke(receiver, parameters)
       } catch (error: InvocationTargetException) {
-        node.throwError("An unexpected error occurred during call native function: ${error.getTargetException().message}")
+        node.throwError("An unexpected error occurred during call native function: ${error.targetException.message}")
       } catch (error: Exception) {
-        // noko.throwError(error.message ?: "An error occurred when calling native function")
         throw error
       }
     }
@@ -37,7 +35,7 @@ actual open class JsFunction : JsObject {
 
   actual fun call(receiver: JsValue, vararg parameters: Any?): JsValue {
     node.checkThread()
-    check(node.ptr != 0L) { "node has been disposed" }
+    check(node.pointer != 0L) { "node has already been disposed" }
     val v8Parameters = Array(parameters.size) { from(node, parameters[it]) }
     return nativeCall(receiver, v8Parameters)
   }

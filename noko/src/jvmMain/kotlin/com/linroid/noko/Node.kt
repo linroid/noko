@@ -26,7 +26,7 @@ actual class Node actual constructor(
   private val strictMode: Boolean,
 ){
 
-  internal actual var ptr: Long = nativeNew(keepAlive, strictMode)
+  internal actual var pointer: Long = nativeNew(keepAlive, strictMode)
   private val listeners = HashSet<LifecycleListener>()
 
   private var running = atomic(false)
@@ -97,7 +97,7 @@ actual class Node actual constructor(
    * @return true if active, false otherwise
    */
   private fun isRunning(): Boolean {
-    return running.value && ptr != 0L
+    return running.value && pointer != 0L
   }
 
   actual fun addEnv(key: String, value: String) {

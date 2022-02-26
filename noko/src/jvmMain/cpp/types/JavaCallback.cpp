@@ -2,25 +2,25 @@
 #include "../EnvHelper.h"
 
 JavaCallback::JavaCallback(
-    Noko *noko,
+    Node *node,
     JNIEnv *env,
     jobject that,
     jclass clazz,
     jmethodID methodId
-) : noko(noko), that(env->NewGlobalRef(that)), clazz_(clazz), methodId_(methodId) {
+) : node(node), that(env->NewGlobalRef(that)), clazz_(clazz), methodId_(methodId) {
   env->GetJavaVM(&vm_);
 }
 
 void JavaCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
-  EnvHelper env(noko->vm_);
+  EnvHelper env(node->vm_);
   auto parameters = env->NewObjectArray(info.Length(), clazz_, nullptr);
   for (int i = 0; i < info.Length(); ++i) {
     v8::Local<v8::Value> element = info[i];
-    auto obj = noko->ToJava(*env, element);
+    auto obj = node->ToJava(*env, element);
     env->SetObjectArrayElement(parameters, i, obj);
   }
   auto caller = (v8::Local<v8::Value>) info.This();
-  auto jCaller = noko->ToJava(*env, caller);
+  auto jCaller = node->ToJava(*env, caller);
   auto jRet = env->CallObjectMethod(that, methodId_, jCaller, parameters);
   env->DeleteLocalRef(jCaller);
 
@@ -37,9 +37,9 @@ void JavaCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
   }
 
   if (jRet != nullptr) {
-    auto result = JSValue::Unwrap(*env, jRet);
+    auto result = JsValue::Unwrap(*env, jRet);
     if (result != nullptr) {
-      info.GetReturnValue().Set(result->Get(noko->isolate_));
+      info.GetReturnValue().Set(result->Get(node->isolate_));
     }
   }
 }

@@ -25,20 +25,20 @@ message(LIBNODE_DIR: ${LIBNODE_DIR})
 set(SOURCES
         __onload.cpp
         EnvHelper.cpp
-        Noko.cpp
+        Node.cpp
         observable/PropertiesObserver.cpp
-        types/JSValue.cpp
-        types/JSObject.cpp
-        types/JSUndefined.cpp
-        types/JSBoolean.cpp
-        types/JSNumber.cpp
-        types/JSString.cpp
-        types/JSArray.cpp
-        types/JSNull.cpp
-        types/JSFunction.cpp
+        types/JsValue.cpp
+        types/JsObject.cpp
+        types/JsUndefined.cpp
+        types/JsBoolean.cpp
+        types/JsNumber.cpp
+        types/JsString.cpp
+        types/JsArray.cpp
+        types/JsNull.cpp
+        types/JsFunction.cpp
         types/JavaCallback.cpp
-        types/JSError.cpp
-        types/JSPromise.cpp)
+        types/JsError.cpp
+        types/JsPromise.cpp)
 
 add_library(noko SHARED ${SOURCES})
 

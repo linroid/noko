@@ -74,12 +74,6 @@ java {
   targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-
-//val desktopJar by project.tasks.registering(Jar::class) {
-//  archiveBaseName.set("noko-desktop")
-//  from(kotlin.jvm("desktop").compilations["main"].output.allOutputs)
-//}
-
 tasks {
   val version = project.property("libnode.version")
   val downloadsDir = File(buildDir, "downloads")
@@ -125,7 +119,7 @@ tasks {
     into(targetHostPrebuiltDir)
   }
 
-  val hostCmake by registering(Exec::class) {
+  val hostCmakeConfigure by registering(Exec::class) {
     workingDir(cmakeDir)
     commandLine("cmake", file("src/jvmMain/cpp/"))
   }
@@ -134,7 +128,7 @@ tasks {
     if (!targetHostPrebuiltDir.exists()) {
       dependsOn(prepareHostPrebuilt)
     }
-    dependsOn(hostCmake)
+    dependsOn(hostCmakeConfigure)
     workingDir(cmakeDir)
     commandLine("make")
     doLast {
@@ -170,15 +164,6 @@ tasks {
 kotlin {
   android {}
 
-  jvm {
-    compilations.all {
-      kotlinOptions.jvmTarget = "1.8"
-    }
-    testRuns["test"].executionTask.configure {
-      useJUnit()
-    }
-  }
-
   jvm("desktop") {
     compilations.all {
       kotlinOptions.jvmTarget = "11"
@@ -204,17 +189,26 @@ kotlin {
       }
     }
 
-    val jvmMain by getting
-    val jvmTest by getting
-
-    val desktopMain by getting {
-      dependsOn(jvmMain)
+    val jvmMain by creating {
+      dependsOn(commonMain)
       dependencies {
-        implementation(kotlin("stdlib"))
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:$coroutinesVersion")
       }
     }
+
+    val jvmTest by creating {
+      dependsOn(commonTest)
+      dependencies {
+        implementation(kotlin("test"))
+      }
+    }
+
+    val desktopMain by getting {
+      dependsOn(jvmMain)
+    }
+
     val desktopTest by getting {
+      dependsOn(jvmTest)
     }
 
     val androidMain by getting {

@@ -1,7 +1,7 @@
 package com.linroid.noko.ref
 
-import com.linroid.noko.types.JSObject
+import com.linroid.noko.types.JsObject
 
 interface JSRef {
-  val thiz: JSObject
+  val thiz: JsObject
 }

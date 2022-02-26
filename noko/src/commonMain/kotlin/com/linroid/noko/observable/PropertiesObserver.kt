@@ -1,11 +1,11 @@
 package com.linroid.noko.observable
 
-import com.linroid.noko.types.JSObject
-import com.linroid.noko.types.JSValue
+import com.linroid.noko.types.JsObject
+import com.linroid.noko.types.JsValue
 
 /**
- * An observer to receive property update events from [JSObject]
+ * An observer to receive property update events from [JsObject]
  */
 interface PropertiesObserver {
-  fun onPropertyChanged(key: String, value: JSValue)
+  fun onPropertyChanged(key: String, value: JsValue)
 }

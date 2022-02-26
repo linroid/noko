@@ -11,7 +11,7 @@ actual object Platform {
     return Debug.isDebuggerConnected()
   }
 
-  actual fun loadLibrary() {
+  actual fun loadNative() {
     System.loadLibrary("noko")
   }
 }

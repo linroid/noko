@@ -1,9 +1,13 @@
 #include "PropertiesObserver.h"
-#include "../types/JSValue.h"
+#include "../types/JsValue.h"
 #include "../EnvHelper.h"
 
-PropertiesObserver::PropertiesObserver(Noko *runtime, JNIEnv *env, jobject that, jmethodID methodId)
-  : noko(runtime), that_(env->NewGlobalRef(that)), methodId_(methodId) {
+PropertiesObserver::PropertiesObserver(
+    Node *node,
+    JNIEnv *env,
+    jobject that,
+    jmethodID methodId
+) : node(node), that_(env->NewGlobalRef(that)), methodId_(methodId) {
   env->GetJavaVM(&vm_);
 }
 

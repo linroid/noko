@@ -2,7 +2,7 @@
 // #define NODE_JS_CONTEXT_H
 //
 // #include <jni.h>
-// #include "../Noko.h"
+// #include "../Node.h"
 //
 // class JSContext {
 // private:
@@ -25,7 +25,7 @@
 //
 //   static jint OnLoad(JNIEnv *env);
 //
-//   static void SetShared(JNIEnv *env, jobject jNoko);
+//   static void SetShared(JNIEnv *env, jobject jNode);
 // };
 //
 //

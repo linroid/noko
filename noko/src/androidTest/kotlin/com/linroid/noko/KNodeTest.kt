@@ -8,12 +8,12 @@ import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
-abstract class nokoTest : Noko.LifecycleListener, StdOutput {
+abstract class NodeTest : LifecycleListener, StdOutput {
 
   private lateinit var file: File
   private val startLatch = CountDownLatch(1)
 
-  private lateinit var node: Noko
+  private lateinit var node: Node
   protected lateinit var context: JSContext
 
   @Before
@@ -21,7 +21,7 @@ abstract class nokoTest : Noko.LifecycleListener, StdOutput {
     println("setupNode")
     val appContext = InstrumentationRegistry.getInstrumentation().targetContext
     file = File.createTempFile("tests_", "temp.js")
-    node = Noko(appContext.cacheDir, this, keepAlive = true)
+    node = Node(appContext.cacheDir, this, keepAlive = true)
     node.start(file.absolutePath)
     node.addListener(this)
     startLatch.await(3, TimeUnit.SECONDS)
@@ -59,7 +59,7 @@ abstract class nokoTest : Noko.LifecycleListener, StdOutput {
   companion object {
     init {
       val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-      Noko.setup(appContext)
+      Node.setup(appContext)
     }
   }
 }

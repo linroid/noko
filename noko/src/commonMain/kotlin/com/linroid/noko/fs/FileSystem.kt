@@ -1,6 +1,6 @@
 package com.linroid.noko.fs
 
-import com.linroid.noko.Noko
+import com.linroid.noko.Node
 import okio.Path
 
 abstract class FileSystem {
@@ -17,7 +17,7 @@ abstract class FileSystem {
   /**
    * Link this filesystem into runtime
    */
-  internal open fun link(noko: Noko) {}
+  internal open fun link(node: Node) {}
 
   enum class Mode(internal val flags: Int) {
     None(0),

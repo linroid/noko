@@ -1,6 +1,6 @@
 package com.linroid.noko.fs
 
-import com.linroid.noko.Noko
+import com.linroid.noko.Node
 import com.linroid.noko.Platform
 import okio.Path
 import okio.Path.Companion.toPath
@@ -78,10 +78,10 @@ class VirtualFileSystem(
     return root / destination.relativeTo(destination.root!!)
   }
 
-  override fun link(noko: Noko) {
-    noko.chroot(root)
+  override fun link(node: Node) {
+    node.chroot(root)
     destinationToPoint.values.forEach {
-      noko.mountFile(it.destination, it.source, it.mode)
+      node.mountFile(it.destination, it.source, it.mode)
     }
   }
 

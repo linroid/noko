@@ -1,6 +1,7 @@
 package com.linroid.noko
 
 import okio.FileSystem
+import java.io.File
 
 actual object Platform {
 
@@ -10,7 +11,9 @@ actual object Platform {
     return false
   }
 
-  actual fun loadLibrary() {
-    System.loadLibrary("noko")
+  actual fun loadNative() {
+    val libDir = File.createTempFile("noko", "noko")
+    libDir.mkdirs()
+    println(libDir)
   }
 }

@@ -26,13 +26,9 @@ std::unique_ptr<node::MultiIsolatePlatform> platform;
 Node::Node(
     JNIEnv *env,
     jobject jThis,
-    jmethodID jAttach,
-    jmethodID jDetach,
     bool keepAlive,
     bool strict
-) : jAttach_(jAttach),
-    jDetach_(jDetach),
-    keepAlive_(keepAlive),
+) : keepAlive_(keepAlive),
     strict_(strict) {
 
   env->GetJavaVM(&vm_);
@@ -63,7 +59,7 @@ Node::~Node() {
     env->DeleteGlobalRef(jSharedNull_);
     env->DeleteGlobalRef(jSharedTrue_);
     env->DeleteGlobalRef(jSharedFalse_);
-    env->SetLongField(jThis_, jPtrId, 0l);
+    env->SetLongField(jThis_, jPointerId, 0l);
     env->DeleteGlobalRef(jThis_);
   }
 
@@ -96,12 +92,12 @@ void Node::Attach() {
   env->SetObjectField(jThis_, jSharedTrueId, jSharedTrue_);
   env->SetObjectField(jThis_, jSharedFalseId, jSharedFalse_);
 
-  env->CallVoidMethod(jThis_, jAttach_, (jlong) &global_);
+  env->CallVoidMethod(jThis_, jAttachId, (jlong) &global_);
 }
 
-void Node::Detach() {
+void Node::Detach() const {
   EnvHelper env(vm_);
-  env->CallVoidMethod(jThis_, jDetach_, jThis_);
+  env->CallVoidMethod(jThis_, jDetachId, jThis_);
 }
 
 int Node::Start(std::vector<std::string> &args) {
@@ -574,11 +570,13 @@ int init_node() {
 //     v8::V8::ShutdownPlatform();
 // }
 
-jfieldID  Node::jSharedNullId;
-jfieldID  Node::jSharedUndefinedId;
-jfieldID  Node::jSharedTrueId;
-jfieldID  Node::jSharedFalseId;
-jfieldID  Node::jPtrId;
+jmethodID Node::jAttachId;
+jmethodID Node::jDetachId;
+jfieldID Node::jSharedNullId;
+jfieldID Node::jSharedUndefinedId;
+jfieldID Node::jSharedTrueId;
+jfieldID Node::jSharedFalseId;
+jfieldID Node::jPointerId;
 
 jint Node::OnLoad(JNIEnv *env) {
   jclass clazz = env->FindClass("com/linroid/noko/Node");
@@ -590,7 +588,9 @@ jint Node::OnLoad(JNIEnv *env) {
                                        "Lcom/linroid/noko/types/JsUndefined;");
   jSharedTrueId = env->GetFieldID(clazz, "sharedTrue", "Lcom/linroid/noko/types/JsBoolean;");
   jSharedFalseId = env->GetFieldID(clazz, "sharedFalse", "Lcom/linroid/noko/types/JsBoolean;");
-  jPtrId = env->GetFieldID(clazz, "pointer", "J");
+  jPointerId = env->GetFieldID(clazz, "pointer", "J");
 
+  jAttachId = env->GetMethodID(clazz, "attach", "(Lcom/linroid/noko/types/JsObject;)V");
+  jDetachId = env->GetMethodID(clazz, "detach", "(Lcom/linroid/noko/types/JsObject;)V");
   return JNI_OK;
 }

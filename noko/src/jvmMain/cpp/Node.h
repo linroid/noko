@@ -32,14 +32,16 @@ enum JSType {
 class Node {
 
 private:
-  jmethodID jAttach_ = nullptr;
-  jmethodID jDetach_ = nullptr;
+  static jmethodID jAttachId;
+  static jmethodID jDetachId;
 
   static jfieldID jSharedNullId;
   static jfieldID jSharedUndefinedId;
   static jfieldID jSharedTrueId;
   static jfieldID jSharedFalseId;
-  static jfieldID jPtrId;
+  static jfieldID jPointerId;
+
+  jobject jThis_ = nullptr;
 
   bool running_ = false;
   std::thread::id threadId_;
@@ -71,8 +73,7 @@ private:
 
   void Attach();
 
-  void Detach();
-
+  void Detach() const;
 
 public:
   jobject jSharedNull_ = nullptr;
@@ -81,14 +82,13 @@ public:
   jobject jSharedFalse_ = nullptr;
 
   JavaVM *vm_ = nullptr;
-  jobject jThis_ = nullptr;
 
   v8::Isolate *isolate_ = nullptr;
   v8::Persistent<v8::Object> global_;
   v8::Persistent<v8::Context> context_;
   v8::Persistent<v8::Function> require_;
 
-  Node(JNIEnv *env, jobject jThis, jmethodID jAttach, jmethodID jDetach, bool keepAlive, bool strict);
+  Node(JNIEnv *env, jobject jThis, bool keepAlive, bool strict);
 
   ~Node();
 
@@ -125,6 +125,11 @@ public:
   jobject Require(const uint16_t *path, int pathLen);
 
   static jint OnLoad(JNIEnv *env);
+
+  static Node* From(JNIEnv *env, jobject jThis) {
+    jlong pointer = env->GetLongField(jThis, jPointerId);
+    return reinterpret_cast<Node *>(pointer);
+  }
 };
 
 #endif //NODE_NOKO_H

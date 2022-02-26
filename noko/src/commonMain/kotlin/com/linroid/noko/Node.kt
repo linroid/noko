@@ -10,9 +10,9 @@ import com.linroid.noko.types.JsValue
  *
  * @param cwd The current work directory for node
  * @param output The standard output interface
- * @param fs
- * @param keepAlive If all the js code is executed completely, should we keep the node running
- * @param strictMode If true to do thread checking when doing operation on js objects
+ * @param fs The file system for Node.js
+ * @param keepAlive true if event loop should keep running after the main script is executed completely,
+ * @param strictMode true to do thread checking when doing operation on js objects
  */
 expect class Node(
   cwd: String? = null,

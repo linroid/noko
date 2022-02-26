@@ -196,6 +196,8 @@ kotlin {
       dependencies {
         implementation("org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.3.2")
         implementation("org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.3.2")
+        implementation("org.jetbrains.kotlinx:atomicfu-jvm:0.17.1")
+        implementation("com.squareup.okio:okio-jvm:3.0.0")
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:$coroutinesVersion")
       }
     }

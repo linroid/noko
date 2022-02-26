@@ -204,7 +204,7 @@ static JNINativeMethod nodeMethods[] = {
     {"nativeStart",          "([Ljava/lang/String;)I",                                                  (void *) Start},
     {"nativeMountFile",      "(Ljava/lang/String;Ljava/lang/String;I)V",                                (void *) MountFile},
     {"nativeChroot",         "(Ljava/lang/String;)V",                                                   (void *) Chroot},
-    {"nativePost",           "(Lkotlinx/coroutines/Runnable;)Z",                                        (void *) Post},
+    {"nativePost",           "(Ljava/lang/Runnable;)Z",                                                 (void *) Post},
     {"nativeEval",           "(Ljava/lang/String;Ljava/lang/String;I)Lcom/linroid/noko/types/JsValue;", (void *) Eval},
     {"nativeParseJson",      "(Ljava/lang/String;)Lcom/linroid/noko/types/JsValue;",                    (void *) ParseJson},
     {"nativeThrowError",     "(Ljava/lang/String;)Lcom/linroid/noko/types/JsError;",                    (void *) ThrowError},

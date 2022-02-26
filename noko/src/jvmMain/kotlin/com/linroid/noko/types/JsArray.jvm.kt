@@ -3,7 +3,7 @@ package com.linroid.noko.types
 import com.linroid.noko.Node
 import com.linroid.noko.annotation.ForNative
 
-class JsArray : JsObject, MutableList<JsValue> {
+actual class JsArray : JsObject, MutableList<JsValue> {
 
   @ForNative
   private constructor(node: Node, ptr: Long) : super(node, ptr)

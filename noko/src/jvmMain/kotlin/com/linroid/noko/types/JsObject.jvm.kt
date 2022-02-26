@@ -5,7 +5,7 @@ import com.linroid.noko.annotation.ForNative
 import com.linroid.noko.observable.PropertiesObserver
 import kotlin.reflect.KClass
 
-open class JsObject : JsValue {
+actual open class JsObject : JsValue {
 
   @ForNative
   protected constructor(node: Node, ptr: Long) : super(node, ptr)
@@ -54,41 +54,38 @@ open class JsObject : JsValue {
     }
   }
 
-  fun has(key: String): Boolean {
+  actual fun has(key: String): Boolean {
     return nativeHas(key)
   }
 
-  fun set(key: String, value: Any?) {
+  actual fun set(key: String, value: Any?) {
     nativeSet(key, from(node, value))
   }
 
-  inline fun <reified T : Any> get(key: String): T {
+  actual inline fun <reified T : Any> get(key: String): T {
     return get(key, T::class)
       ?: throw IllegalStateException("get $key from $this shouldn't return null")
   }
 
-  inline fun <reified T : Any> opt(key: String): T? {
+  actual inline fun <reified T : Any> opt(key: String): T? {
     return get(key, T::class)
   }
 
-  fun <T : Any> get(key: String, clazz: KClass<T>): T? {
+  actual fun <T : Any> get(key: String, clazz: KClass<T>): T? {
     node.checkThread()
     val value = nativeGet(key)
     return value.toType(clazz)
   }
 
-  fun delete(key: String) {
+  actual fun delete(key: String) {
     nativeDelete(key)
   }
 
-  fun keys(): Array<String> {
+  actual fun keys(): Array<String> {
     return nativeKeys()
   }
 
-  /**
-   * Watch some properties to get notified once they are changed
-   */
-  fun watch(observer: PropertiesObserver, vararg properties: String) {
+  actual fun watch(observer: PropertiesObserver, vararg properties: String) {
     nativeWatch(properties, observer)
   }
 

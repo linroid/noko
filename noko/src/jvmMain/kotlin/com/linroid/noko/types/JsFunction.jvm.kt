@@ -6,7 +6,7 @@ import java.lang.reflect.InvocationTargetException
 
 typealias Callable = (receiver: JsValue, parameters: Array<out JsValue>) -> JsValue?
 
-open class JsFunction : JsObject {
+actual open class JsFunction : JsObject {
 
   private val callable: Callable?
 
@@ -21,7 +21,7 @@ open class JsFunction : JsObject {
     nativeNew(name)
   }
 
-  protected open fun onCall(receiver: JsValue, parameters: Array<out JsValue>): JsValue? {
+  protected actual open fun onCall(receiver: JsValue, parameters: Array<out JsValue>): JsValue? {
     if (callable != null) {
       return try {
         callable.invoke(receiver, parameters)
@@ -35,7 +35,7 @@ open class JsFunction : JsObject {
     return null
   }
 
-  fun call(receiver: JsValue, vararg parameters: Any?): JsValue {
+  actual fun call(receiver: JsValue, vararg parameters: Any?): JsValue {
     node.checkThread()
     check(node.ptr != 0L) { "node has been disposed" }
     val v8Parameters = Array(parameters.size) { from(node, parameters[it]) }

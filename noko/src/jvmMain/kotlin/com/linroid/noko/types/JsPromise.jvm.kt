@@ -7,37 +7,31 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-suspend fun JsValue.awaitIfPromise(): JsValue {
-  if (this is JsPromise) {
-    return this.await()
-  }
-  return this
-}
 
-class JsPromise : JsObject {
+actual class JsPromise : JsObject {
 
   private var resolverPtr: Long = 0
 
   @ForNative
   private constructor(node: Node, ptr: Long) : super(node, ptr)
 
-  constructor(node: Node) : super(node, 0) {
+  actual constructor(node: Node) : super(node, 0) {
     nativeNew()
   }
 
-  fun reject(error: String) {
+  actual fun reject(error: String) {
     node.post {
       nativeReject(JsError(node, error))
     }
   }
 
-  fun resolve(value: Any?) {
+  actual fun resolve(value: Any?) {
     node.post {
       nativeResolve(from(node, value))
     }
   }
 
-  fun then(callback: (JsValue) -> Unit): JsPromise {
+  actual fun then(callback: (JsValue) -> Unit): JsPromise {
     val then = JsFunction(node, "then") { _, argv ->
       check(argv.isNotEmpty()) { "then() should receive a JsValue argument" }
       val result: JsValue = argv[0]
@@ -48,7 +42,7 @@ class JsPromise : JsObject {
     return this
   }
 
-  fun catch(callback: (JsObject) -> Unit): JsPromise {
+  actual fun catch(callback: (JsObject) -> Unit): JsPromise {
     val then = JsFunction(node, "catch") { _, argv ->
       val result: JsValue = argv[0]
       check(result is JsObject) { "catch() should receive an JsObject parameter not ${result::class.simpleName}(${result.typeOf()})}: ${result.toJson()}" }
@@ -59,7 +53,7 @@ class JsPromise : JsObject {
     return this
   }
 
-  suspend fun await(): JsValue {
+  actual suspend fun await(): JsValue {
     return suspendCancellableCoroutine { continuation ->
       if (!node.post {
           then {

@@ -134,9 +134,9 @@ tasks {
     workingDir(cmakeDir)
     commandLine("make")
     doLast {
-      val libNoko = cmakeDir.listFiles().find { it.name.startsWith("libnoko") }
+      val libNoko = cmakeDir.listFiles()!!.find { it.name.startsWith("libnoko") }
       checkNotNull(libNoko) { "Couldn't find file: libnoko" }
-      val libNode = File(targetHostPrebuiltDir, "lib").listFiles().find {
+      val libNode = File(targetHostPrebuiltDir, "lib").listFiles()!!.find {
         it.name.startsWith("libnode")
       }
       checkNotNull(libNode) { "Couldn't find file: libnode" }

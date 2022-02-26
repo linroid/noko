@@ -19,7 +19,7 @@ class JsPromise : JsObject {
   private var resolverPtr: Long = 0
 
   @ForNative
-  private constructor(node: Node, nPtr: Long) : super(node, nPtr)
+  private constructor(node: Node, ptr: Long) : super(node, ptr)
 
   constructor(node: Node) : super(node, 0) {
     nativeNew()

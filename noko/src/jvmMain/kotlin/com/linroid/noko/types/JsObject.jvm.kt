@@ -8,7 +8,7 @@ import kotlin.reflect.KClass
 open class JsObject : JsValue {
 
   @ForNative
-  protected constructor(node: Node, nPtr: Long) : super(node, nPtr)
+  protected constructor(node: Node, ptr: Long) : super(node, ptr)
 
   constructor(node: Node) : super(node, 0) {
     node.checkThread()

@@ -99,7 +99,7 @@ cmakeDir.mkdirs()
 
 tasks {
   val downloadAndroidPrebuilt by registering(Download::class) {
-    src("https://github.com/linroid/libnode/releases/download/$nodeVersion/libnode-v16.14.0-android.zip")
+    src("https://github.com/linroid/libnode/releases/download/$nodeVersion/libnode-$nodeVersion-android.zip")
     dest(File(downloadsDir, "libnode.android.zip"))
   }
 

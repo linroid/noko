@@ -1,5 +1,5 @@
-#ifndef DORA_JNICALLBACK_H
-#define DORA_JNICALLBACK_H
+#ifndef NOKO_JNICALLBACK_H
+#define NOKO_JNICALLBACK_H
 
 #include <jni.h>
 #include "../Node.h"
@@ -21,4 +21,4 @@ public:
   void Call(const v8::FunctionCallbackInfo<v8::Value> &info);
 };
 
-#endif //DORA_JNICALLBACK_H
+#endif //NOKO_JNICALLBACK_H

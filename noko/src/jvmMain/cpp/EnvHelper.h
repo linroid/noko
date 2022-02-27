@@ -1,8 +1,8 @@
 #include <jni.h>
 #include "log.h"
 
-#ifndef DORA_JS_JNIENV_H
-#define DORA_JS_JNIENV_H
+#ifndef NOKO_JS_JNIENV_H
+#define NOKO_JS_JNIENV_H
 
 
 class EnvHelper {
@@ -31,4 +31,4 @@ public:
 };
 
 
-#endif //DORA_JS_JNIENV_H
+#endif //NOKO_JS_JNIENV_H

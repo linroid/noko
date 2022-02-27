@@ -1,5 +1,5 @@
-#ifndef DORA_JSERROR_H
-#define DORA_JSERROR_H
+#ifndef NOKO_JSERROR_H
+#define NOKO_JSERROR_H
 
 #include <jni.h>
 #include <v8.h>
@@ -26,4 +26,4 @@ public:
 };
 
 
-#endif //DORA_JSERROR_H
+#endif //NOKO_JSERROR_H

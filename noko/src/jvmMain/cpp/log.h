@@ -1,11 +1,11 @@
-#ifndef DORA_JS_LOG_H
-#define DORA_JS_LOG_H
+#ifndef NOKO_JS_LOG_H
+#define NOKO_JS_LOG_H
 
 #ifdef __ANDROID__
 
 #include <android/log.h>
 
-#define LOG_TAG "noko_Native"
+#define LOG_TAG "Node"
 
 #define LOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, __VA_ARGS__)
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
@@ -22,4 +22,4 @@
 #define LOGE(...) printf(__VA_ARGS__)
 #endif
 
-#endif //DORA_JS_LOG_H
+#endif //NOKO_JS_LOG_H

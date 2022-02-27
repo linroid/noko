@@ -1,5 +1,5 @@
-#ifndef DORA_JS_PROPERTIESOBSERVER_H
-#define DORA_JS_PROPERTIESOBSERVER_H
+#ifndef NOKO_JS_PROPERTIESOBSERVER_H
+#define NOKO_JS_PROPERTIESOBSERVER_H
 
 #include <jni.h>
 #include "../Node.h"
@@ -20,4 +20,4 @@ public:
 };
 
 
-#endif //DORA_JS_PROPERTIESOBSERVER_H
+#endif //NOKO_JS_PROPERTIESOBSERVER_H

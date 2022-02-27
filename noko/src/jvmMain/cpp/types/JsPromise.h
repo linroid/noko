@@ -1,5 +1,5 @@
-#ifndef DORA_JSPROMISE_H
-#define DORA_JSPROMISE_H
+#ifndef NOKO_JSPROMISE_H
+#define NOKO_JSPROMISE_H
 
 #include <jni.h>
 #include "../Node.h"
@@ -29,4 +29,4 @@ public:
 };
 
 
-#endif //DORA_JSPROMISE_H
+#endif //NOKO_JSPROMISE_H

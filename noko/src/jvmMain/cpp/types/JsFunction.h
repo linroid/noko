@@ -1,5 +1,5 @@
-#ifndef DORA_JSFUNCTION_H
-#define DORA_JSFUNCTION_H
+#ifndef NOKO_JSFUNCTION_H
+#define NOKO_JSFUNCTION_H
 
 #include <jni.h>
 #include "../Node.h"
@@ -22,4 +22,4 @@ public:
   JNICALL static jobject Call(JNIEnv *env, jobject jThis, jobject jReceiver, jobjectArray jParameters);
 };
 
-#endif //DORA_JSFUNCTION_H
+#endif //NOKO_JSFUNCTION_H

@@ -6,6 +6,7 @@ import com.linroid.noko.types.JsError
 import com.linroid.noko.types.JsObject
 import com.linroid.noko.types.JsValue
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 /**
@@ -60,7 +61,7 @@ expect class Node(
 
   internal fun checkThread()
 
-  internal fun isInNodeThread(): Boolean
+  fun isInEventLoop(): Boolean
 
   @Throws(JSException::class)
   fun eval(
@@ -74,7 +75,7 @@ expect class Node(
 
   fun throwError(message: String): JsError
 
-  @Deprecated("Not working")
+  @Deprecated("Not working yet")
   @Throws(JSException::class)
   fun require(path: String): JsValue
 }
@@ -82,7 +83,7 @@ expect class Node(
 suspend fun Node.awaitStarted(): JsObject = suspendCancellableCoroutine { cont ->
   val listener = object : LifecycleListener {
     override fun onStart(node: Node, global: JsObject) {
-      cont.resumeWith(Result.success(global))
+      cont.resume(global)
       removeListener(this)
     }
 

@@ -9,7 +9,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlin.jvm.JvmField
 import kotlin.reflect.KClass
 
 actual open class JsValue actual constructor(
@@ -30,7 +29,7 @@ actual open class JsValue actual constructor(
   }
 
   actual override fun toString(): String {
-    if (Platform.isDebuggerConnected() && !node.isInNodeThread()) {
+    if (Platform.isDebuggerConnected() && !node.isInEventLoop()) {
       return runBlocking {
         node.await { nativeToString() }
       }

@@ -25,7 +25,6 @@
 jmethodID jRunMethodId;
 
 JNICALL jint Start(JNIEnv *env, jobject jThis, jobjectArray jArgs) {
-  LOGD("start");
   auto node = Node::From(env, jThis);
   jsize argc = env->GetArrayLength(jArgs);
   std::vector<std::string> args(static_cast<unsigned long>(argc));
@@ -179,19 +178,21 @@ JNICALL void ClearReference(JNIEnv *env, jobject jThis, jlong ref) {
 
 static JNINativeMethod nodeMethods[] = {
 #if defined(__ANDROID__)
-    {"nativeSetup",          "(Landroid/net/ConnectivityManager;)V",                                    (void *) Setup},
+    {"nativeSetup", "(Landroid/net/ConnectivityManager;)V", (void *) Setup},
 #endif
-    {"nativeNew",            "(ZZ)J",                                                                   (void *) New},
-    {"nativeExit",           "(I)V",                                                                    (void *) Exit},
-    {"nativeStart",          "([Ljava/lang/String;)I",                                                  (void *) Start},
-    {"nativeMountFile",      "(Ljava/lang/String;Ljava/lang/String;I)V",                                (void *) MountFile},
-    {"nativeChroot",         "(Ljava/lang/String;)V",                                                   (void *) Chroot},
-    {"nativePost",           "(Ljava/lang/Runnable;)Z",                                                 (void *) Post},
-    {"nativeEval",           "(Ljava/lang/String;Ljava/lang/String;I)Lcom/linroid/noko/types/JsValue;", (void *) Eval},
-    {"nativeParseJson",      "(Ljava/lang/String;)Lcom/linroid/noko/types/JsValue;",                    (void *) ParseJson},
-    {"nativeThrowError",     "(Ljava/lang/String;)Lcom/linroid/noko/types/JsError;",                    (void *) ThrowError},
-    {"nativeRequire",       "(Ljava/lang/String;)Lcom/linroid/noko/types/JsObject;",                   (void *) Require},
-    {"nativeClearReference", "(J)V",                                                                   (void *) ClearReference},
+    {"nativeNew", "(ZZ)J", (void *) New},
+    {"nativeExit", "(I)V", (void *) Exit},
+    {"nativeStart", "([Ljava/lang/String;)I", (void *) Start},
+    {"nativeMountFile", "(Ljava/lang/String;Ljava/lang/String;I)V", (void *) MountFile},
+    {"nativeChroot", "(Ljava/lang/String;)V", (void *) Chroot},
+    {"nativePost", "(Ljava/lang/Runnable;)Z", (void *) Post},
+    {"nativeEval", "(Ljava/lang/String;Ljava/lang/String;I)Lcom/linroid/noko/types/JsValue;",
+     (void *) Eval},
+    {"nativeParseJson", "(Ljava/lang/String;)Lcom/linroid/noko/types/JsValue;", (void *) ParseJson},
+    {"nativeThrowError", "(Ljava/lang/String;)Lcom/linroid/noko/types/JsError;",
+     (void *) ThrowError},
+    {"nativeRequire", "(Ljava/lang/String;)Lcom/linroid/noko/types/JsObject;", (void *) Require},
+    {"nativeClearReference", "(J)V", (void *) ClearReference},
 };
 
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {

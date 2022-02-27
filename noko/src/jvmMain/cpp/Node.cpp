@@ -72,7 +72,6 @@ Node::~Node() {
 }
 
 void Node::Attach() {
-  LOGI("Attach: %p", this);
   v8::Local<v8::Context> context = context_.Get(isolate_);
   v8::HandleScope handleScope(isolate_);
   v8::Context::Scope contextScope(context);
@@ -230,7 +229,7 @@ void Node::RunLoop(node::Environment *env) {
 
 
 void Node::Exit(int code) {
-  LOGI("Exit(%d)", code);
+  LOGI("Exit(code=%d)", code);
   if (keepAlive_) {
     uv_async_send(keepAliveHandle_);
   }
@@ -497,11 +496,10 @@ jobject Node::ParseJson(const uint16_t *json, int jsonLen) {
   return ToJava(*env, result.ToLocalChecked());
 }
 
-jobject Node::ThrowError(const uint16_t *message, int messageLen) {
+jobject Node::ThrowError(const uint16_t *message, int messageLen) const {
   auto error = v8::Exception::Error(V8_STRING(isolate_, message, messageLen));
   isolate_->ThrowException(error);
   EnvHelper env(vm_);
-
   return ToJava(*env, error);
 }
 
@@ -512,9 +510,9 @@ jobject Node::Require(const uint16_t *path, int pathLen) {
   auto global = global_.Get(isolate_);
   v8::TryCatch tryCatch(isolate_);
 
-  auto require = global->Get(context,
-                             V8_UTF_STRING(isolate_, "require")).ToLocalChecked()->ToObject(
-      context).ToLocalChecked();
+  auto require = global->Get(context, V8_UTF_STRING(isolate_, "require"))
+      .ToLocalChecked()->ToObject(context)
+      .ToLocalChecked();
   assert(require->IsFunction());
 
   auto result = require->CallAsFunction(context, global, 1, argv);
@@ -526,7 +524,6 @@ jobject Node::Require(const uint16_t *path, int pathLen) {
   }
   return ToJava(*env, result.ToLocalChecked());
 }
-
 
 int init_node() {
   // Make argv memory adjacent

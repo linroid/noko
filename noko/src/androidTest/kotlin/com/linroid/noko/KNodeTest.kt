@@ -29,7 +29,7 @@ abstract class NodeTest : LifecycleListener, StdOutput {
   }
 
   override fun onNodeStart(context: JSContext) {
-    super.onNodeStart(context)
+    super.onStart(context)
     println("onNodeStart")
     this.context = context
     startLatch.countDown()

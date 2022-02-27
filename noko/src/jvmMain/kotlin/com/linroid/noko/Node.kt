@@ -24,7 +24,7 @@ actual class Node actual constructor(
   private val fs: FileSystem,
   keepAlive: Boolean,
   private val strictMode: Boolean,
-){
+) {
 
   internal actual var pointer: Long = nativeNew(keepAlive, strictMode)
   private val listeners = HashSet<LifecycleListener>()
@@ -60,7 +60,7 @@ actual class Node actual constructor(
     execArgs.add(EXEC_PATH)
     execArgs.addAll(args)
     sequence = counter.incrementAndGet()
-    thread = startThread(isDaemon = true, name = "Node(${sequence})") {
+    thread = startThread(isDaemon = true, name = "${sequence}.node") {
       startInternal(execArgs.toTypedArray())
     }
   }
@@ -139,7 +139,7 @@ actual class Node actual constructor(
     if (!isRunning()) {
       return false
     }
-    if (isInNodeThread()) {
+    if (isInEventLoop()) {
       action()
       return true
     }
@@ -151,7 +151,7 @@ actual class Node actual constructor(
     this.global = global
     check(running.compareAndSet(false, update = true))
     check(isRunning()) { "isRunning() doesn't match the current state" }
-    attachStdOutput(global)
+    // attachStdOutput(global)
     eventOnAttach(global)
     val setupCode = StringBuilder()
     if (output.supportsColor) {
@@ -202,11 +202,13 @@ process.stdout.isRaw = true;
 
   internal actual fun checkThread() {
     if (strictMode) {
-      check(isInNodeThread()) { "Operating js object is only allowed in origin thread: current=${currentThread()}" }
+      check(isInEventLoop()) { "Only the original thread running the event loop for Node.js " +
+          "can touch it's values, " +
+          "otherwise you should call them inside node.post{ ... }" }
     }
   }
 
-  internal actual fun isInNodeThread(): Boolean {
+  actual fun isInEventLoop(): Boolean {
     return currentThread() === thread
   }
 

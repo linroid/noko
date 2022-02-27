@@ -120,7 +120,7 @@ public:
 
   jobject ParseJson(const uint16_t *json, int jsonLen);
 
-  jobject ThrowError(const uint16_t *message, int messageLen);
+  jobject ThrowError(const uint16_t *message, int messageLen) const;
 
   jobject Require(const uint16_t *path, int pathLen);
 

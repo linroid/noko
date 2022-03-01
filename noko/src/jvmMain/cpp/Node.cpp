@@ -288,7 +288,7 @@ jobject Node::ToJava(JNIEnv *env, v8::Local<v8::Value> value) const {
   } else {
     auto pointer = new v8::Persistent<v8::Value>(isolate_, value);
     if (value->IsNumber()) {
-      return JsNumber::Wrap(env, jThis_, pointer);
+      return JsNumber::ToJava(env, jThis_, (jlong) pointer, value.As<v8::Number>()->Value());
     } else if (value->IsObject()) {
       if (value->IsFunction()) {
         return JsFunction::Wrap(env, jThis_, pointer);
@@ -486,6 +486,8 @@ Node::Eval(const uint16_t *code, int codeLen, const uint16_t *source, int source
 }
 
 jobject Node::ParseJson(const uint16_t *json, int jsonLen) {
+  v8::Locker locker(isolate_);
+  v8::HandleScope handleScope(isolate_);
   auto context = context_.Get(isolate_);
   v8::Context::Scope contextScope(context);
   v8::TryCatch tryCatch(isolate_);

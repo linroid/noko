@@ -5,6 +5,16 @@
 #include "v8.h"
 #include "log.h"
 
+#define V8_SCOPE_NEW(env, node_pointer) \
+  if (node_pointer == 0) { \
+    LOGE("Invalid node_pointer %s(%d)-<%s>", __FILE__, __LINE__, __FUNCTION__); \
+    env->FatalError("Invalid node_pointer"); \
+  } \
+  Node *node = reinterpret_cast<Node *>(node_pointer); \
+  auto isolate = node->isolate_; \
+  v8::Locker locker(isolate); \
+  v8::HandleScope handleScope(isolate); \
+
 #define V8_SCOPE(env, jThis) \
   auto node = JsValue::GetNode(env, jThis); \
   if (node == nullptr) { \
@@ -12,8 +22,8 @@
     env->FatalError("GetRuntime returns nullptr"); \
   } \
   auto isolate = node->isolate_; \
-  v8::Locker locker(node->isolate_); \
-  v8::HandleScope handleScope(node->isolate_); \
+  v8::Locker locker(isolate); \
+  v8::HandleScope handleScope(isolate); \
 
 #define SETUP(env, jThis, type) \
   V8_SCOPE(env, jThis) \

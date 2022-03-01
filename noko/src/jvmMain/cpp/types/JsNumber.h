@@ -3,18 +3,22 @@
 
 #include <jni.h>
 #include <v8.h>
+#include "../macros.h"
 
 class JsNumber {
 private:
-  static jclass jClazz;
-  static jmethodID jConstructor;
+  static jclass class_;
+  static jmethodID constructor_id_;
+  static jclass double_class_;
+  static jmethodID double_constructor_id_;
 
 public:
-  inline static jobject Wrap(JNIEnv *env, jobject jNode, v8::Persistent<v8::Value> *value) {
-    return env->NewObject(jClazz, jConstructor, jNode, (jlong) value);
+  static jobject ToJava(JNIEnv *env, jobject node, jlong pointer, jdouble value) {
+    jobject value_obj = env->NewObject(double_class_, double_constructor_id_, value);
+    return env->NewObject(class_, constructor_id_, node, pointer, value_obj);
   }
 
-  JNICALL static void New(JNIEnv *env, jobject jThis, jdouble jData);
+  JNICALL static jlong New(JNIEnv *env, __attribute__((unused)) jclass clazz, jlong node_pointer, jdouble j_value);
 
   static jint OnLoad(JNIEnv *env);
 };

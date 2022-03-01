@@ -6,7 +6,7 @@
 //
 // class JSContext {
 // private:
-//   static jclass jClazz;
+//   static jclass class_;
 //
 // public:
 //   static void ClearPtr(JNIEnv *env, jobject obj) {

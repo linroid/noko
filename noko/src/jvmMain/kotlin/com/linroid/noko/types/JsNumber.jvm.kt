@@ -2,8 +2,6 @@ package com.linroid.noko.types
 
 import com.linroid.noko.NativePointer
 import com.linroid.noko.Node
-import com.linroid.noko.NullNativePointer
-import com.linroid.noko.annotation.ForNative
 
 actual open class JsNumber<T : Number> : JsPrimitive<T> {
 
@@ -13,9 +11,14 @@ actual open class JsNumber<T : Number> : JsPrimitive<T> {
     value: T,
   ) : super(node, pointer, value)
 
-  actual constructor(node: Node, value: T) : super(node, value) {
-    nativeNew(value.toDouble())
-  }
+  actual constructor(node: Node, value: T) : this(
+    node,
+    nativeNew(node.pointer, value.toDouble()),
+    value
+  )
 
-  private external fun nativeNew(data: Double)
+  companion object {
+    @JvmStatic
+    private external fun nativeNew(nodePointer: NativePointer, data: Double): NativePointer
+  }
 }

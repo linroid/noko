@@ -1,30 +1,36 @@
 #include "JsNumber.h"
 #include "JsValue.h"
 
-jclass JsNumber::jClazz;
-jmethodID JsNumber::jConstructor;
+jclass JsNumber::class_;
+jmethodID JsNumber::constructor_id_;
+jclass JsNumber::double_class_;
+jmethodID JsNumber::double_constructor_id_;
 
 jint JsNumber::OnLoad(JNIEnv *env) {
   jclass clazz = env->FindClass("com/linroid/noko/types/JsNumber");
   if (!clazz) {
     return JNI_ERR;
   }
-  jClazz = (jclass) env->NewGlobalRef(clazz);
-  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;JLjava/lang/Number;)V");
+  class_ = (jclass) env->NewGlobalRef(clazz);
+  constructor_id_ = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;JLjava/lang/Number;)V");
+
+  jclass double_class = env->FindClass("java/lang/Double");
+  double_class_ = (jclass) env->NewGlobalRef(double_class);
+  double_constructor_id_ = env->GetMethodID(double_class, "<init>", "(D)V");
   JNINativeMethod methods[] = {
-      {"nativeNew", "(D)V", (void *) JsNumber::New},
+      {"nativeNew", "(JD)J", (void *) JsNumber::New},
   };
 
-  int rc = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
-  if (rc != JNI_OK) {
-    return rc;
+  int result = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
+  if (result != JNI_OK) {
+    return result;
   }
   return JNI_OK;
 }
 
-void JsNumber::New(JNIEnv *env, jobject jThis, jdouble jData) {
-  V8_SCOPE(env, jThis)
-  auto value = v8::Number::New(node->isolate_, jData);
-  auto result = new v8::Persistent<v8::Value>(node->isolate_, value);
-  JsValue::SetPointer(env, jThis, (jlong) result);
+jlong JsNumber::New(JNIEnv *env, __attribute__((unused)) jclass clazz, jlong node_pointer, jdouble j_value) {
+  V8_SCOPE_NEW(env, node_pointer)
+  auto value = v8::Number::New(isolate, j_value);
+  return reinterpret_cast<jlong>(new v8::Persistent<v8::Value>(isolate, value));
 }
+

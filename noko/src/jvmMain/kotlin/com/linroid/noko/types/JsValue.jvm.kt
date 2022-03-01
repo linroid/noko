@@ -9,7 +9,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlin.reflect.KClass
 
 actual open class JsValue actual constructor(
   protected actual val node: Node,
@@ -78,24 +77,20 @@ actual open class JsValue actual constructor(
       return this as T
     }
     if (type.isArray) {
-      check(this is JsArray) {"$this is not JsArray"}
-      this.map { it.toType( type.componentType as Class<out Any>) }.toTypedArray()
+      check(this is JsArray) { "$this is not JsArray" }
+      this.map { it.toType(type.componentType as Class<out Any>) }.toTypedArray()
     }
     val result = when (type) {
       String::class.java -> this.toString()
       Any::class.java -> this
-      Int::class.java -> toNumber().toInt()
-      Boolean::class.java -> toBoolean()
-      Long::class.java -> toNumber().toLong()
-      Float::class.java -> toNumber().toFloat()
-      Double::class.java -> toNumber().toDouble()
+      java.lang.Integer::class.java -> toNumber().toInt()
+      java.lang.Boolean::class.java -> toBoolean()
+      java.lang.Long::class.java -> toNumber().toLong()
+      java.lang.Float::class.java -> toNumber().toFloat()
+      java.lang.Double::class.java -> toNumber().toDouble()
       JsonObject::class.java,
       JsonElement::class.java,
       JsonArray::class.java -> Json.decodeFromString(toJson() ?: return null)
-      // type.isArray -> {
-      //   check(this is JsArray) { "$this is not an JsArray" }
-      //   this.map { it.toType(type.componentType as Class<out Any>) }.toTypedArray()
-      // }
       else -> {
         val json = toJson() ?: return null
         Json.decodeFromString(json)

@@ -9,8 +9,8 @@
 // #include <cstdint>
 // #include "../Node.h"
 //
-// jclass JSContext::jClazz;
-// jmethodID JSContext::jConstructor;
+// jclass JSContext::class_;
+// jmethodID JSContext::constructor;
 // jfieldID JSContext::jNullId;
 // jfieldID JSContext::jUndefinedId;
 // jfieldID JSContext::jTrueId;
@@ -18,17 +18,17 @@
 // jfieldID JSContext::jPtr;
 //
 // jint JSContext::OnLoad(JNIEnv *env) {
-//   jclass clazz = env->FindClass("com/linroid/noko/types/JSContext");
-//   if (clazz == nullptr) {
+//   jclass class_ = env->FindClass("com/linroid/noko/types/JSContext");
+//   if (class_ == nullptr) {
 //     return JNI_ERR;
 //   }
-//   jClazz = (jclass) (env->NewGlobalRef(clazz));
-//   jConstructor = env->GetMethodID(clazz, "<init>", "(JJ)V");
-//   jNullId = env->GetFieldID(clazz, "sharedNull", "Lcom/linroid/noko/types/JsNull;");
-//   jUndefinedId = env->GetFieldID(clazz, "sharedUndefined", "Lcom/linroid/noko/types/JsUndefined;");
-//   jTrueId = env->GetFieldID(clazz, "sharedTrue", "Lcom/linroid/noko/types/JsBoolean;");
-//   jFalseId = env->GetFieldID(clazz, "sharedFalse", "Lcom/linroid/noko/types/JsBoolean;");
-//   jPtr = env->GetFieldID(clazz, "nokoPtr", "J");
+//   class_ = (jclass) (env->NewGlobalRef(class_));
+//   constructor = env->GetMethodID(class_, "<init>", "(JJ)V");
+//   jNullId = env->GetFieldID(class_, "sharedNull", "Lcom/linroid/noko/types/JsNull;");
+//   jUndefinedId = env->GetFieldID(class_, "sharedUndefined", "Lcom/linroid/noko/types/JsUndefined;");
+//   jTrueId = env->GetFieldID(class_, "sharedTrue", "Lcom/linroid/noko/types/JsBoolean;");
+//   jFalseId = env->GetFieldID(class_, "sharedFalse", "Lcom/linroid/noko/types/JsBoolean;");
+//   jPtr = env->GetFieldID(class_, "nokoPtr", "J");
 //
 //   JNINativeMethod methods[] = {
 //     {"nativeEval",           "(Ljava/lang/String;Ljava/lang/String;I)Lcom/linroid/noko/types/JsValue;", (void *) Eval},
@@ -38,7 +38,7 @@
 //     {"nativeClearReference", "(J)V",                                                                  (void *) ClearReference},
 //   };
 //
-//   int rc = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
+//   int rc = env->RegisterNatives(class_, methods, sizeof(methods) / sizeof(JNINativeMethod));
 //   if (rc != JNI_OK) {
 //     return rc;
 //   }

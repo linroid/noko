@@ -42,6 +42,7 @@ private:
   static jfieldID jPointerId;
 
   jobject jThis_ = nullptr;
+  jobject jGlobal_ = nullptr;
 
   bool running_ = false;
   std::thread::id threadId_;

@@ -19,8 +19,6 @@ expect open class JsObject : JsValue {
 
   inline fun <reified T : Any> opt(key: String): T?
 
-  fun <T : Any> get(key: String, clazz: KClass<T>): T?
-
   fun delete(key: String)
 
   fun keys(): Array<String>

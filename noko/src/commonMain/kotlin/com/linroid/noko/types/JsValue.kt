@@ -25,7 +25,7 @@ expect open class JsValue internal constructor(node: Node, pointer: NativePointe
   fun isPromise(): Boolean
 
   @Suppress("IMPLICIT_CAST_TO_ANY", "UNCHECKED_CAST")
-  fun <T : Any> toType(type: KClass<T>): T?
+  inline fun <reified T : Any> toType(): T?
 
   fun dispose()
 

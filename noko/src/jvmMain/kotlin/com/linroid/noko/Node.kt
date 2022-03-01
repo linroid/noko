@@ -151,7 +151,7 @@ actual class Node actual constructor(
     this.global = global
     check(running.compareAndSet(false, update = true))
     check(isRunning()) { "isRunning() doesn't match the current state" }
-    // attachStdOutput(global)
+    attachStdOutput(global)
     eventOnAttach(global)
     val setupCode = StringBuilder()
     if (output.supportsColor) {

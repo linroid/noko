@@ -45,7 +45,7 @@ actual open class JsObject : JsValue {
 
   private fun convertParameters(
     parameters: Array<out JsValue>,
-    parameterTypes: Array<KClass<*>>
+    parameterTypes: Array<Class<*>>
   ): Array<Any?> {
     val argc = parameterTypes.size
     return Array(argc) { i ->
@@ -64,15 +64,15 @@ actual open class JsObject : JsValue {
   }
 
   actual inline fun <reified T : Any> get(key: String): T {
-    return get(key, T::class)
+    return get(key, T::class.java)
       ?: throw IllegalStateException("get $key from $this shouldn't return null")
   }
 
   actual inline fun <reified T : Any> opt(key: String): T? {
-    return get(key, T::class)
+    return get(key, T::class.java)
   }
 
-  actual fun <T : Any> get(key: String, clazz: KClass<T>): T? {
+  fun <T : Any> get(key: String, clazz: Class<T>): T? {
     node.checkThread()
     val value = nativeGet(key)
     return value.toType(clazz)

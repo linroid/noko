@@ -61,6 +61,7 @@ Node::~Node() {
     env->DeleteGlobalRef(jSharedFalse_);
     env->SetLongField(jThis_, jPointerId, 0l);
     env->DeleteGlobalRef(jThis_);
+    env->DeleteGlobalRef(jGlobal_);
   }
 
   isolate_ = nullptr;
@@ -85,13 +86,14 @@ void Node::Attach() {
   this->jSharedUndefined_ = env->NewGlobalRef(JsUndefined::Wrap(*env, jThis_, undefinedValue));
   this->jSharedTrue_ = env->NewGlobalRef(JsBoolean::Wrap(*env, jThis_, trueValue, true));
   this->jSharedFalse_ = env->NewGlobalRef(JsBoolean::Wrap(*env, jThis_, falseValue, false));
+  this->jGlobal_ = env->NewGlobalRef(JsObject::Wrap(*env, jThis_, (jlong) &global_));
 
   env->SetObjectField(jThis_, jSharedNullId, jSharedNull_);
   env->SetObjectField(jThis_, jSharedUndefinedId, jSharedUndefined_);
   env->SetObjectField(jThis_, jSharedTrueId, jSharedTrue_);
   env->SetObjectField(jThis_, jSharedFalseId, jSharedFalse_);
 
-  env->CallVoidMethod(jThis_, jAttachId, (jlong) &global_);
+  env->CallVoidMethod(jThis_, jAttachId, jGlobal_);
 }
 
 void Node::Detach() const {
@@ -297,7 +299,7 @@ jobject Node::ToJava(JNIEnv *env, v8::Local<v8::Value> value) const {
       } else if (value->IsArray()) {
         return JsArray::Wrap(env, jThis_, pointer);
       }
-      return JsObject::Wrap(env, jThis_, pointer);
+      return JsObject::Wrap(env, jThis_, (jlong) pointer);
     } else if (value->IsString()) {
       v8::String::Value unicodeString(isolate_, value);
       jstring jValue = env->NewString(*unicodeString, unicodeString.length());

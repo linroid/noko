@@ -93,5 +93,6 @@ suspend fun Node.awaitStarted(): JsObject = suspendCancellableCoroutine { cont -
     }
   }
   addListener(listener)
+  cont.invokeOnCancellation { removeListener(listener) }
 }
 

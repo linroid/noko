@@ -9,7 +9,7 @@ private:
   static jmethodID jConstructor;
 
 public:
-  inline static jobject Wrap(JNIEnv *env, jobject jNode, v8::Persistent<v8::Value> *value) {
+  inline static jobject Wrap(JNIEnv *env, jobject jNode, jlong value) {
     return env->NewObject(jClazz, jConstructor, jNode, (jlong) value);
   }
 

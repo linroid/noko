@@ -65,23 +65,33 @@ actual open class JsValue actual constructor(
     return false
   }
 
+  actual inline fun <reified T : Any> toType(): T? {
+    return toType(T::class.java)
+  }
+
   @Suppress("IMPLICIT_CAST_TO_ANY", "UNCHECKED_CAST")
-  actual fun <T : Any> toType(type: KClass<T>): T? {
+  fun <T : Any> toType(type: Class<T>): T? {
     if (JsValue::class != type && !this.hasValue()) {
       return null
     }
+    if (JsValue::class.java.isAssignableFrom(type)) {
+      return this as T
+    }
+    if (type.isArray) {
+      check(this is JsArray) {"$this is not JsArray"}
+      this.map { it.toType( type.componentType as Class<out Any>) }.toTypedArray()
+    }
     val result = when (type) {
-      String::class -> this.toString()
-      Any::class -> this
-      Int::class -> toNumber().toInt()
-      Boolean::class -> toBoolean()
-      Long::class -> toNumber().toLong()
-      Float::class -> toNumber().toFloat()
-      Double::class -> toNumber().toDouble()
-      JsonObject::class,
-      JsonElement::class,
-      JsonArray::class -> Json.decodeFromString(toJson() ?: return null)
-      // JsValue::class.isAssignableFrom(type) -> this
+      String::class.java -> this.toString()
+      Any::class.java -> this
+      Int::class.java -> toNumber().toInt()
+      Boolean::class.java -> toBoolean()
+      Long::class.java -> toNumber().toLong()
+      Float::class.java -> toNumber().toFloat()
+      Double::class.java -> toNumber().toDouble()
+      JsonObject::class.java,
+      JsonElement::class.java,
+      JsonArray::class.java -> Json.decodeFromString(toJson() ?: return null)
       // type.isArray -> {
       //   check(this is JsArray) { "$this is not an JsArray" }
       //   this.map { it.toType(type.componentType as Class<out Any>) }.toTypedArray()

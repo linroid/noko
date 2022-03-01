@@ -69,7 +69,7 @@ actual class Node actual constructor(
     try {
       val exitCode = nativeStart(execArgs)
       eventOnStop(exitCode)
-    } catch (error: JSException) {
+    } catch (error: JsException) {
       eventOnError(error)
     } catch (error: Exception) {
       throw error
@@ -188,8 +188,9 @@ process.stdout.isRaw = true;
     if (setupCode.isNotEmpty()) {
       try {
         eval(setupCode.toString())
-      } catch (error: JSException) {
+      } catch (error: JsException) {
         eventOnError(error)
+        return
       }
     }
     eventOnStart(global)
@@ -256,26 +257,26 @@ process.stdout.isRaw = true;
     }
   }
 
-  private fun eventOnError(error: JSException) {
+  private fun eventOnError(error: JsException) {
     listeners.forEach {
       it.onError(error)
     }
   }
 
-  internal fun chroot(dir: Path) {
+  internal actual fun chroot(dir: Path) {
     nativeChroot(dir.toString())
   }
 
-  internal fun mountFile(dst: Path, src: Path, mode: FileSystem.Mode) {
+  internal actual fun mountFile(dst: Path, src: Path, mode: FileSystem.Mode) {
     nativeMountFile(src.toString(), dst.toString(), mode.flags)
   }
 
-  @Throws(JSException::class)
+  @Throws(JsException::class)
   actual fun eval(code: String, source: String, line: Int): JsValue {
     return nativeEval(code, source, line)
   }
 
-  @Throws(JSException::class)
+  @Throws(JsException::class)
   actual fun parseJson(json: String): JsValue {
     return nativeParseJson(json)
   }
@@ -284,7 +285,7 @@ process.stdout.isRaw = true;
     return nativeThrowError(message)
   }
 
-  @Throws(JSException::class)
+  @Throws(JsException::class)
   @Deprecated("Not working")
   actual fun require(path: String): JsValue {
     return nativeRequire(path)

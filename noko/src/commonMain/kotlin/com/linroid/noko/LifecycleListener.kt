@@ -29,5 +29,5 @@ interface LifecycleListener {
   /**
    * Whoops :( something went wrong
    */
-  fun onError(error: JSException) {}
+  fun onError(error: JsException) {}
 }

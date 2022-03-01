@@ -6,6 +6,7 @@ import com.linroid.noko.types.JsError
 import com.linroid.noko.types.JsObject
 import com.linroid.noko.types.JsValue
 import kotlinx.coroutines.suspendCancellableCoroutine
+import okio.Path
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -63,21 +64,25 @@ expect class Node(
 
   fun isInEventLoop(): Boolean
 
-  @Throws(JSException::class)
+  @Throws(JsException::class)
   fun eval(
     code: String,
     source: String = "",
     line: Int = 0,
   ): JsValue
 
-  @Throws(JSException::class)
+  @Throws(JsException::class)
   fun parseJson(json: String): JsValue
 
   fun throwError(message: String): JsError
 
   @Deprecated("Not working yet")
-  @Throws(JSException::class)
+  @Throws(JsException::class)
   fun require(path: String): JsValue
+
+  internal fun chroot(dir: Path)
+
+  internal fun mountFile(dst: Path, src: Path, mode: FileSystem.Mode)
 }
 
 suspend fun Node.awaitStarted(): JsObject = suspendCancellableCoroutine { cont ->
@@ -87,7 +92,7 @@ suspend fun Node.awaitStarted(): JsObject = suspendCancellableCoroutine { cont -
       removeListener(this)
     }
 
-    override fun onError(error: JSException) {
+    override fun onError(error: JsException) {
       cont.resumeWithException(error)
       removeListener(this)
     }
@@ -95,4 +100,3 @@ suspend fun Node.awaitStarted(): JsObject = suspendCancellableCoroutine { cont -
   addListener(listener)
   cont.invokeOnCancellation { removeListener(listener) }
 }
-

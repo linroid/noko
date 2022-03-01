@@ -24,7 +24,7 @@ jint JsError::OnLoad(JNIEnv *env) {
     return rc;
   }
 
-  clazz = env->FindClass("com/linroid/noko/JSException");
+  clazz = env->FindClass("com/linroid/noko/JsException");
   if (!clazz) {
     return JNI_ERR;
   }

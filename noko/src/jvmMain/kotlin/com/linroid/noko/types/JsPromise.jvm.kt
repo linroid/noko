@@ -1,10 +1,9 @@
 package com.linroid.noko.types
 
-import com.linroid.noko.JSException
+import com.linroid.noko.JsException
 import com.linroid.noko.NativePointer
 import com.linroid.noko.Node
 import com.linroid.noko.NullNativePointer
-import com.linroid.noko.annotation.ForNative
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -60,7 +59,7 @@ actual class JsPromise : JsObject {
           then {
             continuation.resume(it)
           }.catch {
-            continuation.resumeWithException(JSException(it))
+            continuation.resumeWithException(JsException(it))
           }
         }) {
         continuation.cancel()

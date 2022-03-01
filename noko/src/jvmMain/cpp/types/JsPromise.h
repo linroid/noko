@@ -1,32 +1,32 @@
-#ifndef NOKO_JSPROMISE_H
-#define NOKO_JSPROMISE_H
+#ifndef NOKO_PROMISE_H
+#define NOKO_PROMISE_H
 
 #include <jni.h>
-#include "../Node.h"
+#include "../NodeRuntime.h"
 
 class JsPromise {
 private:
-  static jclass jClazz;
-  static jmethodID jConstructor;
-  static jfieldID jResolver;
+  static jclass class_;
+  static jmethodID init_method_id_;
+  static jfieldID resolver_field_id_;
 
 public:
-  inline static jobject Wrap(JNIEnv *env, jobject jNode, v8::Persistent<v8::Value> *value) {
-    return env->NewObject(jClazz, jConstructor, jNode, (jlong) value);
+  static jobject ToJava(JNIEnv *env, jobject node, jlong pointer) {
+    return env->NewObject(class_, init_method_id_, node, pointer);
   }
 
   static jint OnLoad(JNIEnv *env);
 
-  static JNICALL void New(JNIEnv *env, jobject jThis);
+  static JNICALL void New(JNIEnv *env, jobject j_this);
 
-  static JNICALL void Reject(JNIEnv *env, jobject jThis, jobject jError);
+  static JNICALL void Reject(JNIEnv *env, jobject j_this, jobject j_error);
 
-  static JNICALL void Resolve(JNIEnv *env, jobject jThis, jobject jValue);
+  static JNICALL void Resolve(JNIEnv *env, jobject j_this, jobject j_value);
 
-  static JNICALL void Then(JNIEnv *env, jobject jThis, jobject jCallback);
+  static JNICALL void Then(JNIEnv *env, jobject j_this, jobject j_callback);
 
-  static JNICALL void Catch(JNIEnv *env, jobject jThis, jobject jCallback);
+  static JNICALL void Catch(JNIEnv *env, jobject j_this, jobject j_callback);
 };
 
 
-#endif //NOKO_JSPROMISE_H
+#endif //NOKO_PROMISE_H

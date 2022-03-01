@@ -2,7 +2,7 @@
 #include <mutex>
 #include <uv.h>
 #include <v8.h>
-#include "Node.h"
+#include "NodeRuntime.h"
 #include "types/JsValue.h"
 #include "types/JsUndefined.h"
 #include "types/JsBoolean.h"
@@ -16,28 +16,28 @@
 #include "types/JsError.h"
 #include "EnvHelper.h"
 
-int Node::instanceCount_ = 0;
-std::mutex Node::sharedMutex_;
-int Node::seq_ = 0;
+int NodeRuntime::instance_count_ = 0;
+std::mutex NodeRuntime::shared_mutex_;
+int NodeRuntime::sequence_ = 0;
 
-bool nodeInitialized = false;
+bool node_initialized = false;
 std::unique_ptr<node::MultiIsolatePlatform> platform;
 
-Node::Node(
+NodeRuntime::NodeRuntime(
     JNIEnv *env,
-    jobject jThis,
-    bool keepAlive,
+    jobject j_this,
+    bool keep_alive,
     bool strict
-) : keepAlive_(keepAlive),
+) : keep_alive_(keep_alive),
     strict_(strict) {
 
   env->GetJavaVM(&vm_);
-  jThis_ = env->NewGlobalRef(jThis);
-  std::lock_guard<std::mutex> lock(sharedMutex_);
-  ++instanceCount_;
-  ++seq_;
-  id_ = seq_;
-  if (!nodeInitialized) {
+  j_this_ = env->NewGlobalRef(j_this);
+  std::lock_guard<std::mutex> lock(shared_mutex_);
+  ++instance_count_;
+  ++sequence_;
+  id_ = sequence_;
+  if (!node_initialized) {
     init_node();
   }
 #pragma clang diagnostic push
@@ -46,72 +46,72 @@ Node::Node(
 #pragma clang diagnostic pop
 }
 
-Node::~Node() {
+NodeRuntime::~NodeRuntime() {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat"
   LOGE("Node(): thread_id=%d, id=%d, this=%p", std::this_thread::get_id(), id_, this);
 #pragma clang diagnostic pop
-  std::lock_guard<std::mutex> sharedLock(sharedMutex_);
-  std::lock_guard<std::mutex> asyncLock(asyncMutex_);
+  std::lock_guard<std::mutex> shared_lock(shared_mutex_);
+  std::lock_guard<std::mutex> async_lock(async_mutex_);
   {
     EnvHelper env(vm_);
-    env->DeleteGlobalRef(jSharedUndefined_);
-    env->DeleteGlobalRef(jSharedNull_);
-    env->DeleteGlobalRef(jSharedTrue_);
-    env->DeleteGlobalRef(jSharedFalse_);
-    env->SetLongField(jThis_, jPointerId, 0l);
-    env->DeleteGlobalRef(jThis_);
-    env->DeleteGlobalRef(jGlobal_);
+    env->DeleteGlobalRef(shared_undefined_);
+    env->DeleteGlobalRef(shared_null_);
+    env->DeleteGlobalRef(shared_true_);
+    env->DeleteGlobalRef(shared_false_);
+    env->SetLongField(j_this_, pointer_field_id_, 0l);
+    env->DeleteGlobalRef(j_this_);
+    env->DeleteGlobalRef(j_global_);
   }
 
   isolate_ = nullptr;
   running_ = false;
   LOGI("set running=false");
 
-  --instanceCount_;
-  LOGE("Node() finished, instanceCount=%d", instanceCount_);
+  --instance_count_;
+  LOGE("Node() finished, instanceCount=%d", instance_count_);
 }
 
-void Node::Attach() {
+void NodeRuntime::Attach() {
   v8::Local<v8::Context> context = context_.Get(isolate_);
-  v8::HandleScope handleScope(isolate_);
-  v8::Context::Scope contextScope(context);
+  v8::HandleScope handle_scope(isolate_);
+  v8::Context::Scope context_scope(context);
   running_ = true;
   EnvHelper env(vm_);
-  auto nullValue = new v8::Persistent<v8::Value>(isolate_, v8::Null(isolate_));
-  auto undefinedValue = new v8::Persistent<v8::Value>(isolate_, v8::Undefined(isolate_));
-  auto trueValue = new v8::Persistent<v8::Value>(isolate_, v8::True(isolate_));
-  auto falseValue = new v8::Persistent<v8::Value>(isolate_, v8::False(isolate_));
-  this->jSharedNull_ = env->NewGlobalRef(JsNull::Wrap(*env, jThis_, nullValue));
-  this->jSharedUndefined_ = env->NewGlobalRef(JsUndefined::Wrap(*env, jThis_, undefinedValue));
-  this->jSharedTrue_ = env->NewGlobalRef(JsBoolean::Wrap(*env, jThis_, trueValue, true));
-  this->jSharedFalse_ = env->NewGlobalRef(JsBoolean::Wrap(*env, jThis_, falseValue, false));
-  this->jGlobal_ = env->NewGlobalRef(JsObject::Wrap(*env, jThis_, (jlong) &global_));
+  auto null_value = new v8::Persistent<v8::Value>(isolate_, v8::Null(isolate_));
+  auto undefined_value = new v8::Persistent<v8::Value>(isolate_, v8::Undefined(isolate_));
+  auto true_value = new v8::Persistent<v8::Value>(isolate_, v8::True(isolate_));
+  auto false_value = new v8::Persistent<v8::Value>(isolate_, v8::False(isolate_));
+  this->shared_null_ = env->NewGlobalRef(JsNull::ToJava(*env, j_this_, (jlong)null_value));
+  this->shared_undefined_ = env->NewGlobalRef(JsUndefined::ToJava(*env, j_this_, (jlong) undefined_value));
+  this->shared_true_ = env->NewGlobalRef(JsBoolean::ToJava(*env, j_this_, (jlong)true_value, true));
+  this->shared_false_ = env->NewGlobalRef(JsBoolean::ToJava(*env, j_this_, (jlong)false_value, false));
+  this->j_global_ = env->NewGlobalRef(JsObject::ToJava(*env, j_this_, (jlong) &global_));
 
-  env->SetObjectField(jThis_, jSharedNullId, jSharedNull_);
-  env->SetObjectField(jThis_, jSharedUndefinedId, jSharedUndefined_);
-  env->SetObjectField(jThis_, jSharedTrueId, jSharedTrue_);
-  env->SetObjectField(jThis_, jSharedFalseId, jSharedFalse_);
+  env->SetObjectField(j_this_, shared_null_field_id_, shared_null_);
+  env->SetObjectField(j_this_, shared_undefined_field_id_, shared_undefined_);
+  env->SetObjectField(j_this_, shared_true_field_id_, shared_true_);
+  env->SetObjectField(j_this_, shared_false_field_id_, shared_false_);
 
-  env->CallVoidMethod(jThis_, jAttachId, jGlobal_);
+  env->CallVoidMethod(j_this_, attach_method_id_, j_global_);
 }
 
-void Node::Detach() const {
+void NodeRuntime::Detach() const {
   EnvHelper env(vm_);
-  env->CallVoidMethod(jThis_, jDetachId, jThis_);
+  env->CallVoidMethod(j_this_, detach_method_id_, j_this_);
 }
 
-int Node::Start(std::vector<std::string> &args) {
-  threadId_ = std::this_thread::get_id();
+int NodeRuntime::Start(std::vector<std::string> &args) {
+  thread_id_ = std::this_thread::get_id();
 
-  int exitCode = 0;
+  int exit_code = 0;
   if (!InitLoop()) {
     LOGE("Failed to call InitLoop()");
     return -1;
   }
 
   std::shared_ptr<node::ArrayBufferAllocator> allocator = node::ArrayBufferAllocator::Create();
-  isolate_ = node::NewIsolate(allocator, eventLoop_, platform.get());
+  isolate_ = node::NewIsolate(allocator, event_loop_, platform.get());
 
   if (isolate_ == nullptr) {
     LOGE("Failed to call node::NewIsolate()");
@@ -122,22 +122,22 @@ int Node::Start(std::vector<std::string> &args) {
     v8::Locker locker(isolate_);
     v8::Isolate::Scope isolateScope(isolate_);
 
-    auto isolateData = node::CreateIsolateData(isolate_, eventLoop_, platform.get(),
-                                               allocator.get());
-    v8::HandleScope handleScope(isolate_);
+    auto isolate_data = node::CreateIsolateData(isolate_, event_loop_, platform.get(),
+                                                allocator.get());
+    v8::HandleScope handle_scope(isolate_);
     v8::Local<v8::Context> context = node::NewContext(isolate_);
     if (context.IsEmpty()) {
       LOGE("Failed to call node::NewContext()");
       return -3;
     }
 
-    v8::Context::Scope contextScope(context);
+    v8::Context::Scope context_scope(context);
     auto flags = static_cast<node::EnvironmentFlags::Flags>(node::EnvironmentFlags::kOwnsEmbedded
                                                             |
                                                             node::EnvironmentFlags::kOwnsProcessState
                                                             |
                                                             node::EnvironmentFlags::kTrackUnmanagedFds);
-    auto env = node::CreateEnvironment(isolateData, context, args, args, flags);
+    auto env = node::CreateEnvironment(isolate_data, context, args, args, flags);
     node::SetProcessExitHandler(env, [](node::Environment *environment, int code) {
       LOGW("Node.js process is exiting: code=%d", code);
       node::Stop(environment);
@@ -159,16 +159,16 @@ int Node::Start(std::vector<std::string> &args) {
     RunLoop(env);
     Detach();
     // node::EmitExit() returns the current exit code.
-    auto exitCodeMaybe = node::EmitProcessExit(env);
-    if (exitCodeMaybe.IsJust()) {
-      exitCode = exitCodeMaybe.ToChecked();
+    auto exit_code_maybe = node::EmitProcessExit(env);
+    if (exit_code_maybe.IsJust()) {
+      exit_code = exit_code_maybe.ToChecked();
     }
     // node::Stop() can be used to explicitly stop the event loop and keep
     // further JavaScript from running. It can be called from any thread,
     // and will act like worker.terminate() if called from another thread.
     node::Stop(env);
 
-    node::FreeIsolateData(isolateData);
+    node::FreeIsolateData(isolate_data);
     node::FreeEnvironment(env);
 
     context_.Reset();
@@ -177,38 +177,38 @@ int Node::Start(std::vector<std::string> &args) {
   }
 
   CloseLoop();
-  return exitCode;
+  return exit_code;
 }
 
 
-void Node::CloseLoop() {
+void NodeRuntime::CloseLoop() {
   LOGW("closing uv loop");
   // Unregister the Isolate with the platform and add a listener that is called
   // when the Platform is done cleaning up any state it had associated with
   // the Isolate.
-  bool platformFinished = false;
+  bool platform_finished = false;
   platform->AddIsolateFinishedCallback(isolate_, [](void *data) {
     *static_cast<bool *>(data) = true;
-  }, &platformFinished);
+  }, &platform_finished);
   platform->UnregisterIsolate(isolate_);
   isolate_->Dispose();
   // Wait until the platform has cleaned up all relevant resources.
-  while (!platformFinished) {
-    uv_run(eventLoop_, UV_RUN_ONCE);
+  while (!platform_finished) {
+    uv_run(event_loop_, UV_RUN_ONCE);
   }
-  int uvErrorCode = uv_loop_close(eventLoop_);
-  eventLoop_ = nullptr;
+  int uvErrorCode = uv_loop_close(event_loop_);
+  event_loop_ = nullptr;
   LOGI("close loop result: %d, callbacks.size=%lu", uvErrorCode, callbacks_.size());
   // uv_loop_delete(loop);
   // assert(err == 0);
 }
 
-void Node::RunLoop(node::Environment *env) {
+void NodeRuntime::RunLoop(node::Environment *env) {
   v8::SealHandleScope seal(isolate_);
 
   int more;
   do {
-    uv_run(eventLoop_, UV_RUN_DEFAULT);
+    uv_run(event_loop_, UV_RUN_DEFAULT);
 
     // V8 tasks on background threads may end up scheduling new tasks in the
     // foreground, which in turn can keep the event loop going. For example,
@@ -216,7 +216,7 @@ void Node::RunLoop(node::Environment *env) {
     platform->DrainTasks(isolate_);
 
     // If there are new tasks, continue.
-    more = uv_loop_alive(eventLoop_);
+    more = uv_loop_alive(event_loop_);
     if (more) continue;
     LOGW("no more task, try to exit");
     // node::EmitBeforeExit() is used to emit the 'beforeExit' event on
@@ -225,38 +225,38 @@ void Node::RunLoop(node::Environment *env) {
 
     // 'beforeExit' can also schedule new work that keeps the event loop
     // running.
-    more = uv_loop_alive(eventLoop_);
+    more = uv_loop_alive(event_loop_);
   } while (more);
 }
 
 
-void Node::Exit(int code) {
+void NodeRuntime::Exit(int code) {
   LOGI("Exit(code=%d)", code);
-  if (keepAlive_) {
-    uv_async_send(keepAliveHandle_);
+  if (keep_alive_) {
+    uv_async_send(keep_alive_handle_);
   }
   Post([&] {
     v8::HandleScope handle_scope(isolate_);
     auto process = process_.Get(isolate_);
     auto context = context_.Get(isolate_);
     v8::Local<v8::Value> v8Code = v8::Number::New(isolate_, code);
-    auto exitFunc = process->Get(context, V8_UTF_STRING(isolate_, "exit"));
+    auto exit_func = process->Get(context, V8_UTF_STRING(isolate_, "exit"));
     LOGI("Calling process.exit(%d)", code);
-    UNUSED(v8::Local<v8::Function>::Cast(exitFunc.ToLocalChecked())->Call(context, process, 1,
-                                                                          &v8Code));
+    UNUSED(v8::Local<v8::Function>::Cast(exit_func.ToLocalChecked())->Call(context, process, 1,
+                                                                           &v8Code));
   });
 }
 
-bool Node::InitLoop() {
-  eventLoop_ = uv_loop_new();
-  int ret = uv_loop_init(eventLoop_);
+bool NodeRuntime::InitLoop() {
+  event_loop_ = uv_loop_new();
+  int ret = uv_loop_init(event_loop_);
   if (ret != 0) {
     LOGE("Failed to initialize loop: %s", uv_err_name(ret));
     return false;
   }
-  if (keepAlive_) {
-    keepAliveHandle_ = new uv_async_t();
-    ret = uv_async_init(eventLoop_, keepAliveHandle_, [](uv_async_t *handle) {
+  if (keep_alive_) {
+    keep_alive_handle_ = new uv_async_t();
+    ret = uv_async_init(event_loop_, keep_alive_handle_, [](uv_async_t *handle) {
       LOGD("Stop keep alive");
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCDFAInspection"
@@ -273,61 +273,61 @@ bool Node::InitLoop() {
   return true;
 }
 
-jobject Node::ToJava(JNIEnv *env, v8::Local<v8::Value> value) const {
+jobject NodeRuntime::ToJava(JNIEnv *env, v8::Local<v8::Value> value) const {
   if (value->IsNull()) {
-    return this->jSharedNull_;
+    return this->shared_null_;
   } else if (value->IsUndefined()) {
-    return this->jSharedUndefined_;
+    return this->shared_undefined_;
   } else if (value->IsBoolean()) {
     v8::Local<v8::Boolean> target = value->ToBoolean(isolate_);
     if (target->Value()) {
-      return this->jSharedTrue_;
+      return this->shared_true_;
     } else {
-      return this->jSharedFalse_;
+      return this->shared_false_;
     }
   } else {
     auto pointer = new v8::Persistent<v8::Value>(isolate_, value);
     if (value->IsNumber()) {
-      return JsNumber::ToJava(env, jThis_, (jlong) pointer, value.As<v8::Number>()->Value());
+      return JsNumber::ToJava(env, j_this_, (jlong) pointer, value.As<v8::Number>()->Value());
     } else if (value->IsObject()) {
       if (value->IsFunction()) {
-        return JsFunction::Wrap(env, jThis_, pointer);
+        return JsFunction::ToJava(env, j_this_, (jlong) pointer);
       } else if (value->IsPromise()) {
-        return JsPromise::Wrap(env, jThis_, pointer);
+        return JsPromise::ToJava(env, j_this_, (jlong) pointer);
       } else if (value->IsNativeError()) {
-        return JsError::Wrap(env, jThis_, pointer);
+        return JsError::ToJava(env, j_this_, (jlong) pointer);
       } else if (value->IsArray()) {
-        return JsArray::Wrap(env, jThis_, pointer);
+        return JsArray::ToJava(env, j_this_, (jlong) pointer);
       }
-      return JsObject::Wrap(env, jThis_, (jlong) pointer);
+      return JsObject::ToJava(env, j_this_, (jlong) pointer);
     } else if (value->IsString()) {
       v8::String::Value unicodeString(isolate_, value);
       jstring jValue = env->NewString(*unicodeString, unicodeString.length());
-      return JsString::Wrap(env, jThis_, pointer, jValue);
+      return JsString::ToJava(env, j_this_, (jlong) pointer, jValue);
     }
-    return JsValue::Wrap(env, jThis_, pointer);
+    return JsValue::ToJava(env, j_this_, (jlong) pointer);
   }
 }
 
-void Node::TryLoop() {
-  if (!eventLoop_) {
+void NodeRuntime::TryLoop() {
+  if (!event_loop_) {
     LOGE("TryLoop but eventLoop is null");
     return;
   }
-  if (!callbackHandle_) {
-    callbackHandle_ = new uv_async_t();
-    callbackHandle_->data = this;
-    uv_async_init(eventLoop_, callbackHandle_, [](uv_async_t *handle) {
-      auto *runtime = reinterpret_cast<Node *>(handle->data);
+  if (!callback_handle_) {
+    callback_handle_ = new uv_async_t();
+    callback_handle_->data = this;
+    uv_async_init(event_loop_, callback_handle_, [](uv_async_t *handle) {
+      auto *runtime = reinterpret_cast<NodeRuntime *>(handle->data);
       runtime->Handle(handle);
     });
-    uv_async_send(callbackHandle_);
+    uv_async_send(callback_handle_);
   }
 }
 
-bool Node::Await(const std::function<void()> &runnable) {
+bool NodeRuntime::Await(const std::function<void()> &runnable) {
   assert(isolate_ != nullptr);
-  if (std::this_thread::get_id() == threadId_) {
+  if (std::this_thread::get_id() == thread_id_) {
     runnable();
     return true;
   } else if (strict_) {
@@ -340,13 +340,13 @@ bool Node::Await(const std::function<void()> &runnable) {
     auto callback = [&]() {
       runnable();
       {
-        std::lock_guard<std::mutex> lock(asyncMutex_);
+        std::lock_guard<std::mutex> lock(async_mutex_);
         signaled = true;
       }
       cv.notify_one();
     };
 
-    std::unique_lock<std::mutex> lock(asyncMutex_);
+    std::unique_lock<std::mutex> lock(async_mutex_);
     if (!running_) {
       LOGE("Instance has been destroyed, ignore await");
       return false;
@@ -360,15 +360,15 @@ bool Node::Await(const std::function<void()> &runnable) {
   }
 }
 
-bool Node::Post(const std::function<void()> &runnable) {
+bool NodeRuntime::Post(const std::function<void()> &runnable) {
   if (!running_) {
     return false;
   }
-  std::lock_guard<std::mutex> lock(asyncMutex_);
+  std::lock_guard<std::mutex> lock(async_mutex_);
   if (!running_) {
     return false;
   }
-  if (std::this_thread::get_id() == threadId_) {
+  if (std::this_thread::get_id() == thread_id_) {
     runnable();
     return true;
   } else {
@@ -378,13 +378,13 @@ bool Node::Post(const std::function<void()> &runnable) {
   }
 }
 
-void Node::Handle(uv_async_t *handle) {
-  asyncMutex_.lock();
+void NodeRuntime::Handle(uv_async_t *handle) {
+  async_mutex_.lock();
   while (!callbacks_.empty()) {
     auto callback = callbacks_.front();
-    asyncMutex_.unlock();
+    async_mutex_.unlock();
     callback();
-    asyncMutex_.lock();
+    async_mutex_.lock();
     callbacks_.erase(callbacks_.begin());
   }
 #pragma clang diagnostic push
@@ -393,31 +393,31 @@ void Node::Handle(uv_async_t *handle) {
     delete (uv_async_t *) h;
   });
 #pragma clang diagnostic pop
-  callbackHandle_ = nullptr;
-  asyncMutex_.unlock();
+  callback_handle_ = nullptr;
+  async_mutex_.unlock();
 }
 
 // v8::Local<v8::Value> Node::Require(const char *path) {
-//     v8::EscapableHandleScope handleScope(isolate_);
+//     v8::EscapableHandleScope handle_scope(isolate_);
 //     auto context = context_.Get(isolate_);
 //     auto global = global_->Get(isolate_);
-//     v8::Context::Scope contextScope(context);
+//     v8::Context::Scope context_scope(context);
 //     auto key = v8::String::NewFromUtf8(isolate_, "require").ToLocalChecked();
 //     v8::Local<v8::Object> require = global->Get(context, key).ToLocalChecked()->ToObject(context).ToLocalChecked();
 //     v8::Local<v8::Value> *argv = new v8::Local<v8::Value>[1];
 //     argv[0] = V8_UTF_STRING(isolate_, path);
 //     assert(require->IsFunction());
 //     auto result = require->CallAsFunction(context, global, 1, argv).ToLocalChecked();
-//     return handleScope.Escape(result->ToObject(context).ToLocalChecked());
+//     return handle_scope.Escape(result->ToObject(context).ToLocalChecked());
 // }
 
-v8::Local<v8::Value> Node::Require(const char *path) {
+v8::Local<v8::Value> NodeRuntime::Require(const char *path) {
   CheckThread();
   v8::EscapableHandleScope scope(isolate_);
   auto context = context_.Get(isolate_);
   auto require = require_.Get(isolate_);
   auto global = global_.Get(isolate_);
-  v8::Context::Scope contextScope(context);
+  v8::Context::Scope context_scope(context);
 
   auto *argv = new v8::Local<v8::Value>[1];
   argv[0] = V8_UTF_STRING(isolate_, path);
@@ -426,93 +426,92 @@ v8::Local<v8::Value> Node::Require(const char *path) {
   return scope.Escape(result);
 }
 
-void Node::MountFile(const char *src, const char *dst, const int mode) {
+void NodeRuntime::MountFile(const char *src, const char *dst, const int mode) {
   CheckThread();
-  v8::Locker _locker(isolate_);
-  v8::HandleScope _handleScope(isolate_);
+  v8::Locker locker(isolate_);
+  v8::HandleScope handle_scope(isolate_);
   auto context = context_.Get(isolate_);
   auto env = node::GetCurrentEnvironment(context);
   node::Mount(env, src, dst, mode);
 }
 
-void Node::Chroot(const char *path) {
+void NodeRuntime::Chroot(const char *path) {
   CheckThread();
-  v8::Locker _locker(isolate_);
-  v8::HandleScope _handleScope(isolate_);
+  v8::Locker locker(isolate_);
+  v8::HandleScope handle_scope(isolate_);
   auto context = context_.Get(isolate_);
   auto env = node::GetCurrentEnvironment(context);
   node::Chroot(env, path);
 }
 
-void Node::Throw(JNIEnv *env, v8::Local<v8::Value> exception) {
+void NodeRuntime::Throw(JNIEnv *env, v8::Local<v8::Value> exception) {
   CheckThread();
   auto reference = new v8::Persistent<v8::Value>(isolate_, exception);
-  auto jException = JsError::ToException(env, JsError::Wrap(env, jThis_, reference));
-  env->Throw((jthrowable) jException);
+  auto j_exception = JsError::ToException(env, JsError::ToJava(env, j_this_, (jlong) reference));
+  env->Throw((jthrowable) j_exception);
 }
 
-void Node::CheckThread() {
-  if (std::this_thread::get_id() != threadId_) {
+void NodeRuntime::CheckThread() {
+  if (std::this_thread::get_id() != thread_id_) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat"
     LOGE("js object can only be accessed from the Node.js thread: current=%ld, threadId=%ld",
-         std::this_thread::get_id(), threadId_);
+         std::this_thread::get_id(), thread_id_);
 #pragma clang diagnostic pop
     std::abort();
   }
 }
 
-jobject
-Node::Eval(const uint16_t *code, int codeLen, const uint16_t *source, int sourceLen, int line) {
-  v8::TryCatch tryCatch(isolate_);
+jobject NodeRuntime::Eval(const uint16_t *code, int code_len, const uint16_t *source, int source_len, int line) {
+  v8::TryCatch try_catch(isolate_);
   auto context = context_.Get(isolate_);
-  v8::ScriptOrigin scriptOrigin(V8_STRING(isolate_, source, sourceLen),
-                                v8::Integer::New(isolate_, line),
-                                v8::Integer::New(isolate_, 0));
-  auto script = v8::Script::Compile(context, V8_STRING(isolate_, code, codeLen), &scriptOrigin);
+  v8::ScriptOrigin script_origin(V8_STRING(isolate_, source, source_len),
+                                 v8::Integer::New(isolate_, line),
+                                 v8::Integer::New(isolate_, 0));
+  auto script = v8::Script::Compile(context, V8_STRING(isolate_, code, code_len), &script_origin);
   EnvHelper env(vm_);
   if (script.IsEmpty()) {
     LOGE("Compile script with an exception");
-    Throw(*env, tryCatch.Exception());
+    Throw(*env, try_catch.Exception());
     return nullptr;
   }
   auto result = script.ToLocalChecked()->Run(context);
   if (result.IsEmpty()) {
     LOGE("Run script with an exception");
-    Throw(*env, tryCatch.Exception());
+    Throw(*env, try_catch.Exception());
     return nullptr;
   }
   return ToJava(*env, result.ToLocalChecked());
 }
 
-jobject Node::ParseJson(const uint16_t *json, int jsonLen) {
+jobject NodeRuntime::ParseJson(const uint16_t *json, int json_len) {
   v8::Locker locker(isolate_);
-  v8::HandleScope handleScope(isolate_);
+  v8::HandleScope handle_scope(isolate_);
   auto context = context_.Get(isolate_);
-  v8::Context::Scope contextScope(context);
-  v8::TryCatch tryCatch(isolate_);
-  auto result = v8::JSON::Parse(context, V8_STRING(isolate_, json, jsonLen));
+  v8::Context::Scope context_scope(context);
+  v8::TryCatch try_catch(isolate_);
+  auto result = v8::JSON::Parse(context, V8_STRING(isolate_, json, json_len));
   EnvHelper env(vm_);
   if (result.IsEmpty()) {
-    Throw(*env, tryCatch.Exception());
+    Throw(*env, try_catch.Exception());
     return nullptr;
   }
   return ToJava(*env, result.ToLocalChecked());
 }
 
-jobject Node::ThrowError(const uint16_t *message, int messageLen) const {
-  auto error = v8::Exception::Error(V8_STRING(isolate_, message, messageLen));
+jobject NodeRuntime::ThrowError(const uint16_t *message, int message_len) const {
+  auto error = v8::Exception::Error(V8_STRING(isolate_, message, message_len));
   isolate_->ThrowException(error);
   EnvHelper env(vm_);
   return ToJava(*env, error);
 }
 
-jobject Node::Require(const uint16_t *path, int pathLen) {
+jobject NodeRuntime::Require(const uint16_t *path, int path_len) {
   auto context = context_.Get(isolate_);
   auto *argv = new v8::Local<v8::Value>[1];
-  argv[0] = V8_STRING(isolate_, path, pathLen);
+  argv[0] = V8_STRING(isolate_, path, path_len);
   auto global = global_.Get(isolate_);
-  v8::TryCatch tryCatch(isolate_);
+  v8::TryCatch try_catch(isolate_);
 
   auto require = global->Get(context, V8_UTF_STRING(isolate_, "require"))
       .ToLocalChecked()->ToObject(context)
@@ -523,7 +522,7 @@ jobject Node::Require(const uint16_t *path, int pathLen) {
 
   EnvHelper env(vm_);
   if (result.IsEmpty()) {
-    Throw(*env, tryCatch.Exception());
+    Throw(*env, try_catch.Exception());
     return nullptr;
   }
   return ToJava(*env, result.ToLocalChecked());
@@ -551,7 +550,7 @@ int init_node() {
   for (const std::string &error: errors)
     LOGE("%s: %s\n", args[0].c_str(), error.c_str());
   if (exit_code == 0) {
-    nodeInitialized = true;
+    node_initialized = true;
   }
 
   // Create a v8::Platform instance. `MultiIsolatePlatform::Create()` is a way
@@ -566,32 +565,32 @@ int init_node() {
 }
 
 // void shutdownNode() {
-//     nodeInitialized = false;
+//     node_initialized = false;
 //     v8::V8::Dispose();
 //     v8::V8::ShutdownPlatform();
 // }
 
-jmethodID Node::jAttachId;
-jmethodID Node::jDetachId;
-jfieldID Node::jSharedNullId;
-jfieldID Node::jSharedUndefinedId;
-jfieldID Node::jSharedTrueId;
-jfieldID Node::jSharedFalseId;
-jfieldID Node::jPointerId;
+jmethodID NodeRuntime::attach_method_id_;
+jmethodID NodeRuntime::detach_method_id_;
+jfieldID NodeRuntime::shared_null_field_id_;
+jfieldID NodeRuntime::shared_undefined_field_id_;
+jfieldID NodeRuntime::shared_true_field_id_;
+jfieldID NodeRuntime::shared_false_field_id_;
+jfieldID NodeRuntime::pointer_field_id_;
 
-jint Node::OnLoad(JNIEnv *env) {
+jint NodeRuntime::OnLoad(JNIEnv *env) {
   jclass clazz = env->FindClass("com/linroid/noko/Node");
   if (clazz == nullptr) {
     return JNI_ERR;
   }
-  jSharedNullId = env->GetFieldID(clazz, "sharedNull", "Lcom/linroid/noko/types/JsNull;");
-  jSharedUndefinedId = env->GetFieldID(clazz, "sharedUndefined",
-                                       "Lcom/linroid/noko/types/JsUndefined;");
-  jSharedTrueId = env->GetFieldID(clazz, "sharedTrue", "Lcom/linroid/noko/types/JsBoolean;");
-  jSharedFalseId = env->GetFieldID(clazz, "sharedFalse", "Lcom/linroid/noko/types/JsBoolean;");
-  jPointerId = env->GetFieldID(clazz, "pointer", "J");
+  shared_null_field_id_ = env->GetFieldID(clazz, "sharedNull", "Lcom/linroid/noko/types/JsNull;");
+  shared_undefined_field_id_ = env->GetFieldID(clazz, "sharedUndefined",
+                                               "Lcom/linroid/noko/types/JsUndefined;");
+  shared_true_field_id_ = env->GetFieldID(clazz, "sharedTrue", "Lcom/linroid/noko/types/JsBoolean;");
+  shared_false_field_id_ = env->GetFieldID(clazz, "sharedFalse", "Lcom/linroid/noko/types/JsBoolean;");
+  pointer_field_id_ = env->GetFieldID(clazz, "pointer", "J");
 
-  jAttachId = env->GetMethodID(clazz, "attach", "(Lcom/linroid/noko/types/JsObject;)V");
-  jDetachId = env->GetMethodID(clazz, "detach", "(Lcom/linroid/noko/types/JsObject;)V");
+  attach_method_id_ = env->GetMethodID(clazz, "attach", "(Lcom/linroid/noko/types/JsObject;)V");
+  detach_method_id_ = env->GetMethodID(clazz, "detach", "(Lcom/linroid/noko/types/JsObject;)V");
   return JNI_OK;
 }

@@ -5,29 +5,30 @@
 
 class JsObject {
 private:
-  static jclass jClazz;
-  static jmethodID jConstructor;
+  static jclass class_;
+  static jclass string_class_;
+  static jmethodID init_method_id_;
 
 public:
-  inline static jobject Wrap(JNIEnv *env, jobject jNode, jlong value) {
-    return env->NewObject(jClazz, jConstructor, jNode, (jlong) value);
+  static jobject ToJava(JNIEnv *env, jobject node, jlong pointer) {
+    return env->NewObject(class_, init_method_id_, node, pointer);
   }
 
   static jint OnLoad(JNIEnv *env);
 
-  static JNICALL jobject Get(JNIEnv *env, jobject jThis, jstring jKey);
+  static JNICALL jobject Get(JNIEnv *env, jobject j_this, jstring j_key);
 
-  static JNICALL void Delete(JNIEnv *env, jobject jThis, jstring jKey);
+  static JNICALL void Delete(JNIEnv *env, jobject j_this, jstring j_key);
 
-  static JNICALL void Set(JNIEnv *env, jobject jThis, jstring jKey, jobject jValue);
+  static JNICALL void Set(JNIEnv *env, jobject j_this, jstring j_key, jobject j_value);
 
-  static JNICALL jboolean Has(JNIEnv *env, jobject jThis, jstring jKey);
+  static JNICALL jboolean Has(JNIEnv *env, jobject j_this, jstring j_key);
 
-  static JNICALL jobjectArray Keys(JNIEnv *env, jobject jThis);
+  static JNICALL jobjectArray Keys(JNIEnv *env, jobject j_this);
 
-  static JNICALL void Watch(JNIEnv *env, jobject jThis, jobjectArray jKeys, jobject jObserver);
+  static JNICALL void Watch(JNIEnv *env, jobject j_this, jobjectArray j_keys, jobject j_observer);
 
-  static JNICALL void New(JNIEnv *env, jobject jThis);
+  static JNICALL void New(JNIEnv *env, jobject j_this);
 };
 
 #endif //NODE_JSOBJECT_H

@@ -2,9 +2,9 @@
 #include "JsValue.h"
 
 jclass JsNumber::class_;
-jmethodID JsNumber::constructor_id_;
+jmethodID JsNumber::init_method_id_;
 jclass JsNumber::double_class_;
-jmethodID JsNumber::double_constructor_id_;
+jmethodID JsNumber::double_init_method_id_;
 
 jint JsNumber::OnLoad(JNIEnv *env) {
   jclass clazz = env->FindClass("com/linroid/noko/types/JsNumber");
@@ -12,11 +12,11 @@ jint JsNumber::OnLoad(JNIEnv *env) {
     return JNI_ERR;
   }
   class_ = (jclass) env->NewGlobalRef(clazz);
-  constructor_id_ = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;JLjava/lang/Number;)V");
+  init_method_id_ = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;JLjava/lang/Number;)V");
 
   jclass double_class = env->FindClass("java/lang/Double");
   double_class_ = (jclass) env->NewGlobalRef(double_class);
-  double_constructor_id_ = env->GetMethodID(double_class, "<init>", "(D)V");
+  double_init_method_id_ = env->GetMethodID(double_class, "<init>", "(D)V");
   JNINativeMethod methods[] = {
       {"nativeNew", "(JD)J", (void *) JsNumber::New},
   };

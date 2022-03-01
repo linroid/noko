@@ -5,11 +5,11 @@
 #include "JavaCallback.h"
 #include "../EnvHelper.h"
 
-jclass JsFunction::jClazz;
-jmethodID JsFunction::jConstructor;
-jmethodID JsFunction::jCall;
+jclass JsFunction::class_;
+jmethodID JsFunction::init_method_id_;
+jmethodID JsFunction::call_method_id_;
 
-void staticCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
+void StaticCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
   // CHECK(info.Data()->IsExternal());
   auto external = info.Data().As<v8::External>();
   auto callback = reinterpret_cast<JavaCallback *>(external->Value());
@@ -19,50 +19,50 @@ void staticCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
 static void WeakCallback(const v8::WeakCallbackInfo<JavaCallback> &data) {
   LOGW("ObserverWeakCallback");
   JavaCallback *callback = data.GetParameter();
-  EnvHelper env(callback->node->vm_);
-  JsValue::SetPointer(*env, callback->that, 0);
+  EnvHelper env(callback->runtime_->vm_);
+  JsValue::SetPointer(*env, callback->that_, 0);
   delete callback;
 }
 
-void JsFunction::New(JNIEnv *env, jobject jThis, jstring jName) {
+void JsFunction::New(JNIEnv *env, jobject j_this, jstring jName) {
   const uint16_t *name = env->GetStringChars(jName, nullptr);
-  const jint nameLen = env->GetStringLength(jName);
-  V8_SCOPE(env, jThis)
-  auto callback = new JavaCallback(node, env, jThis, JsValue::jClazz, jCall);
+  const jint name_len = env->GetStringLength(jName);
+  V8_SCOPE(env, j_this)
+  auto callback = new JavaCallback(runtime, env, j_this, JsValue::class_, call_method_id_);
   auto data = v8::External::New(isolate, callback);
-  auto context = node->context_.Get(isolate);
-  auto func = v8::FunctionTemplate::New(isolate, staticCallback, data)->GetFunction(context).ToLocalChecked();
-  func->SetName(V8_STRING(isolate, name, nameLen));
+  auto context = runtime->context_.Get(isolate);
+  auto func = v8::FunctionTemplate::New(isolate, StaticCallback, data)->GetFunction(context).ToLocalChecked();
+  func->SetName(V8_STRING(isolate, name, name_len));
 
   auto result = new v8::Persistent<v8::Value>(isolate, func);
   result->SetWeak(callback, WeakCallback, v8::WeakCallbackType::kParameter);
   env->ReleaseStringChars(jName, name);
-  JsValue::SetPointer(env, jThis, (jlong) result);
+  JsValue::SetPointer(env, j_this, (jlong) result);
 }
 
-jobject JsFunction::Call(JNIEnv *env, jobject jThis, jobject jReceiver, jobjectArray jParameters) {
-  auto receiver = JsValue::Unwrap(env, jReceiver);
+jobject JsFunction::Call(JNIEnv *env, jobject j_this, jobject j_receiver, jobjectArray j_parameters) {
+  auto receiver = JsValue::Unwrap(env, j_receiver);
 
-  int argc = env->GetArrayLength(jParameters);
+  int argc = env->GetArrayLength(j_parameters);
   v8::Persistent<v8::Value> *parameters[argc];
   for (int i = 0; i < argc; ++i) {
-    auto jElement = env->GetObjectArrayElement(jParameters, i);
-    parameters[i] = JsValue::Unwrap(env, jElement);
-    env->DeleteLocalRef(jElement);
+    auto element = env->GetObjectArrayElement(j_parameters, i);
+    parameters[i] = JsValue::Unwrap(env, element);
+    env->DeleteLocalRef(element);
   }
 
-  SETUP(env, jThis, v8::Function)
+  SETUP(env, j_this, v8::Function)
   auto *argv = new v8::Local<v8::Value>[argc];
   for (int i = 0; i < argc; ++i) {
     argv[i] = parameters[i]->Get(isolate);
   }
-  v8::TryCatch tryCatch(isolate);
+  v8::TryCatch try_catch(isolate);
   auto result = that->Call(context, receiver->Get(isolate), argc, argv);
   if (result.IsEmpty()) {
-    node->Throw(env, tryCatch.Exception());
+    runtime->Throw(env, try_catch.Exception());
     return nullptr;
   }
-  return node->ToJava(env, result.ToLocalChecked());
+  return runtime->ToJava(env, result.ToLocalChecked());
 }
 
 jint JsFunction::OnLoad(JNIEnv *env) {
@@ -75,10 +75,10 @@ jint JsFunction::OnLoad(JNIEnv *env) {
       {"nativeCall", "(Lcom/linroid/noko/types/JsValue;[Lcom/linroid/noko/types/JsValue;)Lcom/linroid/noko/types/JsValue;", (void *) JsFunction::Call},
       {"nativeNew",  "(Ljava/lang/String;)V",                                                                               (void *) JsFunction::New},
   };
-  jClazz = (jclass) env->NewGlobalRef(clazz);
-  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;J)V");
-  jCall = env->GetMethodID(clazz, "onCall",
-                           "(Lcom/linroid/noko/types/JsValue;[Lcom/linroid/noko/types/JsValue;)Lcom/linroid/noko/types/JsValue;");
+  class_ = (jclass) env->NewGlobalRef(clazz);
+  init_method_id_ = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;J)V");
+  call_method_id_ = env->GetMethodID(clazz, "onCall",
+                                     "(Lcom/linroid/noko/types/JsValue;[Lcom/linroid/noko/types/JsValue;)Lcom/linroid/noko/types/JsValue;");
   env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
   return JNI_OK;
 }

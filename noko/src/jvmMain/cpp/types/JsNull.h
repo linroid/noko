@@ -2,19 +2,19 @@
 #define NODE_JSNULL_H
 
 #include <jni.h>
-#include "../Node.h"
+#include "../NodeRuntime.h"
 
 class JsNull {
 private:
-  static jclass jClazz;
-  static jmethodID jConstructor;
+  static jclass class_;
+  static jmethodID init_method_id_;
 
 public:
-  inline static jobject Wrap(JNIEnv *env, jobject jNode, v8::Persistent<v8::Value> *value) {
-    return env->NewObject(jClazz, jConstructor, jNode, (jlong) value);
+  inline static jobject ToJava(JNIEnv *env, jobject node, jlong value) {
+    return env->NewObject(class_, init_method_id_, node, value);
   }
 
-  JNICALL static void New(JNIEnv *env, jobject jThis);
+  JNICALL static void New(JNIEnv *env, jobject j_this);
 
   static jint OnLoad(JNIEnv *env);
 };

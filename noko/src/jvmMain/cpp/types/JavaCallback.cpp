@@ -2,50 +2,50 @@
 #include "../EnvHelper.h"
 
 JavaCallback::JavaCallback(
-    Node *node,
+    NodeRuntime *node,
     JNIEnv *env,
     jobject that,
     jclass clazz,
-    jmethodID methodId
-) : node(node), that(env->NewGlobalRef(that)), clazz_(clazz), methodId_(methodId) {
-  env->GetJavaVM(&vm_);
+    jmethodID method_id
+) : runtime_(node), that_(env->NewGlobalRef(that)), class_(clazz), method_id_(method_id) {
+
 }
 
 void JavaCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
-  EnvHelper env(node->vm_);
-  auto parameters = env->NewObjectArray(info.Length(), clazz_, nullptr);
+  EnvHelper env(runtime_->vm_);
+  auto parameters = env->NewObjectArray(info.Length(), class_, nullptr);
   for (int i = 0; i < info.Length(); ++i) {
     v8::Local<v8::Value> element = info[i];
-    auto obj = node->ToJava(*env, element);
+    auto obj = runtime_->ToJava(*env, element);
     env->SetObjectArrayElement(parameters, i, obj);
   }
   auto caller = (v8::Local<v8::Value>) info.This();
-  auto jCaller = node->ToJava(*env, caller);
-  auto jRet = env->CallObjectMethod(that, methodId_, jCaller, parameters);
-  env->DeleteLocalRef(jCaller);
+  auto j_caller = runtime_->ToJava(*env, caller);
+  auto j_result = env->CallObjectMethod(that_, method_id_, j_caller, parameters);
+  env->DeleteLocalRef(j_caller);
 
   env->DeleteLocalRef(parameters);
 
   if (env->ExceptionCheck()) {
-    // TODO: Throw crash into v8
+    // TODO: Throw exception into v8
     info.GetReturnValue().Set(v8::Undefined(info.GetIsolate()));
     env->Throw(env->ExceptionOccurred());
     if (env.HasAttached()) {
-      vm_->DetachCurrentThread();
+      runtime_->vm_->DetachCurrentThread();
     }
     return;
   }
 
-  if (jRet != nullptr) {
-    auto result = JsValue::Unwrap(*env, jRet);
+  if (j_result != nullptr) {
+    auto result = JsValue::Unwrap(*env, j_result);
     if (result != nullptr) {
-      info.GetReturnValue().Set(result->Get(node->isolate_));
+      info.GetReturnValue().Set(result->Get(runtime_->isolate_));
     }
   }
 }
 
 JavaCallback::~JavaCallback() {
   LOGD("~JavaCallback()");
-  EnvHelper env(vm_);
-  env->DeleteGlobalRef(that);
+  EnvHelper env(runtime_->vm_);
+  env->DeleteGlobalRef(that_);
 }

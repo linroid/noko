@@ -5,32 +5,32 @@
 #include "v8.h"
 #include "log.h"
 
-#define V8_SCOPE_NEW(env, node_pointer) \
-  if (node_pointer == 0) { \
-    LOGE("Invalid node_pointer %s(%d)-<%s>", __FILE__, __LINE__, __FUNCTION__); \
-    env->FatalError("Invalid node_pointer"); \
+#define V8_SCOPE_NEW(env, runtime_pointer) \
+  if (runtime_pointer == 0) { \
+    LOGE("Invalid runtime_pointer %s(%d)-<%s>", __FILE__, __LINE__, __FUNCTION__); \
+    env->FatalError("Invalid runtime_pointer"); \
   } \
-  Node *node = reinterpret_cast<Node *>(node_pointer); \
-  auto isolate = node->isolate_; \
+  NodeRuntime *runtime = reinterpret_cast<NodeRuntime *>(runtime_pointer); \
+  auto isolate = runtime->isolate_; \
   v8::Locker locker(isolate); \
-  v8::HandleScope handleScope(isolate); \
+  v8::HandleScope handle_scope(isolate); \
 
-#define V8_SCOPE(env, jThis) \
-  auto node = JsValue::GetNode(env, jThis); \
-  if (node == nullptr) { \
-    LOGE("GetNode node nullptr %s(%d)-<%s>", __FILE__, __LINE__, __FUNCTION__); \
+#define V8_SCOPE(env, j_this) \
+  auto runtime = JsValue::GetRuntime(env, j_this); \
+  if (runtime == nullptr) { \
+    LOGE("GetRuntime runtime nullptr %s(%d)-<%s>", __FILE__, __LINE__, __FUNCTION__); \
     env->FatalError("GetRuntime returns nullptr"); \
   } \
-  auto isolate = node->isolate_; \
+  auto isolate = runtime->isolate_; \
   v8::Locker locker(isolate); \
-  v8::HandleScope handleScope(isolate); \
+  v8::HandleScope handle_scope(isolate); \
 
-#define SETUP(env, jThis, type) \
-  V8_SCOPE(env, jThis) \
-  auto reference = JsValue::Unwrap(env, jThis); \
-  auto context = node->context_.Get(isolate); \
+#define SETUP(env, j_this, type) \
+  V8_SCOPE(env, j_this) \
+  auto reference = JsValue::Unwrap(env, j_this); \
+  auto context = runtime->context_.Get(isolate); \
   auto persistent = reinterpret_cast<v8::Persistent<type> *>(reference); \
-  auto that = v8::Local<type>::New(node->isolate_, *persistent);
+  auto that = v8::Local<type>::New(runtime->isolate_, *persistent);
 
 
 #define V8_UTF_STRING(isolate, str) v8::String::NewFromUtf8(isolate, str, v8::NewStringType::kNormal).ToLocalChecked()

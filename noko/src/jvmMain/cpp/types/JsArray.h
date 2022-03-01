@@ -2,27 +2,27 @@
 #define NODE_JSARRAY_H
 
 #include <jni.h>
-#include "../Node.h"
+#include "../NodeRuntime.h"
 
 class JsArray {
 private:
-  static jclass jClazz;
-  static jmethodID jConstructor;
+  static jclass class_;
+  static jmethodID init_method_id_;
 
 public:
-  inline static jobject Wrap(JNIEnv *env, jobject jNode, v8::Persistent<v8::Value> *value) {
-    return env->NewObject(jClazz, jConstructor, jNode, (jlong) value);
+  inline static jobject ToJava(JNIEnv *env, jobject node, jlong pointer) {
+    return env->NewObject(class_, init_method_id_, node, pointer);
   }
 
-  JNICALL static jint Size(JNIEnv *env, jobject jThis);
+  JNICALL static jint Size(JNIEnv *env, jobject j_this);
 
-  JNICALL static void New(JNIEnv *env, jobject jThis);
+  JNICALL static void New(JNIEnv *env, jobject j_this);
 
-  JNICALL static jobject Get(JNIEnv *env, jobject jThis, jint jIndex);
+  JNICALL static jobject Get(JNIEnv *env, jobject j_this, jint j_index);
 
-  JNICALL static jboolean Add(JNIEnv *env, jobject jThis, jobject jElement);
+  JNICALL static jboolean Add(JNIEnv *env, jobject j_this, jobject j_element);
 
-  JNICALL static jboolean AddAll(JNIEnv *env, jobject jThis, jobjectArray jElements);
+  JNICALL static jboolean AddAll(JNIEnv *env, jobject j_this, jobjectArray j_elements);
 
   static jint OnLoad(JNIEnv *env);
 };

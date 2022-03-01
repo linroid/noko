@@ -2,47 +2,47 @@
 #define NODE_JSVALUE_H
 
 #include <jni.h>
-#include "../Node.h"
+#include "../NodeRuntime.h"
 
 class JsValue {
 private:
-  static jfieldID jPointer;
-  static jmethodID jConstructor;
-  static jmethodID jNodePointer;
+  static jfieldID pointer_field_id_;
+  static jmethodID init_method_id_;
+  static jmethodID get_node_pointer_id_;
 public:
-  static jclass jClazz;
+  static jclass class_;
 
   inline static jlong GetPointer(JNIEnv *env, jobject jObj) {
-    return env->GetLongField(jObj, jPointer);
+    return env->GetLongField(jObj, pointer_field_id_);
   }
 
-  inline static void SetPointer(JNIEnv *env, jobject jThis, jlong value) {
-    env->SetLongField(jThis, jPointer, value);
+  inline static void SetPointer(JNIEnv *env, jobject obj, jlong value) {
+    env->SetLongField(obj, pointer_field_id_, value);
   }
 
-  inline static jobject Wrap(JNIEnv *env, jobject jNode, v8::Persistent<v8::Value> *value) {
-    return env->NewObject(jClazz, jConstructor, jNode, (jlong) value);
+  inline static jobject ToJava(JNIEnv *env, jobject node, jlong pointer) {
+    return env->NewObject(class_, init_method_id_, node, pointer);
   }
 
-  inline static v8::Persistent<v8::Value> *Unwrap(JNIEnv *env, jobject jObj) {
-    return reinterpret_cast<v8::Persistent<v8::Value> *>(GetPointer(env, jObj));
+  inline static v8::Persistent<v8::Value> *Unwrap(JNIEnv *env, jobject obj) {
+    return reinterpret_cast<v8::Persistent<v8::Value> *>(GetPointer(env, obj));
   }
 
-  inline static Node *GetNode(JNIEnv *env, jobject jObj) {
-    auto ptr = env->CallLongMethod(jObj, jNodePointer);
-    if (ptr == 0) return nullptr;
-    return reinterpret_cast<Node *>(ptr);
+  inline static NodeRuntime *GetRuntime(JNIEnv *env, jobject obj) {
+    auto pointer = env->CallLongMethod(obj, get_node_pointer_id_);
+    if (pointer == 0) return nullptr;
+    return reinterpret_cast<NodeRuntime *>(pointer);
   }
 
-  JNICALL static jstring ToString(JNIEnv *env, jobject jThis);
+  JNICALL static jstring ToString(JNIEnv *env, jobject j_this);
 
-  JNICALL static jstring TypeOf(JNIEnv *env, jobject jThis);
+  JNICALL static jstring TypeOf(JNIEnv *env, jobject j_this);
 
-  JNICALL static jstring ToJson(JNIEnv *env, jobject jThis);
+  JNICALL static jstring ToJson(JNIEnv *env, jobject j_this);
 
-  JNICALL static jdouble ToNumber(JNIEnv *env, jobject jThis);
+  JNICALL static jdouble ToNumber(JNIEnv *env, jobject j_this);
 
-  JNICALL static void Dispose(JNIEnv *env, jobject jThis);
+  JNICALL static void Dispose(JNIEnv *env, jobject j_this);
 
   static jint OnLoad(JNIEnv *env);
 };

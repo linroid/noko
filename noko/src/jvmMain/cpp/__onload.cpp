@@ -5,7 +5,7 @@
 #include <cmath>
 #include <ares.h>
 #include "EnvHelper.h"
-#include "Node.h"
+#include "NodeRuntime.h"
 #include "types/JsValue.h"
 #include "types/JsObject.h"
 #include "types/JsUndefined.h"
@@ -25,7 +25,7 @@
 jmethodID jRunMethodId;
 
 JNICALL jint Start(JNIEnv *env, jobject jThis, jobjectArray jArgs) {
-  auto node = Node::From(env, jThis);
+  auto node = NodeRuntime::From(env, jThis);
   jsize argc = env->GetArrayLength(jArgs);
   std::vector<std::string> args(static_cast<unsigned long>(argc));
 
@@ -44,12 +44,12 @@ JNICALL jint Start(JNIEnv *env, jobject jThis, jobjectArray jArgs) {
 
 struct PostMessage {
   jobject runnable;
-  Node *node;
+  NodeRuntime *node;
 };
 
 JNICALL jboolean Post(JNIEnv *env, jobject jThis, jobject jRunnable) {
   auto *message = new PostMessage();
-  message->node = Node::From(env, jThis);
+  message->node = NodeRuntime::From(env, jThis);
   message->runnable = env->NewGlobalRef(jRunnable);
   auto success = message->node->Post([message] {
     EnvHelper _env(message->node->vm_);
@@ -68,7 +68,7 @@ JNICALL void MountFile(JNIEnv *env, jobject jThis, jstring jSrc, jstring jDst, j
   const char *src = env->GetStringUTFChars(jSrc, nullptr);
   const char *dst = env->GetStringUTFChars(jDst, nullptr);
 
-  auto node = Node::From(env, jThis);
+  auto node = NodeRuntime::From(env, jThis);
   node->MountFile(src, dst, mode);
 
   env->ReleaseStringUTFChars(jDst, src);
@@ -78,19 +78,19 @@ JNICALL void MountFile(JNIEnv *env, jobject jThis, jstring jSrc, jstring jDst, j
 JNICALL void Chroot(JNIEnv *env, jobject jThis, jstring jPath) {
   const char *path = env->GetStringUTFChars(jPath, nullptr);
 
-  auto node = Node::From(env, jThis);
+  auto node = NodeRuntime::From(env, jThis);
   node->Chroot(path);
 
   env->ReleaseStringUTFChars(jPath, path);
 }
 
 JNICALL jlong New(JNIEnv *env, jobject jThis, jboolean keepAlive, jboolean strict) {
-  auto *noko = new Node(env, jThis, keepAlive, strict);
+  auto *noko = new NodeRuntime(env, jThis, keepAlive, strict);
   return reinterpret_cast<jlong>(noko);
 }
 
 JNICALL void Exit(JNIEnv *env, jobject jThis, jint exitCode) {
-  auto node = Node::From(env, jThis);
+  auto node = NodeRuntime::From(env, jThis);
   node->Exit(exitCode);
 }
 
@@ -105,7 +105,7 @@ JNICALL void Setup(__unused JNIEnv *env, __unused jclass jThis, jobject connecti
 }
 
 JNICALL jobject Eval(JNIEnv *env, jobject jThis, jstring jCode, jstring jSource, jint jLine) {
-  auto node = Node::From(env, jThis);
+  auto node = NodeRuntime::From(env, jThis);
 
   jint codeLen = env->GetStringLength(jCode);
   auto code = env->GetStringChars(jCode, nullptr);
@@ -121,7 +121,7 @@ JNICALL jobject Eval(JNIEnv *env, jobject jThis, jstring jCode, jstring jSource,
 JNICALL jobject ParseJson(JNIEnv *env, jobject jThis, jstring jJson) {
   const uint16_t *json = env->GetStringChars(jJson, nullptr);
   const jint jsonLen = env->GetStringLength(jJson);
-  auto node = Node::From(env, jThis);
+  auto node = NodeRuntime::From(env, jThis);
   auto result = node->ParseJson(json, jsonLen);
   env->ReleaseStringChars(jJson, json);
   return result;
@@ -130,7 +130,7 @@ JNICALL jobject ParseJson(JNIEnv *env, jobject jThis, jstring jJson) {
 JNICALL jobject ThrowError(JNIEnv *env, jobject jThis, jstring jMessage) {
   const uint16_t *message = env->GetStringChars(jMessage, nullptr);
   const jint messageLen = env->GetStringLength(jMessage);
-  auto node = Node::From(env, jThis);
+  auto node = NodeRuntime::From(env, jThis);
   auto result = node->ThrowError(message, messageLen);
   env->ReleaseStringChars(jMessage, message);
   return result;
@@ -140,14 +140,14 @@ JNICALL jobject ThrowError(JNIEnv *env, jobject jThis, jstring jMessage) {
 JNICALL jobject Require(JNIEnv *env, jobject jThis, jstring jPath) {
   jint pathLen = env->GetStringLength(jPath);
   auto path = env->GetStringChars(jPath, nullptr);
-  auto node = Node::From(env, jThis);
+  auto node = NodeRuntime::From(env, jThis);
   auto result = node->Require(path, pathLen);
   env->ReleaseStringChars(jPath, path);
   return result;
 }
 
 JNICALL void ClearReference(JNIEnv *env, jobject jThis, jlong ref) {
-  auto node = JsValue::GetNode(env, jThis);
+  auto node = JsValue::GetRuntime(env, jThis);
   auto reference = reinterpret_cast<v8::Persistent<v8::Value> *>(ref);
 
   LOGV("clear reference: reference=%p, node=%p", reference, node);
@@ -165,7 +165,7 @@ JNICALL void ClearReference(JNIEnv *env, jobject jThis, jlong ref) {
   bool submitted = node->Post([reference, node] {
     if (node->IsRunning()) {
       v8::Locker locker(node->isolate_);
-      v8::HandleScope handleScope(node->isolate_);
+      v8::HandleScope handle_scope(node->isolate_);
       reference->Reset();
     }
     delete reference;
@@ -216,7 +216,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
   jclass runnableClass = env->FindClass("java/lang/Runnable");
   jRunMethodId = env->GetMethodID(runnableClass, "run", "()V");
 
-  LOAD_JNI_CLASS(Node)
+  LOAD_JNI_CLASS(NodeRuntime)
   LOAD_JNI_CLASS(JsValue)
   LOAD_JNI_CLASS(JsObject)
   LOAD_JNI_CLASS(JsBoolean)

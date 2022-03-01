@@ -25,7 +25,7 @@ message(LIBNODE_DIR: ${LIBNODE_DIR})
 set(SOURCES
         __onload.cpp
         EnvHelper.cpp
-        Node.cpp
+        NodeRuntime.cpp
         observable/PropertiesObserver.cpp
         types/JsValue.cpp
         types/JsObject.cpp

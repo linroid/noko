@@ -6,12 +6,13 @@
 
 class JsUndefined {
 private:
-  static jclass jClazz;
-  static jmethodID jConstructor;
+  static jclass class_;
+  static jmethodID constructor_id_;
 
 public:
-  inline static jobject Wrap(JNIEnv *env, jobject jNode, v8::Persistent <v8::Value> *value) {
-    return env->NewObject(jClazz, jConstructor, jNode, (jlong) value);
+
+  inline static jobject ToJava(JNIEnv *env, jobject node, jlong pointer) {
+    return env->NewObject(class_, constructor_id_, node, pointer);
   }
 
   static jint OnLoad(JNIEnv *env);

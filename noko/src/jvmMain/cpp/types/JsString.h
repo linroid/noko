@@ -3,20 +3,20 @@
 
 #include <jni.h>
 #include "v8.h"
-#include "../Node.h"
+#include "../NodeRuntime.h"
 #include "JsValue.h"
 
 class JsString {
 private:
-  static jclass jClazz;
-  static jmethodID jConstructor;
+  static jclass class_;
+  static jmethodID init_method_id;
 
 public:
-  JNICALL static void New(JNIEnv *env, jobject jThis, jstring jValue);
-
-  inline static jobject Wrap(JNIEnv *env, jobject jNode, v8::Persistent<v8::Value> *jPointer, jstring jValue) {
-    return env->NewObject(jClazz, jConstructor, jNode, (jlong) jPointer, jValue);
+  static jobject ToJava(JNIEnv *env, jobject node, jlong pointer, jstring value) {
+    return env->NewObject(class_, init_method_id, node, pointer, value);
   }
+
+  JNICALL static void New(JNIEnv *env, jobject j_this, jstring j_value);
 
   static jint OnLoad(JNIEnv *env);
 };

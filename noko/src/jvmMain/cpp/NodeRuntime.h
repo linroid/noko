@@ -29,36 +29,36 @@ enum JSType {
   kError,
 };
 
-class Node {
+class NodeRuntime {
 
 private:
-  static jmethodID jAttachId;
-  static jmethodID jDetachId;
+  static jmethodID attach_method_id_;
+  static jmethodID detach_method_id_;
 
-  static jfieldID jSharedNullId;
-  static jfieldID jSharedUndefinedId;
-  static jfieldID jSharedTrueId;
-  static jfieldID jSharedFalseId;
-  static jfieldID jPointerId;
+  static jfieldID shared_null_field_id_;
+  static jfieldID shared_undefined_field_id_;
+  static jfieldID shared_true_field_id_;
+  static jfieldID shared_false_field_id_;
+  static jfieldID pointer_field_id_;
 
-  jobject jThis_ = nullptr;
-  jobject jGlobal_ = nullptr;
+  jobject j_this_ = nullptr;
+  jobject j_global_ = nullptr;
 
   bool running_ = false;
-  std::thread::id threadId_;
-  std::mutex asyncMutex_;
+  std::thread::id thread_id_;
+  std::mutex async_mutex_;
   std::vector<std::function<void()>> callbacks_;
   int id_ = -1;
-  bool keepAlive_ = false;
+  bool keep_alive_ = false;
   bool strict_ = false;
 
-  static std::mutex sharedMutex_;
-  static jint instanceCount_;
-  static jint seq_;
+  static std::mutex shared_mutex_;
+  static jint instance_count_;
+  static jint sequence_;
 
-  uv_loop_t *eventLoop_ = nullptr;
-  uv_async_t *keepAliveHandle_ = nullptr;
-  uv_async_t *callbackHandle_ = nullptr;
+  uv_loop_t *event_loop_ = nullptr;
+  uv_async_t *keep_alive_handle_ = nullptr;
+  uv_async_t *callback_handle_ = nullptr;
 
   v8::Persistent<v8::Object> process_;
 
@@ -77,10 +77,10 @@ private:
   void Detach() const;
 
 public:
-  jobject jSharedNull_ = nullptr;
-  jobject jSharedUndefined_ = nullptr;
-  jobject jSharedTrue_ = nullptr;
-  jobject jSharedFalse_ = nullptr;
+  jobject shared_null_ = nullptr;
+  jobject shared_undefined_ = nullptr;
+  jobject shared_true_ = nullptr;
+  jobject shared_false_ = nullptr;
 
   JavaVM *vm_ = nullptr;
 
@@ -89,9 +89,9 @@ public:
   v8::Persistent<v8::Context> context_;
   v8::Persistent<v8::Function> require_;
 
-  Node(JNIEnv *env, jobject jThis, bool keepAlive, bool strict);
+  NodeRuntime(JNIEnv *env, jobject j_this, bool keep_alive, bool strict);
 
-  ~Node();
+  ~NodeRuntime();
 
   int Start(std::vector<std::string> &args);
 
@@ -117,19 +117,19 @@ public:
     return running_;
   }
 
-  jobject Eval(const uint16_t *code, int codeLen, const uint16_t *source, int sourceLen, int line);
+  jobject Eval(const uint16_t *code, int codeLen, const uint16_t *source, int source_len, int line);
 
-  jobject ParseJson(const uint16_t *json, int jsonLen);
+  jobject ParseJson(const uint16_t *json, int json_len);
 
-  jobject ThrowError(const uint16_t *message, int messageLen) const;
+  jobject ThrowError(const uint16_t *message, int message_len) const;
 
-  jobject Require(const uint16_t *path, int pathLen);
+  jobject Require(const uint16_t *path, int path_len);
 
   static jint OnLoad(JNIEnv *env);
 
-  static Node* From(JNIEnv *env, jobject jThis) {
-    jlong pointer = env->GetLongField(jThis, jPointerId);
-    return reinterpret_cast<Node *>(pointer);
+  static NodeRuntime* From(JNIEnv *env, jobject j_this) {
+    jlong pointer = env->GetLongField(j_this, pointer_field_id_);
+    return reinterpret_cast<NodeRuntime *>(pointer);
   }
 };
 

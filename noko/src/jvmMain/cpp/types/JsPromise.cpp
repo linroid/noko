@@ -2,9 +2,9 @@
 #include "JsValue.h"
 #include "JsError.h"
 
-jclass JsPromise::jClazz;
-jmethodID JsPromise::jConstructor;
-jfieldID JsPromise::jResolver;
+jclass JsPromise::class_;
+jmethodID JsPromise::init_method_id_;
+jfieldID JsPromise::resolver_field_id_;
 
 jint JsPromise::OnLoad(JNIEnv *env) {
   jclass clazz = env->FindClass("com/linroid/noko/types/JsPromise");
@@ -18,71 +18,71 @@ jint JsPromise::OnLoad(JNIEnv *env) {
       {"nativeThen",    "(Lcom/linroid/noko/types/JsFunction;)V", (void *) JsPromise::Then},
       {"nativeCatch",   "(Lcom/linroid/noko/types/JsFunction;)V", (void *) JsPromise::Catch},
   };
-  jClazz = (jclass) env->NewGlobalRef(clazz);
-  jConstructor = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;J)V");
-  jResolver = env->GetFieldID(clazz, "resolverPointer", "J");
+  class_ = (jclass) env->NewGlobalRef(clazz);
+  init_method_id_ = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;J)V");
+  resolver_field_id_ = env->GetFieldID(clazz, "resolverPointer", "J");
   env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
   return JNI_OK;
 }
 
-void JsPromise::New(JNIEnv *env, jobject jThis) {
-  V8_SCOPE(env, jThis)
-  auto context = node->context_.Get(isolate);
+void JsPromise::New(JNIEnv *env, jobject j_this) {
+  V8_SCOPE(env, j_this)
+  auto context = runtime->context_.Get(isolate);
   auto resolver = v8::Promise::Resolver::New(context).ToLocalChecked();
   auto promise = resolver->GetPromise();
-  auto resolverResult = new v8::Persistent<v8::Value>(isolate, resolver);
-  auto promiseResult = new v8::Persistent<v8::Value>(isolate, promise);
-  JsValue::SetPointer(env, jThis, (jlong) promiseResult);
-  env->SetLongField(jThis, jResolver, reinterpret_cast<jlong>(resolverResult));
+  auto resolver_result = new v8::Persistent<v8::Value>(isolate, resolver);
+  auto promise_result = new v8::Persistent<v8::Value>(isolate, promise);
+  JsValue::SetPointer(env, j_this, (jlong) promise_result);
+  env->SetLongField(j_this, resolver_field_id_, reinterpret_cast<jlong>(resolver_result));
 }
 
-void JsPromise::Reject(JNIEnv *env, jobject jThis, jobject jError) {
-  auto value = JsValue::Unwrap(env, jError);
-  jlong resolverPtr = env->GetLongField(jThis, jResolver);
-  auto resolver = reinterpret_cast<v8::Persistent<v8::Promise::Resolver> *>(resolverPtr);
-  SETUP(env, jThis, v8::Promise)
-  v8::TryCatch tryCatch(node->isolate_);
+void JsPromise::Reject(JNIEnv *env, jobject j_this, jobject j_error) {
+  auto value = JsValue::Unwrap(env, j_error);
+  jlong resolver_pointer = env->GetLongField(j_this, resolver_field_id_);
+  auto resolver = reinterpret_cast<v8::Persistent<v8::Promise::Resolver> *>(resolver_pointer);
+  SETUP(env, j_this, v8::Promise)
+  v8::TryCatch try_catch(runtime->isolate_);
   UNUSED(resolver->Get(isolate)->Reject(context, value->Get(isolate)));
-  if (tryCatch.HasCaught()) {
-    node->Throw(env, tryCatch.Exception());
+  if (try_catch.HasCaught()) {
+    runtime->Throw(env, try_catch.Exception());
     return;
   }
 }
 
-void JsPromise::Resolve(JNIEnv *env, jobject jThis, jobject jValue) {
-  auto value = JsValue::Unwrap(env, jValue);
-  jlong resolverPtr = env->GetLongField(jThis, jResolver);
-  auto resolver = reinterpret_cast<v8::Persistent<v8::Promise::Resolver> *>(resolverPtr);
-  SETUP(env, jThis, v8::Promise)
-  v8::TryCatch tryCatch(node->isolate_);
+void JsPromise::Resolve(JNIEnv *env, jobject j_this, jobject j_value) {
+  auto value = JsValue::Unwrap(env, j_value);
+  jlong resolver_pointer = env->GetLongField(j_this, resolver_field_id_);
+  auto resolver = reinterpret_cast<v8::Persistent<v8::Promise::Resolver> *>(resolver_pointer);
+  SETUP(env, j_this, v8::Promise)
+  v8::TryCatch try_catch(runtime->isolate_);
   UNUSED(resolver->Get(isolate)->Resolve(context, value->Get(isolate)));
-  if (tryCatch.HasCaught()) {
-    node->Throw(env, tryCatch.Exception());
+  if (try_catch.HasCaught()) {
+    runtime->Throw(env, try_catch.Exception());
     return;
   }
-  // node->isolate_->RunMicrotasks();
+  // runtime->isolate_->RunMicrotasks();
 }
 
-void JsPromise::Then(JNIEnv *env, jobject jThis, jobject jCallback) {
+void JsPromise::Then(JNIEnv *env, jobject j_this, jobject j_callback) {
   auto callback = reinterpret_cast<v8::Persistent<v8::Function> *>(JsValue::GetPointer(env,
-                                                                                       jCallback));
-  SETUP(env, jThis, v8::Promise)
-  v8::TryCatch tryCatch(node->isolate_);
+                                                                                       j_callback));
+  SETUP(env, j_this, v8::Promise)
+  v8::TryCatch try_catch(runtime->isolate_);
   auto ret = that->Then(context, callback->Get(isolate));
   if (ret.IsEmpty()) {
-    node->Throw(env, tryCatch.Exception());
+    runtime->Throw(env, try_catch.Exception());
     return;
   }
 }
 
-void JsPromise::Catch(JNIEnv *env, jobject jThis, jobject jCallback) {
+void JsPromise::Catch(JNIEnv *env, jobject j_this, jobject j_callback) {
   auto callback = reinterpret_cast<v8::Persistent<v8::Function> *>(JsValue::GetPointer(env,
-                                                                                       jCallback));
-  SETUP(env, jThis, v8::Promise)
-  v8::TryCatch tryCatch(node->isolate_);
+                                                                                       j_callback));
+  SETUP(env, j_this, v8::Promise)
+  v8::TryCatch try_catch(runtime->isolate_);
   auto ret = that->Catch(context, callback->Get(isolate));
   if (ret.IsEmpty()) {
-    node->Throw(env, tryCatch.Exception());
+    runtime->Throw(env, try_catch.Exception());
     return;
   }
 }

@@ -12,8 +12,8 @@ private:
 public:
   static jclass class_;
 
-  inline static jlong GetPointer(JNIEnv *env, jobject jObj) {
-    return env->GetLongField(jObj, pointer_field_id_);
+  inline static jlong GetPointer(JNIEnv *env, jobject obj) {
+    return env->GetLongField(obj, pointer_field_id_);
   }
 
   inline static void SetPointer(JNIEnv *env, jobject obj, jlong value) {

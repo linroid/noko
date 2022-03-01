@@ -3,7 +3,7 @@
 #include "js_value.h"
 
 jclass JsString::class_;
-jmethodID JsString::init_method_id;
+jmethodID JsString::init_method_id_;
 
 jint JsString::OnLoad(JNIEnv *env) {
   jclass clazz = env->FindClass("com/linroid/noko/types/JsString");
@@ -11,7 +11,7 @@ jint JsString::OnLoad(JNIEnv *env) {
     return JNI_ERR;
   }
   class_ = (jclass) env->NewGlobalRef(clazz);
-  init_method_id = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;JLjava/lang/String;)V");
+  init_method_id_ = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;JLjava/lang/String;)V");
 
   JNINativeMethod methods[] = {
       {"nativeNew", "(Ljava/lang/String;)V", (void *) JsString::New},

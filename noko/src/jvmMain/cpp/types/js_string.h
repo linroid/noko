@@ -9,11 +9,11 @@
 class JsString {
 private:
   static jclass class_;
-  static jmethodID init_method_id;
+  static jmethodID init_method_id_;
 
 public:
   static jobject ToJava(JNIEnv *env, jobject node, jlong pointer, jstring value) {
-    return env->NewObject(class_, init_method_id, node, pointer, value);
+    return env->NewObject(class_, init_method_id_, node, pointer, value);
   }
 
   JNICALL static void New(JNIEnv *env, jobject j_this, jstring j_value);

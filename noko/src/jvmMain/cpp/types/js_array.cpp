@@ -1,6 +1,6 @@
-#include "JsArray.h"
-#include "JsValue.h"
-#include "JsError.h"
+#include "js_array.h"
+#include "js_value.h"
+#include "js_error.h"
 
 jclass JsArray::class_;
 jmethodID JsArray::init_method_id_;

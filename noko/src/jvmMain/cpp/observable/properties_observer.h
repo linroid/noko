@@ -2,7 +2,7 @@
 #define NOKO_JS_PROPERTIESOBSERVER_H
 
 #include <jni.h>
-#include "../NodeRuntime.h"
+#include "../node_runtime.h"
 
 class PropertiesObserver {
 private:

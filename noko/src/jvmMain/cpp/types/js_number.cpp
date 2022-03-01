@@ -1,5 +1,5 @@
-#include "JsNumber.h"
-#include "JsValue.h"
+#include "js_number.h"
+#include "js_value.h"
 
 jclass JsNumber::class_;
 jmethodID JsNumber::init_method_id_;

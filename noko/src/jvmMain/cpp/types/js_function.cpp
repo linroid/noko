@@ -1,9 +1,9 @@
-#include "JsFunction.h"
-#include "JsValue.h"
-#include "JsString.h"
-#include "JsError.h"
-#include "JavaCallback.h"
-#include "../EnvHelper.h"
+#include "js_function.h"
+#include "js_value.h"
+#include "js_string.h"
+#include "js_error.h"
+#include "../util/java_callback.h"
+#include "../util/env_helper.h"
 
 jclass JsFunction::class_;
 jmethodID JsFunction::init_method_id_;

@@ -1,4 +1,4 @@
-#include "EnvHelper.h"
+#include "env_helper.h"
 
 EnvHelper::EnvHelper(JavaVM *vm) : vm_(vm) {
   stat_ = vm->GetEnv((void **) (&env_), JNI_VERSION_1_6);

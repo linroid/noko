@@ -1,6 +1,6 @@
-#include "JsPromise.h"
-#include "JsValue.h"
-#include "JsError.h"
+#include "js_promise.h"
+#include "js_value.h"
+#include "js_error.h"
 
 jclass JsPromise::class_;
 jmethodID JsPromise::init_method_id_;

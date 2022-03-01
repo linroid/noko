@@ -1,6 +1,6 @@
 #include <string>
-#include "JsString.h"
-#include "JsValue.h"
+#include "js_string.h"
+#include "js_value.h"
 
 jclass JsString::class_;
 jmethodID JsString::init_method_id;

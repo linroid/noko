@@ -1,5 +1,5 @@
-#include "JavaCallback.h"
-#include "../EnvHelper.h"
+#include "java_callback.h"
+#include "env_helper.h"
 
 JavaCallback::JavaCallback(
     NodeRuntime *node,

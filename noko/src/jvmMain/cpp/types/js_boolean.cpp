@@ -1,4 +1,4 @@
-#include "JsBoolean.h"
+#include "js_boolean.h"
 
 jclass JsBoolean::class_id_;
 jmethodID JsBoolean::init_method_id_;

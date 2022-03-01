@@ -1,12 +1,12 @@
 #include <jni.h>
 #include <node.h>
-#include "JsObject.h"
-#include "JsValue.h"
-#include "JsString.h"
-#include "JsUndefined.h"
-#include "JsNull.h"
-#include "../observable/PropertiesObserver.h"
-#include "../EnvHelper.h"
+#include "js_object.h"
+#include "js_value.h"
+#include "js_string.h"
+#include "js_undefined.h"
+#include "js_null.h"
+#include "../observable/properties_observer.h"
+#include "../util/env_helper.h"
 
 jclass JsObject::class_;
 jclass JsObject::string_class_;

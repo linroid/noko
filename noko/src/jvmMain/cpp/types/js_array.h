@@ -2,7 +2,7 @@
 #define NODE_JSARRAY_H
 
 #include <jni.h>
-#include "../NodeRuntime.h"
+#include "../node_runtime.h"
 
 class JsArray {
 private:

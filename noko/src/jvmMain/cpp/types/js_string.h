@@ -3,8 +3,8 @@
 
 #include <jni.h>
 #include "v8.h"
-#include "../NodeRuntime.h"
-#include "JsValue.h"
+#include "../node_runtime.h"
+#include "js_value.h"
 
 class JsString {
 private:

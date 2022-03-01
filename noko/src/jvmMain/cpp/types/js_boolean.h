@@ -2,8 +2,8 @@
 #define NODE_JSBOOLEAN_H
 
 #include <jni.h>
-#include "../NodeRuntime.h"
-#include "JsValue.h"
+#include "../node_runtime.h"
+#include "js_value.h"
 
 class JsBoolean {
 private:

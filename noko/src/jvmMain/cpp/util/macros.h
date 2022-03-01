@@ -1,8 +1,8 @@
 #ifndef NODE_MACROS_H
 #define NODE_MACROS_H
 
-#include <jni.h>
-#include "v8.h"
+#include "jni.h"
+#include "../prebuilt/android/x86/include/node/v8.h"
 #include "log.h"
 
 #define V8_SCOPE_NEW(env, runtime_pointer) \

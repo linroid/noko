@@ -3,7 +3,7 @@
 
 #include <jni.h>
 #include <v8.h>
-#include "../macros.h"
+#include "../util/macros.h"
 
 class JsNumber {
 private:

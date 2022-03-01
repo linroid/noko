@@ -1,6 +1,6 @@
-#include "JsValue.h"
-#include "JsString.h"
-#include "JsError.h"
+#include "js_value.h"
+#include "js_string.h"
+#include "js_error.h"
 
 jclass JsError::class_;
 jmethodID JsError::init_method_id_;

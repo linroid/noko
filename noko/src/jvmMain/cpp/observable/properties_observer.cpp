@@ -1,6 +1,6 @@
-#include "PropertiesObserver.h"
-#include "../types/JsValue.h"
-#include "../EnvHelper.h"
+#include "properties_observer.h"
+#include "../types/js_value.h"
+#include "../util/env_helper.h"
 
 PropertiesObserver::PropertiesObserver(
     NodeRuntime *node,

@@ -1,7 +1,7 @@
 #include <jni.h>
-#include "../NodeRuntime.h"
-#include "JsValue.h"
-#include "JsError.h"
+#include "../node_runtime.h"
+#include "js_value.h"
+#include "js_error.h"
 
 jmethodID JsValue::init_method_id_;
 jclass JsValue::class_;

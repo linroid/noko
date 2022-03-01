@@ -2,7 +2,7 @@
 #define NOKO_PROMISE_H
 
 #include <jni.h>
-#include "../NodeRuntime.h"
+#include "../node_runtime.h"
 
 class JsPromise {
 private:

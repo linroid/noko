@@ -7,7 +7,7 @@
 #include <thread>
 #include <node.h>
 #include <uv.h>
-#include "macros.h"
+#include "util/macros.h"
 
 int init_node();
 

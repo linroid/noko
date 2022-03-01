@@ -2,8 +2,8 @@
 #define NOKO_JNICALLBACK_H
 
 #include <jni.h>
-#include "../NodeRuntime.h"
-#include "JsValue.h"
+#include "../node_runtime.h"
+#include "../types/js_value.h"
 
 class JavaCallback {
 private:

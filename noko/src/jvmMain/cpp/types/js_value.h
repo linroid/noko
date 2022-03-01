@@ -2,7 +2,7 @@
 #define NODE_JSVALUE_H
 
 #include <jni.h>
-#include "../NodeRuntime.h"
+#include "../node_runtime.h"
 
 class JsValue {
 private:

@@ -31,6 +31,10 @@ expect class Node(
 
   internal val cleaner: (Long) -> Unit
 
+  var state: State
+
+  var global: JsObject?
+
   /**
    * Start node instance with arguments
    */
@@ -85,7 +89,23 @@ expect class Node(
   internal fun mountFile(dst: Path, src: Path, mode: FileSystem.Mode)
 }
 
+enum class State {
+  Initialized,
+  Attached,
+  Started,
+  Detached,
+  Stopped,
+}
+
 suspend fun Node.awaitStarted(): JsObject = suspendCancellableCoroutine { cont ->
+  println("awaitStarted")
+  if (state == State.Started) {
+    cont.resume(global!!)
+    return@suspendCancellableCoroutine
+  } else if (state > State.Started) {
+    cont.resumeWithException(IllegalStateException("Node is not running"))
+    return@suspendCancellableCoroutine
+  }
   val listener = object : LifecycleListener {
     override fun onStart(node: Node, global: JsObject) {
       cont.resume(global)

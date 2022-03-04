@@ -31,10 +31,12 @@ actual class Node actual constructor(
 
   private var running = atomic(false)
   private val lock = SynchronizedObject()
-  private var global: JsObject? = null
   private var sequence = 0
   private val environmentVariables = HashMap(customEnvs)
   private val versions = HashMap(customVersions)
+
+  actual var global: JsObject? = null
+  actual var state: State = State.Initialized
 
   internal actual val cleaner: (Long) -> Unit = { ref: Long ->
     check(ref != 0L) { "The reference has been already cleared" }
@@ -128,17 +130,13 @@ actual class Node actual constructor(
    * @param code The exit code
    */
   actual fun exit(code: Int) {
-    if (!isRunning()) {
-      return
-    }
+    check(isRunning()) { "Node is not in running state" }
     nativeExit(code)
     running.value = false
   }
 
   actual fun post(action: () -> Unit): Boolean {
-    if (!isRunning()) {
-      return false
-    }
+    check(isRunning()) { "Node is not in running state" }
     if (isInEventLoop()) {
       action()
       return true
@@ -150,7 +148,7 @@ actual class Node actual constructor(
   private fun attach(global: JsObject) {
     this.global = global
     check(running.compareAndSet(false, update = true))
-    check(isRunning()) { "isRunning() doesn't match the current state" }
+    check(isRunning()) { "Node is not in running state" }
     attachStdOutput(global)
     eventOnAttach(global)
     val setupCode = StringBuilder()
@@ -203,9 +201,11 @@ process.stdout.isRaw = true;
 
   internal actual fun checkThread() {
     if (strictMode) {
-      check(isInEventLoop()) { "Only the original thread running the event loop for Node.js " +
-          "can touch it's values, " +
-          "otherwise you should call them inside node.post{ ... }" }
+      check(isInEventLoop()) {
+        "Only the original thread running the event loop for Node.js " +
+            "can touch it's values, " +
+            "otherwise you should call them inside node.post{ ... }"
+      }
     }
   }
 
@@ -236,18 +236,22 @@ process.stdout.isRaw = true;
     listeners.forEach {
       it.onAttach(this, global)
     }
+    state = State.Attached
   }
 
   private fun eventOnStart(global: JsObject) {
+    println("eventOnStart")
     listeners.forEach {
       it.onStart(this, global)
     }
+    state = State.Started
   }
 
   private fun eventOnDetach(global: JsObject) {
     listeners.forEach {
       it.onDetach(this, global)
     }
+    state = State.Detached
   }
 
   private fun eventOnStop(code: Int) {
@@ -255,6 +259,7 @@ process.stdout.isRaw = true;
     listeners.forEach {
       it.onStop(code)
     }
+    state = State.Stopped
   }
 
   private fun eventOnError(error: JsException) {

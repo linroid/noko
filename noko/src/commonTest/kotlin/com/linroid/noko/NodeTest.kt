@@ -1,61 +1,39 @@
 package com.linroid.noko
 
+import com.linroid.noko.types.JsArray
+import com.linroid.noko.types.JsNumber
 import com.linroid.noko.types.JsObject
-import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
-class NodeTest {
+class NodeTest : WithNode() {
 
   @Test
-  fun startNode(): Unit = runBlocking {
-    val node = Node(null, object : StdOutput {
-      override fun stdout(str: String) {
-        println(str)
-      }
-
-      override fun stderr(str: String) {
-        println(str)
-      }
-
-    }, keepAlive = true, strictMode = true)
-    node.start("-p", "process.versions")
-    withTimeout(3000) {
-      node.awaitStarted()
-    }
-  }
-
-  @Test
-  fun parseJsonObject(): Unit = runBlocking {
-    val node = Node(null, object : StdOutput {
-      override fun stdout(str: String) {
-        println(str)
-      }
-
-      override fun stderr(str: String) {
-        println(str)
-      }
-
-    }, keepAlive = true, strictMode = true)
-    node.start("-p", "process.versions")
-    withTimeout(3000) {
-      node.awaitStarted()
-    }
-    node.await {
-      val person = node.parseJson(
-        """
+  fun parseJson_object(): Unit = blockingInNode {
+    val person = node.parseJson(
+      """
       {
         "name": "Foo",
         "age": 18,
         "is_adult": true
       }
     """.trimIndent()
-      )
-      assertIs<JsObject>(person)
-      assertEquals("Foo", person.get("name"))
-      assertEquals(18, person.get("age"))
-      assertEquals(true, person.get("is_adult"))
-    }
+    )
+    assertIs<JsObject>(person)
+    assertEquals("Foo", person.get("name"))
+    assertEquals(18, person.get("age"))
+    assertEquals(true, person.get("is_adult"))
+  }
+
+  @Test
+  fun parseJson_array() {
+    val numbers = node.parseJson(
+      """
+      [0, 1, 2, 3, 4]
+    """.trimIndent()
+    )
+    assertIs<JsArray>(numbers)
+    assertEquals((numbers[0] as JsNumber<*>).get().toInt(), 0)
   }
 }

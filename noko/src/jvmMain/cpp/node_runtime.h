@@ -41,20 +41,28 @@ private:
   static jfieldID shared_false_field_id_;
   static jfieldID pointer_field_id_;
 
+  static std::mutex shared_mutex_;
+  static jint instance_count_;
+  static jint sequence_;
+
+  int id_ = -1;
+  bool keep_alive_ = false;
+  bool strict_ = false;
+
   jobject j_this_ = nullptr;
   jobject j_global_ = nullptr;
+  jobject shared_null_ = nullptr;
+  jobject shared_undefined_ = nullptr;
+  jobject shared_true_ = nullptr;
+  jobject shared_false_ = nullptr;
+
+  v8::Persistent<v8::Object> global_;
+  v8::Persistent<v8::Function> require_;
 
   bool running_ = false;
   std::thread::id thread_id_;
   std::mutex async_mutex_;
   std::vector<std::function<void()>> callbacks_;
-  int id_ = -1;
-  bool keep_alive_ = false;
-  bool strict_ = false;
-
-  static std::mutex shared_mutex_;
-  static jint instance_count_;
-  static jint sequence_;
 
   uv_loop_t *event_loop_ = nullptr;
   uv_async_t *keep_alive_handle_ = nullptr;
@@ -77,17 +85,10 @@ private:
   void Detach() const;
 
 public:
-  jobject shared_null_ = nullptr;
-  jobject shared_undefined_ = nullptr;
-  jobject shared_true_ = nullptr;
-  jobject shared_false_ = nullptr;
-
   JavaVM *vm_ = nullptr;
 
   v8::Isolate *isolate_ = nullptr;
-  v8::Persistent<v8::Object> global_;
   v8::Persistent<v8::Context> context_;
-  v8::Persistent<v8::Function> require_;
 
   NodeRuntime(JNIEnv *env, jobject j_this, bool keep_alive, bool strict);
 

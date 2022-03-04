@@ -110,8 +110,6 @@ class NodeRuntime {
 
   jobject ToJava(JNIEnv *env, v8::Local<v8::Value> value) const;
 
-  v8::Local<v8::Value> Require(const char *path);
-
   void MountFile(const char *src, const char *dst, int mode);
 
   void Chroot(const char *path);

@@ -393,19 +393,6 @@ void NodeRuntime::Handle(uv_async_t *handle) {
   async_mutex_.unlock();
 }
 
-v8::Local<v8::Value> NodeRuntime::Require(const char *path) {
-  RUNTIME_V8_SCOPE();
-  v8::EscapableHandleScope scope(isolate_);
-  auto require = require_.Get(isolate_);
-  auto global = global_.Get(isolate_);
-
-  auto *argv = new v8::Local<v8::Value>[1];
-  argv[0] = V8_UTF_STRING(isolate_, path);
-  assert(require->IsFunction());
-  auto result = require->Call(context, global, 1, argv).ToLocalChecked();
-  return scope.Escape(result);
-}
-
 void NodeRuntime::MountFile(const char *src, const char *dst, const int mode) {
   RUNTIME_V8_SCOPE();
   auto env = node::GetCurrentEnvironment(context);

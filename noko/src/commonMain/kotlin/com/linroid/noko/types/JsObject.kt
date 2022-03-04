@@ -26,5 +26,5 @@ expect open class JsObject : JsValue {
   /**
    * Watch [properties] to get value changed notifications
    */
-  fun watch(vararg properties: String, observer: PropertiesObserver)
+  fun watch(observer: PropertiesObserver, vararg properties: String)
 }

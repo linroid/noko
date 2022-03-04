@@ -9,7 +9,7 @@ abstract class WithNode {
   protected lateinit var node: Node
 
   @BeforeTest
-  fun setup(): Unit = runBlocking {
+  open fun setUp(): Unit = runBlocking {
     node = Node(null, object : StdOutput {
       override fun stdout(str: String) {
         println(str)
@@ -28,7 +28,7 @@ abstract class WithNode {
   }
 
   @AfterTest
-  fun tearDown() {
+  open fun tearDown() {
     node.exit(0)
   }
 

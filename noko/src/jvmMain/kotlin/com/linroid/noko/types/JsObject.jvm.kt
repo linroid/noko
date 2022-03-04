@@ -86,7 +86,7 @@ actual open class JsObject : JsValue {
     return nativeKeys()
   }
 
-  actual fun watch(vararg properties: String, observer: PropertiesObserver) {
+  actual fun watch(observer: PropertiesObserver, vararg properties: String) {
     nativeWatch(properties, observer)
   }
 

@@ -30,7 +30,6 @@ abstract class WithNode {
   @AfterTest
   fun tearDown() {
     node.exit(0)
-    println("tearDown")
   }
 
   protected fun <T> blockingInNode(action: () -> T) = runBlocking {

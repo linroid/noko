@@ -27,13 +27,15 @@ class NodeTest : WithNode() {
   }
 
   @Test
-  fun parseJson_array() {
+  fun parseJson_array() = blockingInNode {
     val numbers = node.parseJson(
       """
       [0, 1, 2, 3, 4]
     """.trimIndent()
     )
     assertIs<JsArray>(numbers)
-    assertEquals((numbers[0] as JsNumber<*>).get().toInt(), 0)
+    repeat(5) { index ->
+      assertEquals((numbers[index] as JsNumber<*>).get().toInt(), index)
+    }
   }
 }

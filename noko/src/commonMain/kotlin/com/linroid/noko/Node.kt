@@ -98,7 +98,6 @@ enum class State {
 }
 
 suspend fun Node.awaitStarted(): JsObject = suspendCancellableCoroutine { cont ->
-  println("awaitStarted")
   if (state == State.Started) {
     cont.resume(global!!)
     return@suspendCancellableCoroutine

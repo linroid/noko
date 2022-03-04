@@ -240,7 +240,6 @@ process.stdout.isRaw = true;
   }
 
   private fun eventOnStart(global: JsObject) {
-    println("eventOnStart")
     listeners.forEach {
       it.onStart(this, global)
     }

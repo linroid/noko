@@ -1,7 +1,7 @@
-import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
-import de.undercouch.gradle.tasks.download.Download
-import com.android.build.gradle.tasks.ExternalNativeBuildTask
 import com.android.build.gradle.LibraryExtension
+import com.android.build.gradle.tasks.ExternalNativeBuildTask
+import de.undercouch.gradle.tasks.download.Download
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 plugins {
   kotlin("multiplatform") version "1.6.10"
@@ -183,6 +183,7 @@ kotlin {
   }
 
   sourceSets {
+    val mockkVersion = "1.12.3"
     val commonMain by getting {
       dependencies {
         implementation(kotlin("stdlib"))
@@ -194,6 +195,7 @@ kotlin {
     }
     val commonTest by getting {
       dependencies {
+        implementation("io.mockk:mockk-common:${mockkVersion}")
         implementation(kotlin("test"))
       }
     }
@@ -213,6 +215,8 @@ kotlin {
       dependsOn(commonTest)
       dependencies {
         implementation(kotlin("test"))
+        implementation("io.mockk:mockk:${mockkVersion}")
+        implementation("io.mockk:mockk-agent-jvm:${mockkVersion}")
       }
     }
 
@@ -222,6 +226,9 @@ kotlin {
 
     val desktopTest by getting {
       dependsOn(jvmTest)
+      dependencies {
+        implementation("io.mockk:mockk:${mockkVersion}")
+      }
     }
 
     val androidMain by getting {

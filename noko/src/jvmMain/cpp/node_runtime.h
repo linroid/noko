@@ -8,6 +8,12 @@
 #include <node.h>
 #include <uv.h>
 #include "util/macros.h"
+#define RUNTIME_V8_SCOPE()                  \
+  CheckThread();                            \
+  v8::Locker locker(isolate_);              \
+  v8::HandleScope handle_scope(isolate_);   \
+  auto context = context_.Get(isolate_);    \
+  v8::Context::Scope context_scope(context) \
 
 int init_node();
 
@@ -31,7 +37,7 @@ enum JSType {
 
 class NodeRuntime {
 
-private:
+ private:
   static jmethodID attach_method_id_;
   static jmethodID detach_method_id_;
 
@@ -84,7 +90,7 @@ private:
 
   void Detach() const;
 
-public:
+ public:
   JavaVM *vm_ = nullptr;
 
   v8::Isolate *isolate_ = nullptr;
@@ -128,7 +134,7 @@ public:
 
   static jint OnLoad(JNIEnv *env);
 
-  static NodeRuntime* From(JNIEnv *env, jobject j_this) {
+  static NodeRuntime *From(JNIEnv *env, jobject j_this) {
     jlong pointer = env->GetLongField(j_this, pointer_field_id_);
     return reinterpret_cast<NodeRuntime *>(pointer);
   }

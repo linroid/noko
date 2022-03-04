@@ -73,19 +73,17 @@ NodeRuntime::~NodeRuntime() {
 }
 
 void NodeRuntime::Attach() {
-  v8::Local<v8::Context> context = context_.Get(isolate_);
-  v8::HandleScope handle_scope(isolate_);
-  v8::Context::Scope context_scope(context);
+  RUNTIME_V8_SCOPE();
   running_ = true;
   EnvHelper env(vm_);
   auto null_value = new v8::Persistent<v8::Value>(isolate_, v8::Null(isolate_));
   auto undefined_value = new v8::Persistent<v8::Value>(isolate_, v8::Undefined(isolate_));
   auto true_value = new v8::Persistent<v8::Value>(isolate_, v8::True(isolate_));
   auto false_value = new v8::Persistent<v8::Value>(isolate_, v8::False(isolate_));
-  this->shared_null_ = env->NewGlobalRef(JsNull::ToJava(*env, j_this_, (jlong)null_value));
+  this->shared_null_ = env->NewGlobalRef(JsNull::ToJava(*env, j_this_, (jlong) null_value));
   this->shared_undefined_ = env->NewGlobalRef(JsUndefined::ToJava(*env, j_this_, (jlong) undefined_value));
-  this->shared_true_ = env->NewGlobalRef(JsBoolean::ToJava(*env, j_this_, (jlong)true_value, true));
-  this->shared_false_ = env->NewGlobalRef(JsBoolean::ToJava(*env, j_this_, (jlong)false_value, false));
+  this->shared_true_ = env->NewGlobalRef(JsBoolean::ToJava(*env, j_this_, (jlong) true_value, true));
+  this->shared_false_ = env->NewGlobalRef(JsBoolean::ToJava(*env, j_this_, (jlong) false_value, false));
   this->j_global_ = env->NewGlobalRef(JsObject::ToJava(*env, j_this_, (jlong) &global_));
 
   env->SetObjectField(j_this_, shared_null_field_id_, shared_null_);
@@ -120,7 +118,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
 
   {
     v8::Locker locker(isolate_);
-    v8::Isolate::Scope isolateScope(isolate_);
+    v8::Isolate::Scope isolate_scope(isolate_);
 
     auto isolate_data = node::CreateIsolateData(isolate_, event_loop_, platform.get(),
                                                 allocator.get());
@@ -133,10 +131,10 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
 
     v8::Context::Scope context_scope(context);
     auto flags = static_cast<node::EnvironmentFlags::Flags>(node::EnvironmentFlags::kOwnsEmbedded
-                                                            |
-                                                            node::EnvironmentFlags::kOwnsProcessState
-                                                            |
-                                                            node::EnvironmentFlags::kTrackUnmanagedFds);
+        |
+            node::EnvironmentFlags::kOwnsProcessState
+        |
+            node::EnvironmentFlags::kTrackUnmanagedFds);
     auto env = node::CreateEnvironment(isolate_data, context, args, args, flags);
     node::SetProcessExitHandler(env, [](node::Environment *environment, int code) {
       LOGW("Node.js process is exiting: code=%d", code);
@@ -179,7 +177,6 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
   CloseLoop();
   return exit_code;
 }
-
 
 void NodeRuntime::CloseLoop() {
   LOGW("closing uv loop");
@@ -229,7 +226,6 @@ void NodeRuntime::RunLoop(node::Environment *env) {
   } while (more);
 }
 
-
 void NodeRuntime::Exit(int code) {
   LOGI("Exit(code=%d)", code);
   if (keep_alive_) {
@@ -242,8 +238,8 @@ void NodeRuntime::Exit(int code) {
     v8::Local<v8::Value> v8Code = v8::Number::New(isolate_, code);
     auto exit_func = process->Get(context, V8_UTF_STRING(isolate_, "exit"));
     LOGI("Calling process.exit(%d)", code);
-    UNUSED(v8::Local<v8::Function>::Cast(exit_func.ToLocalChecked())->Call(context, process, 1,
-                                                                           &v8Code));
+    UNUSED(v8::Local<v8::Function>::Cast(exit_func.ToLocalChecked())
+               ->Call(context, process, 1, &v8Code));
   });
 }
 
@@ -397,27 +393,11 @@ void NodeRuntime::Handle(uv_async_t *handle) {
   async_mutex_.unlock();
 }
 
-// v8::Local<v8::Value> Node::Require(const char *path) {
-//     v8::EscapableHandleScope handle_scope(isolate_);
-//     auto context = context_.Get(isolate_);
-//     auto global = global_->Get(isolate_);
-//     v8::Context::Scope context_scope(context);
-//     auto key = v8::String::NewFromUtf8(isolate_, "require").ToLocalChecked();
-//     v8::Local<v8::Object> require = global->Get(context, key).ToLocalChecked()->ToObject(context).ToLocalChecked();
-//     v8::Local<v8::Value> *argv = new v8::Local<v8::Value>[1];
-//     argv[0] = V8_UTF_STRING(isolate_, path);
-//     assert(require->IsFunction());
-//     auto result = require->CallAsFunction(context, global, 1, argv).ToLocalChecked();
-//     return handle_scope.Escape(result->ToObject(context).ToLocalChecked());
-// }
-
 v8::Local<v8::Value> NodeRuntime::Require(const char *path) {
-  CheckThread();
+  RUNTIME_V8_SCOPE();
   v8::EscapableHandleScope scope(isolate_);
-  auto context = context_.Get(isolate_);
   auto require = require_.Get(isolate_);
   auto global = global_.Get(isolate_);
-  v8::Context::Scope context_scope(context);
 
   auto *argv = new v8::Local<v8::Value>[1];
   argv[0] = V8_UTF_STRING(isolate_, path);
@@ -427,25 +407,19 @@ v8::Local<v8::Value> NodeRuntime::Require(const char *path) {
 }
 
 void NodeRuntime::MountFile(const char *src, const char *dst, const int mode) {
-  CheckThread();
-  v8::Locker locker(isolate_);
-  v8::HandleScope handle_scope(isolate_);
-  auto context = context_.Get(isolate_);
+  RUNTIME_V8_SCOPE();
   auto env = node::GetCurrentEnvironment(context);
   node::Mount(env, src, dst, mode);
 }
 
 void NodeRuntime::Chroot(const char *path) {
-  CheckThread();
-  v8::Locker locker(isolate_);
-  v8::HandleScope handle_scope(isolate_);
-  auto context = context_.Get(isolate_);
+  RUNTIME_V8_SCOPE();
   auto env = node::GetCurrentEnvironment(context);
   node::Chroot(env, path);
 }
 
 void NodeRuntime::Throw(JNIEnv *env, v8::Local<v8::Value> exception) {
-  CheckThread();
+  RUNTIME_V8_SCOPE();
   auto reference = new v8::Persistent<v8::Value>(isolate_, exception);
   auto j_exception = JsError::ToException(env, JsError::ToJava(env, j_this_, (jlong) reference));
   env->Throw((jthrowable) j_exception);
@@ -463,8 +437,9 @@ void NodeRuntime::CheckThread() {
 }
 
 jobject NodeRuntime::Eval(const uint16_t *code, int code_len, const uint16_t *source, int source_len, int line) {
+  RUNTIME_V8_SCOPE();
+
   v8::TryCatch try_catch(isolate_);
-  auto context = context_.Get(isolate_);
   v8::ScriptOrigin script_origin(V8_STRING(isolate_, source, source_len),
                                  v8::Integer::New(isolate_, line),
                                  v8::Integer::New(isolate_, 0));
@@ -485,10 +460,8 @@ jobject NodeRuntime::Eval(const uint16_t *code, int code_len, const uint16_t *so
 }
 
 jobject NodeRuntime::ParseJson(const uint16_t *json, int json_len) {
-  v8::Locker locker(isolate_);
-  v8::HandleScope handle_scope(isolate_);
-  auto context = context_.Get(isolate_);
-  v8::Context::Scope context_scope(context);
+  RUNTIME_V8_SCOPE();
+
   v8::TryCatch try_catch(isolate_);
   auto result = v8::JSON::Parse(context, V8_STRING(isolate_, json, json_len));
   EnvHelper env(vm_);
@@ -547,7 +520,7 @@ int init_node() {
   // Parse Node.js CLI options, and print any errors that have occurred while
   // trying to parse them.
   int exit_code = node::InitializeNodeWithArgs(&args, &exec_args, &errors);
-  for (const std::string &error: errors)
+  for (const std::string &error : errors)
     LOGE("%s: %s\n", args[0].c_str(), error.c_str());
   if (exit_code == 0) {
     node_initialized = true;

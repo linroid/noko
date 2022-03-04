@@ -253,21 +253,15 @@ fun configureSourceSets() {
   // Android Studio on versions >= 4.0canary8)
   libraryExtension.apply {
     sourceSets.findByName("main")?.apply {
-      kotlin.srcDirs(
-        "src/commonMain/kotlin", "src/jvmMain/kotlin", "src/androidMain/kotlin"
-      )
-      res.srcDirs(
-        "src/commonMain/resources", "src/androidMain/res"
-      )
+      kotlin.srcDirs("src/androidMain/kotlin")
+      res.srcDirs("src/androidMain/res")
       assets.srcDirs("src/androidMain/assets")
       // Keep Kotlin files in java source sets so the source set is not empty when
       // running unit tests which would prevent the tests from running in CI.
       java.includes.add("**/*.kt")
     }
     sourceSets.findByName("test")?.apply {
-      java.srcDirs(
-        "src/commonTest/kotlin", "src/jvmTest/kotlin"
-      )
+      kotlin.srcDirs("src/androidTest/kotlin")
       res.srcDirs("src/commonTest/res", "src/jvmTest/res")
       // Keep Kotlin files in java source sets so the source set is not empty when
       // running unit tests which would prevent the tests from running in CI.

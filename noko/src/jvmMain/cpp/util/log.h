@@ -15,11 +15,11 @@
 
 #else
 #include "stdio.h"
-#define LOGV(...) printf(__VA_ARGS__)
-#define LOGD(...) printf(__VA_ARGS__)
-#define LOGI(...) printf(__VA_ARGS__)
-#define LOGW(...) printf(__VA_ARGS__)
-#define LOGE(...) printf(__VA_ARGS__)
+#define LOGV(...) printf(__VA_ARGS__); printf("\n")
+#define LOGD(...) printf(__VA_ARGS__); printf("\n")
+#define LOGI(...) printf(__VA_ARGS__); printf("\n")
+#define LOGW(...) printf(__VA_ARGS__); printf("\n")
+#define LOGE(...) printf(__VA_ARGS__); printf("\n")
 #endif
 
 #endif //NOKO_JS_LOG_H

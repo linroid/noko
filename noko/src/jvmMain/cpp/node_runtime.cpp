@@ -29,10 +29,10 @@ NodeRuntime::NodeRuntime(
     bool keep_alive,
     bool strict
 ) : keep_alive_(keep_alive),
-    strict_(strict) {
+    strict_(strict),
+    j_this_(env->NewGlobalRef(j_this)) {
 
   env->GetJavaVM(&vm_);
-  j_this_ = env->NewGlobalRef(j_this);
   std::lock_guard<std::mutex> lock(shared_mutex_);
   ++instance_count_;
   ++sequence_;
@@ -40,19 +40,12 @@ NodeRuntime::NodeRuntime(
   if (!node_initialized) {
     init_node();
   }
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wformat"
-  LOGD("new Node: thread_id=%d, id=%d, this=%p", std::this_thread::get_id(), id_, this);
-#pragma clang diagnostic pop
 }
 
 NodeRuntime::~NodeRuntime() {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wformat"
-  LOGE("Node(): thread_id=%d, id=%d, this=%p", std::this_thread::get_id(), id_, this);
-#pragma clang diagnostic pop
   std::lock_guard<std::mutex> shared_lock(shared_mutex_);
   std::lock_guard<std::mutex> async_lock(async_mutex_);
+
   {
     EnvHelper env(vm_);
     env->DeleteGlobalRef(shared_undefined_);
@@ -66,10 +59,7 @@ NodeRuntime::~NodeRuntime() {
 
   isolate_ = nullptr;
   running_ = false;
-  LOGI("set running=false");
-
   --instance_count_;
-  LOGE("Node() finished, instanceCount=%d", instance_count_);
 }
 
 void NodeRuntime::Attach() {
@@ -137,7 +127,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
             node::EnvironmentFlags::kTrackUnmanagedFds);
     auto env = node::CreateEnvironment(isolate_data, context, args, args, flags);
     node::SetProcessExitHandler(env, [](node::Environment *environment, int code) {
-      LOGW("Node.js process is exiting: code=%d", code);
+      LOGW("Node.js exited with code %d", code);
       node::Stop(environment);
     });
 
@@ -179,7 +169,6 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
 }
 
 void NodeRuntime::CloseLoop() {
-  LOGW("closing uv loop");
   // Unregister the Isolate with the platform and add a listener that is called
   // when the Platform is done cleaning up any state it had associated with
   // the Isolate.
@@ -195,7 +184,6 @@ void NodeRuntime::CloseLoop() {
   }
   int uvErrorCode = uv_loop_close(event_loop_);
   event_loop_ = nullptr;
-  LOGI("close loop result: %d, callbacks.size=%lu", uvErrorCode, callbacks_.size());
   // uv_loop_delete(loop);
   // assert(err == 0);
 }
@@ -227,7 +215,7 @@ void NodeRuntime::RunLoop(node::Environment *env) {
 }
 
 void NodeRuntime::Exit(int code) {
-  LOGI("Exit(code=%d)", code);
+  LOGW("exit(%d)", code);
   if (keep_alive_) {
     uv_async_send(keep_alive_handle_);
   }
@@ -253,7 +241,7 @@ bool NodeRuntime::InitLoop() {
   if (keep_alive_) {
     keep_alive_handle_ = new uv_async_t();
     ret = uv_async_init(event_loop_, keep_alive_handle_, [](uv_async_t *handle) {
-      LOGD("Stop keep alive");
+      LOGD("Stop keeping alive");
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCDFAInspection"
       uv_close((uv_handle_t *) handle, [](uv_handle_t *h) {
@@ -307,7 +295,7 @@ jobject NodeRuntime::ToJava(JNIEnv *env, v8::Local<v8::Value> value) const {
 
 void NodeRuntime::TryLoop() {
   if (!event_loop_) {
-    LOGE("TryLoop but eventLoop is null");
+    LOGE("TryLoop() but eventLoop is null");
     return;
   }
   if (!callback_handle_) {
@@ -416,7 +404,7 @@ void NodeRuntime::CheckThread() {
   if (std::this_thread::get_id() != thread_id_) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat"
-    LOGE("js object can only be accessed from the Node.js thread: current=%ld, threadId=%ld",
+    LOGE("Only the original thread can access Node.js: current=%ld, threadId=%ld",
          std::this_thread::get_id(), thread_id_);
 #pragma clang diagnostic pop
     std::abort();
@@ -491,7 +479,7 @@ jobject NodeRuntime::Require(const uint16_t *path, int path_len) {
 int init_node() {
   // Make argv memory adjacent
   char cmd[128];
-  strcpy(cmd, "node --trace-exit --trace-sigint --trace-sync-io --trace-warnings --title=Dora.js");
+  strcpy(cmd, "node --trace-exit --trace-sigint --trace-sync-io --trace-warnings --title=node");
   int argc = 0;
   char *argv[128];
   char *p2 = strtok(cmd, " ");

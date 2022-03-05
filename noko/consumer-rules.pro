@@ -1,12 +1,12 @@
--keep class com.linroid.noko.annotation.JSName
-#-keepclasseswithmembers class com.linroid.dora.** {
+-keep class com.linroid.noko.annotation.JsName
+#-keepclasseswithmembers class com.linroid.noko.** {
 #    @ocom.linroid.noko.js.BindJS *;
 #}
-#-keepnames class com.linroid.dora.** {
+#-keepnames class com.linroid.noko.** {
 #    @com.linroid.noko.js.BindJS *;
 #}
 -keepclassmembers class ** {
-    @com.linroid.noko.annotation.JSName *;
+    @com.linroid.noko.annotation.JsName *;
 }
 -keep class com.linroid.noko.** { *; }
 -keepnames class com.linroid.noko.** { *; }

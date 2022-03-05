@@ -54,6 +54,7 @@ class NodeTest : WithNode() {
     val versions = global.get<JsObject>("process").get<JsObject>("versions")
     val json = versions.toJson()
     assertNotNull(json)
+    println(json)
     assertTrue(json.isNotEmpty())
   }
 }

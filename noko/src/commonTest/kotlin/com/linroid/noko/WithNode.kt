@@ -21,7 +21,7 @@ abstract class WithNode {
 
     }, keepAlive = true, strictMode = true)
 
-    node.start("-p", "process.versions")
+    node.start("-p", "process.pid")
     withTimeout(3000) {
       node.awaitStarted()
     }

@@ -30,7 +30,15 @@ abstract class WithNode {
 
   @AfterTest
   open fun tearDown() {
-    node.exit(0)
+    runBlocking {
+      val job = launch {
+        node.awaitStopped()
+      }
+      node.exit(0)
+      withTimeout(3000) {
+        job.join()
+      }
+    }
   }
 
   protected fun <T> joinNode(action: () -> T) = runBlocking {

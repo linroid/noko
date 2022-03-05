@@ -119,3 +119,19 @@ suspend fun Node.awaitStarted(): JsObject = suspendCancellableCoroutine { cont -
   addListener(listener)
   cont.invokeOnCancellation { removeListener(listener) }
 }
+
+suspend fun Node.awaitStopped(): Int = suspendCancellableCoroutine { cont ->
+  val listener = object : LifecycleListener {
+    override fun onStop(code: Int) {
+      cont.resume(code)
+      removeListener(this)
+    }
+
+    override fun onError(error: JsException) {
+      cont.resumeWithException(error)
+      removeListener(this)
+    }
+  }
+  addListener(listener)
+  cont.invokeOnCancellation { removeListener(listener) }
+}

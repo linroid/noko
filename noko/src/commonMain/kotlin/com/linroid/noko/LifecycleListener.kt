@@ -24,7 +24,7 @@ interface LifecycleListener {
   /**
    * Node.js is already exited, it's time to cleanup resources
    */
-  fun onStop(exitCode: Int) {}
+  fun onStop(code: Int) {}
 
   /**
    * Whoops :( something went wrong

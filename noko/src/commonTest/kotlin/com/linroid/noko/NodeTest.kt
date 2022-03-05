@@ -3,9 +3,9 @@ package com.linroid.noko
 import com.linroid.noko.types.JsArray
 import com.linroid.noko.types.JsNumber
 import com.linroid.noko.types.JsObject
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertIs
+import com.linroid.noko.types.JsUndefined
+import kotlin.random.Random
+import kotlin.test.*
 
 class NodeTest : WithNode() {
 
@@ -38,4 +38,23 @@ class NodeTest : WithNode() {
       assertEquals((numbers[index] as JsNumber<*>).get().toInt(), index)
     }
   }
+
+  @Test
+  fun eval() {
+    assertIs<JsObject>(node.eval("process.versions"))
+    assertIs<JsUndefined>(node.eval("console.log('Hello')"))
+    val value = Random.nextInt()
+    node.eval("global.testValue=$value;")
+    assertEquals(value, node.global!!.get("testValue"))
+  }
+
+  @Test
+  fun versions() {
+    val global = node.global!!
+    val versions = global.get<JsObject>("process").get<JsObject>("versions")
+    val json = versions.toJson()
+    assertNotNull(json)
+    assertTrue(json.isNotEmpty())
+  }
+
 }

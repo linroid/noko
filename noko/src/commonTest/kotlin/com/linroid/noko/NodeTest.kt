@@ -10,7 +10,7 @@ import kotlin.test.*
 class NodeTest : WithNode() {
 
   @Test
-  fun parseJson_object(): Unit = blockingInNode {
+  fun parseJson_object(): Unit = joinNode {
     val person = node.parseJson(
       """
       {
@@ -27,7 +27,7 @@ class NodeTest : WithNode() {
   }
 
   @Test
-  fun parseJson_array() = blockingInNode {
+  fun parseJson_array() = joinNode {
     val numbers = node.parseJson(
       """
       [0, 1, 2, 3, 4]
@@ -40,7 +40,7 @@ class NodeTest : WithNode() {
   }
 
   @Test
-  fun eval(): Unit = blockingInNode {
+  fun eval(): Unit = joinNode {
     assertIs<JsObject>(node.eval("process.versions"))
     assertIs<JsUndefined>(node.eval("console.log('Hello')"))
     val value = Random.nextInt()
@@ -49,7 +49,7 @@ class NodeTest : WithNode() {
   }
 
   @Test
-  fun versions(): Unit = blockingInNode {
+  fun versions(): Unit = joinNode {
     val global = node.global!!
     val versions = global.get<JsObject>("process").get<JsObject>("versions")
     val json = versions.toJson()

@@ -13,13 +13,13 @@ class JsObjectTest : WithNode() {
   @BeforeTest
   override fun setUp() {
     super.setUp()
-    blockingInNode {
+    joinNode {
       obj = JsObject(node)
     }
   }
 
   @Test
-  fun setterAndGetter(): Unit = blockingInNode {
+  fun setterAndGetter(): Unit = joinNode {
     obj.set("intValue", 1)
     val intValue = obj.get<JsValue>("intValue")
     assertIs<JsNumber<*>>(intValue)
@@ -47,7 +47,7 @@ class JsObjectTest : WithNode() {
   }
 
   @Test
-  fun deleteAndHas(): Unit = blockingInNode {
+  fun deleteAndHas(): Unit = joinNode {
     obj.set("foo", 1)
     assertTrue(obj.has("foo"))
     assertTrue(!obj.has("bar"))
@@ -56,14 +56,14 @@ class JsObjectTest : WithNode() {
   }
 
   @Test
-  fun keys(): Unit = blockingInNode {
+  fun keys(): Unit = joinNode {
     obj.set("foo", 1)
     obj.set("bar", 1)
     assertContentEquals(arrayOf("foo", "bar"), obj.keys())
   }
 
   @Test
-  fun watchProperties(): Unit = blockingInNode {
+  fun watchProperties(): Unit = joinNode {
     println("watchProperties")
     val observer = mockk<PropertiesObserver>(relaxed = true)
     obj.watch(observer, "name", "age")

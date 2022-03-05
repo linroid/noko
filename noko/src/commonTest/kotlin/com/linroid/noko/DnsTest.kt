@@ -8,7 +8,7 @@ import kotlin.test.assertIs
 class DnsTest : WithNode() {
 
   @Test
-  fun getServers(): Unit = blockingInNode {
+  fun getServers(): Unit = joinNode {
     val result = node.eval("new (require('dns').promises.Resolver)().getServers()")
     val json = result.toJson()!!
     val servers = Json.parseToJsonElement(json)

@@ -1,5 +1,6 @@
 package com.linroid.noko
 
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -32,7 +33,7 @@ abstract class WithNode {
     node.exit(0)
   }
 
-  protected fun <T> blockingInNode(action: () -> T) = runBlocking {
+  protected fun <T> joinNode(action: () -> T) = runBlocking {
     node.await(action)
   }
 }

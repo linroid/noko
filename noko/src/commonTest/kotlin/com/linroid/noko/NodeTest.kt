@@ -40,7 +40,7 @@ class NodeTest : WithNode() {
   }
 
   @Test
-  fun eval() {
+  fun eval(): Unit = blockingInNode {
     assertIs<JsObject>(node.eval("process.versions"))
     assertIs<JsUndefined>(node.eval("console.log('Hello')"))
     val value = Random.nextInt()
@@ -49,12 +49,11 @@ class NodeTest : WithNode() {
   }
 
   @Test
-  fun versions() {
+  fun versions(): Unit = blockingInNode {
     val global = node.global!!
     val versions = global.get<JsObject>("process").get<JsObject>("versions")
     val json = versions.toJson()
     assertNotNull(json)
     assertTrue(json.isNotEmpty())
   }
-
 }

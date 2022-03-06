@@ -147,7 +147,7 @@ JNICALL jobject Require(JNIEnv *env, jobject j_this, jstring j_path) {
 }
 
 JNICALL void ClearReference(JNIEnv *env, jobject j_this, jlong j_reference) {
-  auto runtime = JsValue::GetRuntime(env, j_this);
+  auto runtime = Runtime::Get(env, j_this);
   auto reference = reinterpret_cast<v8::Persistent <v8::Value> *>(j_reference);
 
   LOGV("clear reference: reference=%p, runtime=%p", reference, runtime);

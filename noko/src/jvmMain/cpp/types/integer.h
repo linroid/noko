@@ -13,6 +13,7 @@ jint Value(JNIEnv *env, jobject obj);
 bool Is(JNIEnv *env, jobject obj);
 
 jint OnLoad(JNIEnv *env);
+
 }
 
 #endif //NOKO_TYPES_INTEGER_H_

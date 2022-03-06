@@ -7,6 +7,7 @@ class JsUndefined internal constructor(
   node: Node,
   pointer: NativePointer,
 ) : JsValue(node, pointer) {
+
   override fun toString(): String {
     return "undefined"
   }
@@ -14,4 +15,5 @@ class JsUndefined internal constructor(
   override fun toJson(): String? {
     return null
   }
+
 }

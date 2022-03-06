@@ -23,10 +23,9 @@
 
 #define SETUP(env, j_this, type) \
   V8_SCOPE(env, j_this) \
-  auto reference = JsValue::Unwrap(env, j_this); \
   auto context = runtime->context_.Get(isolate); \
-  auto persistent = reinterpret_cast<v8::Persistent<type> *>(reference); \
-  auto that = persistent->Get(isolate);
+  auto reference = reinterpret_cast<v8::Persistent<type> *>(JsValue::GetPointer(env, j_this)); \
+  auto that = reference->Get(isolate);
 
 
 #define V8_UTF_STRING(isolate, str) v8::String::NewFromUtf8(isolate, str, v8::NewStringType::kNormal).ToLocalChecked()

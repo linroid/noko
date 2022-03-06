@@ -2,21 +2,27 @@
 #include "js_value.h"
 #include "js_error.h"
 
-jclass JsArray::class_;
-jmethodID JsArray::init_method_id_;
+namespace JsArray {
 
-jint JsArray::Size(JNIEnv *env, jobject j_this) {
+jclass class_;
+jmethodID init_method_id_;
+
+jobject Of(JNIEnv *env, jobject node, jlong pointer) {
+  return env->NewObject(class_, init_method_id_, node, pointer);
+}
+
+jint Size(JNIEnv *env, jobject j_this) {
   SETUP(env, j_this, v8::Array)
   return (jint) that->Length();
 }
 
-jlong JsArray::New(JNIEnv *env, jclass clazz) {
+jlong New(JNIEnv *env, jclass clazz) {
   V8_SCOPE_NEW(env)
   auto value = v8::Array::New(runtime->isolate_);
   return (jlong) new v8::Persistent<v8::Value>(runtime->isolate_, value);
 }
 
-jboolean JsArray::AddAll(JNIEnv *env, jobject j_this, jobjectArray j_elements) {
+jboolean AddAll(JNIEnv *env, jobject j_this, jobjectArray j_elements) {
   SETUP(env, j_this, v8::Array)
   auto size = env->GetArrayLength(j_elements);
   v8::TryCatch try_catch(runtime->isolate_);
@@ -35,7 +41,7 @@ jboolean JsArray::AddAll(JNIEnv *env, jobject j_this, jobjectArray j_elements) {
   return true;
 }
 
-jobject JsArray::Get(JNIEnv *env, jobject j_this, jint j_index) {
+jobject Get(JNIEnv *env, jobject j_this, jint j_index) {
   SETUP(env, j_this, v8::Array)
   v8::TryCatch try_catch(runtime->isolate_);
   auto value = that->Get(context, j_index).ToLocalChecked();
@@ -46,7 +52,7 @@ jobject JsArray::Get(JNIEnv *env, jobject j_this, jint j_index) {
   return runtime->ToJava(env, value);
 }
 
-jboolean JsArray::Add(JNIEnv *env, jobject j_this, jobject j_element) {
+jboolean Add(JNIEnv *env, jobject j_this, jobject j_element) {
   SETUP(env, j_this, v8::Array)
   auto element = JsValue::Value(context, isolate, env, j_element);
   v8::TryCatch try_catch(isolate);
@@ -67,7 +73,7 @@ void JNICALL Clear(JNIEnv *env, jobject j_this) {
   that->Set(context, V8_UTF_STRING(isolate, "length"), v8::Number::New(isolate, 0)).Check();
 }
 
-jint JsArray::OnLoad(JNIEnv *env) {
+jint OnLoad(JNIEnv *env) {
   jclass clazz = env->FindClass("com/linroid/noko/types/JsArray");
   if (!clazz) {
     return JNI_ERR;
@@ -85,4 +91,6 @@ jint JsArray::OnLoad(JNIEnv *env) {
   init_method_id_ = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;J)V");
   env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
   return JNI_OK;
+}
+
 }

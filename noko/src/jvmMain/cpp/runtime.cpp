@@ -72,7 +72,7 @@ void Runtime::Attach() {
   current_runtime_ = this;
   EnvHelper env(vm_);
   auto undefined_value = new v8::Persistent<v8::Value>(isolate_, v8::Undefined(isolate_));
-  this->shared_undefined_ = env->NewGlobalRef(JsUndefined::ToJava(*env, j_this_, (jlong) undefined_value));
+  this->shared_undefined_ = env->NewGlobalRef(JsUndefined::Of(*env, j_this_, (jlong) undefined_value));
   this->j_global_ = env->NewGlobalRef(JsObject::Of(*env, j_this_, (jlong) &global_));
 
   env->SetObjectField(j_this_, shared_undefined_field_id_, shared_undefined_);

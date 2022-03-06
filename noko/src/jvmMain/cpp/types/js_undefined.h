@@ -4,18 +4,12 @@
 #include <jni.h>
 #include <v8.h>
 
-class JsUndefined {
-private:
-  static jclass class_;
-  static jmethodID constructor_id_;
+namespace JsUndefined {
 
-public:
+jobject Of(JNIEnv *env, jobject node, jlong pointer);
 
-  inline static jobject ToJava(JNIEnv *env, jobject node, jlong pointer) {
-    return env->NewObject(class_, constructor_id_, node, pointer);
-  }
+jint OnLoad(JNIEnv *env);
 
-  static jint OnLoad(JNIEnv *env);
-};
+}
 
 #endif //NODE_JSUNDEFINED_H

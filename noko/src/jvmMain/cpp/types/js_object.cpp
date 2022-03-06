@@ -11,18 +11,17 @@
 #include "string.h" // NOLINT(modernize-deprecated-headers)
 #include "double.h"
 #include "long.h"
+namespace JsObject {
 
-jclass JsObject::class_;
-jclass JsObject::string_class_;
-jmethodID JsObject::init_method_id_;
+jclass class_;
+jclass string_class_;
+jmethodID init_method_id_;
 
-uint64_t getRepresentation(const double number) {
-  uint64_t representation;
-  memcpy(&representation, &number, sizeof representation);
-  return representation;
+jobject Of(JNIEnv *env, jobject node, jlong pointer) {
+  return env->NewObject(class_, init_method_id_, node, pointer);
 }
 
-JNICALL void JsObject::Set(JNIEnv *env, jobject j_this, jstring j_key, jobject j_value) {
+JNICALL void Set(JNIEnv *env, jobject j_this, jstring j_key, jobject j_value) {
   const jchar *key_chars = env->GetStringChars(j_key, nullptr);
   const jint key_len = env->GetStringLength(j_key);
 
@@ -34,7 +33,7 @@ JNICALL void JsObject::Set(JNIEnv *env, jobject j_this, jstring j_key, jobject j
   that->Set(context, key, value).Check();
 }
 
-JNICALL jobject JsObject::Get(JNIEnv *env, jobject j_this, jstring j_key) {
+JNICALL jobject Get(JNIEnv *env, jobject j_this, jstring j_key) {
   const uint16_t *key = env->GetStringChars(j_key, nullptr);
   const jint key_len = env->GetStringLength(j_key);
   SETUP(env, j_this, v8::Object)
@@ -43,7 +42,7 @@ JNICALL jobject JsObject::Get(JNIEnv *env, jobject j_this, jstring j_key) {
   return runtime->ToJava(env, value);
 }
 
-jboolean JsObject::Has(JNIEnv *env, jobject j_this, jstring j_key) {
+jboolean Has(JNIEnv *env, jobject j_this, jstring j_key) {
   const uint16_t *key = env->GetStringChars(j_key, nullptr);
   const jint key_len = env->GetStringLength(j_key);
   SETUP(env, j_this, v8::Object)
@@ -52,7 +51,7 @@ jboolean JsObject::Has(JNIEnv *env, jobject j_this, jstring j_key) {
   return static_cast<jboolean>(result);
 }
 
-jobjectArray JsObject::Keys(JNIEnv *env, jobject j_this) {
+jobjectArray Keys(JNIEnv *env, jobject j_this) {
   SETUP(env, j_this, v8::Object)
   v8::TryCatch try_catch(isolate);
   auto names = that->GetPropertyNames(context);
@@ -76,18 +75,18 @@ jobjectArray JsObject::Keys(JNIEnv *env, jobject j_this) {
   return result;
 }
 
-void JsObject::New(JNIEnv *env, jobject j_this) {
+void New(JNIEnv *env, jobject j_this) {
   V8_SCOPE(env, j_this)
   auto value = v8::Object::New(runtime->isolate_);
   auto result = new v8::Persistent<v8::Value>(runtime->isolate_, value);
-  JsValue::SetPointer(env, j_this, (jlong) result);
+  JsValue::SetPointer(env, j_this, result);
 }
 
-void JsObject::Delete(JNIEnv *env, jobject j_this, jstring j_key) {
+void Delete(JNIEnv *env, jobject j_this, jstring j_key) {
   const uint16_t *key = env->GetStringChars(j_key, nullptr);
   const jint key_len = env->GetStringLength(j_key);
   SETUP(env, j_this, v8::Object)
-  UNUSED(that->Delete(context, V8_STRING(isolate, key, key_len)));
+  that->Delete(context, V8_STRING(isolate, key, key_len)).Check();
   env->ReleaseStringChars(j_key, key);
 }
 
@@ -104,7 +103,7 @@ static void SetterCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
   auto isolate = info.GetIsolate();
   auto context = isolate->GetCurrentContext();
   auto new_value = info[0];
-  UNUSED(holder->Set(context, 1, new_value));
+  holder->Set(context, 1, new_value).Check();
 
   auto key = holder->Get(context, 0).ToLocalChecked().As<v8::String>();
 
@@ -125,7 +124,7 @@ static void ObserverWeakCallback(const v8::WeakCallbackInfo<PropertiesObserver> 
   delete callback;
 }
 
-void JsObject::Watch(JNIEnv *env, jobject j_this, jobjectArray j_keys, jobject j_observer) {
+void Watch(JNIEnv *env, jobject j_this, jobjectArray j_keys, jobject j_observer) {
   SETUP(env, j_this, v8::Object)
   auto length = env->GetArrayLength(j_keys);
 
@@ -148,7 +147,7 @@ void JsObject::Watch(JNIEnv *env, jobject j_this, jobjectArray j_keys, jobject j
      */
     auto holder = v8::Object::New(isolate);
 
-    UNUSED(holder->Set(context, 0, v8_key));
+    holder->Set(context, 0, v8_key).Check();
 
     auto getter = v8::FunctionTemplate::New(isolate, GetterCallback, holder)->GetFunction(context).ToLocalChecked();
     auto setter = v8::FunctionTemplate::New(isolate, SetterCallback, holder)->GetFunction(context).ToLocalChecked();
@@ -160,10 +159,10 @@ void JsObject::Watch(JNIEnv *env, jobject j_this, jobjectArray j_keys, jobject j
     // Remove the entry if exists, and move the value into holder
     if (that->Has(context, v8_key).ToChecked()) {
       auto value = that->Get(context, v8_key).ToLocalChecked();
-      UNUSED(holder->Set(context, 1, value));
-      UNUSED(that->Delete(context, v8_key));
+      holder->Set(context, 1, value).Check();
+      that->Delete(context, v8_key).Check();
     } else {
-      UNUSED(holder->Set(context, 1, v8::Undefined(isolate)));
+      holder->Set(context, 1, v8::Undefined(isolate)).Check();
     }
 
     auto observer = new PropertiesObserver(runtime, env, j_observer, method_id);
@@ -178,20 +177,20 @@ void JsObject::Watch(JNIEnv *env, jobject j_this, jobjectArray j_keys, jobject j
   }
 }
 
-jint JsObject::OnLoad(JNIEnv *env) {
+jint OnLoad(JNIEnv *env) {
   jclass clazz = env->FindClass("com/linroid/noko/types/JsObject");
   if (!clazz) {
     return JNI_ERR;
   }
 
   JNINativeMethod methods[] = {
-      {"nativeGet", "(Ljava/lang/String;)Ljava/lang/Object;", (void *) (JsObject::Get)},
-      {"nativeSet", "(Ljava/lang/String;Ljava/lang/Object;)V", (void *) (JsObject::Set)},
-      {"nativeNew", "()V", (void *) (JsObject::New)},
-      {"nativeHas", "(Ljava/lang/String;)Z", (void *) (JsObject::Has)},
-      {"nativeDelete", "(Ljava/lang/String;)V", (void *) (JsObject::Delete)},
-      {"nativeKeys", "()[Ljava/lang/String;", (void *) (JsObject::Keys)},
-      {"nativeWatch", "([Ljava/lang/String;Lcom/linroid/noko/observable/PropertiesObserver;)V", (void *) (JsObject::Watch)},
+      {"nativeGet", "(Ljava/lang/String;)Ljava/lang/Object;", (void *) (Get)},
+      {"nativeSet", "(Ljava/lang/String;Ljava/lang/Object;)V", (void *) (Set)},
+      {"nativeNew", "()V", (void *) (New)},
+      {"nativeHas", "(Ljava/lang/String;)Z", (void *) (Has)},
+      {"nativeDelete", "(Ljava/lang/String;)V", (void *) (Delete)},
+      {"nativeKeys", "()[Ljava/lang/String;", (void *) (Keys)},
+      {"nativeWatch", "([Ljava/lang/String;Lcom/linroid/noko/observable/PropertiesObserver;)V", (void *) (Watch)},
   };
   class_ = (jclass) env->NewGlobalRef(clazz);
   init_method_id_ = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;J)V");
@@ -200,4 +199,6 @@ jint JsObject::OnLoad(JNIEnv *env) {
   string_class_ = (jclass) env->NewGlobalRef(string_class);
   env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
   return JNI_OK;
+}
+
 }

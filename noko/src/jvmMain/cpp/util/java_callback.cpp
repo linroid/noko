@@ -39,7 +39,7 @@ void JavaCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
   }
 
   if (j_result != nullptr) {
-    auto result = JsValue::Unwrap(*env, j_result);
+    auto result = JsValue::GetPointer(*env, j_result);
     if (result != nullptr) {
       info.GetReturnValue().Set(result->Get(runtime_->isolate_));
     }

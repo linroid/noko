@@ -3,6 +3,12 @@
 
 #include <jni.h>
 #include "../runtime.h"
+#include "../util/jni_helper.h"
+#include "integer.h"
+#include "long.h"
+#include "double.h"
+#include "string.h"
+#include "boolean.h"
 
 class JsValue {
  private:
@@ -46,7 +52,34 @@ class JsValue {
 
   JNICALL static jdouble ToNumber(JNIEnv *env, jobject j_this);
 
+  JNICALL static jboolean Equals(JNIEnv *env, jobject j_this, jobject j_other);
+
   JNICALL static void Dispose(JNIEnv *env, jobject j_this);
+
+  static inline v8::Local<v8::Value> Value(v8::Local<v8::Context> context,
+                                    v8::Isolate *isolate,
+                                    JNIEnv *env,
+                                    jobject obj) {
+    if (obj == nullptr) {
+      return v8::Null(isolate);
+    } else if (JsValue::Is(env, obj)) {
+      return JsValue::Unwrap(env, obj)->Get(isolate);
+    } else if (String::Is(env, obj)) {
+      return String::Value(env, (jstring) obj);
+    } else if (Boolean::Is(env, obj)) {
+      return Boolean::Value(env, obj) ? v8::True(isolate) : v8::False(isolate);
+    } else if (Integer::Is(env, obj)) {
+      return v8::Int32::New(isolate, Integer::Value(env, obj));
+    } else if (Long::Is(env, obj)) {
+      return v8::BigInt::New(isolate, Long::Value(env, obj));
+    } else if (Double::Is(env, obj)) {
+      return v8::Number::New(isolate, Double::Value(env, obj));
+    } else {
+      auto class_name = JniHelper::GetClassName(env, obj);
+      LOGE("Not supported type: %s", class_name.c_str());
+      abort();
+    }
+  }
 
   static jint OnLoad(JNIEnv *env);
 };

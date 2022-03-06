@@ -30,27 +30,8 @@ JNICALL void JsObject::Set(JNIEnv *env, jobject j_this, jstring j_key, jobject j
 
   auto key = V8_STRING(isolate, key_chars, key_len);
   env->ReleaseStringChars(j_key, key_chars);
-  if (j_value == nullptr) {
-    that->Set(context, key, v8::Null(isolate)).Check();
-  } else if (JsValue::Is(env, j_value)) {
-    auto value = JsValue::Unwrap(env, j_value);
-    that->Set(context, key, value->Get(isolate)).Check();
-  } else if (String::Is(env, j_value)) {
-    that->Set(context, key, String::Value(env, (jstring) j_value)).Check();
-  } else if (Boolean::Is(env, j_value)) {
-    auto value = Boolean::Value(env, j_value) ? v8::True(isolate) : v8::False(isolate);
-    that->Set(context, key, value).Check();
-  } else if (Integer::Is(env, j_value)) {
-    that->Set(context, key, v8::Int32::New(isolate, Integer::Value(env, j_value))).Check();
-  } else if (Long::Is(env, j_value)) {
-    that->Set(context, key, v8::BigInt::New(isolate, Long::Value(env, j_value))).Check();
-  } else if (Double::Is(env, j_value)) {
-    auto value = v8::Number::New(isolate, Double::Value(env, j_value));
-    that->Set(context, key, value).Check();
-  } else {
-    auto class_name = JniHelper::GetClassName(env, j_value);
-    LOGE("Not supported type: %s", class_name.c_str());
-  }
+  auto value = JsValue::Value(context, isolate, env, j_value);
+  that->Set(context, key, value).Check();
 }
 
 JNICALL jobject JsObject::Get(JNIEnv *env, jobject j_this, jstring j_key) {

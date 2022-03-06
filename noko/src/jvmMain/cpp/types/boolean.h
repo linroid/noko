@@ -2,7 +2,8 @@
 #define NODE_JSBOOLEAN_H
 
 #include <jni.h>
-#include "js_value.h"
+#include "v8.h"
+
 namespace Boolean {
 
 jobject Of(v8::Local<v8::Value> &value);

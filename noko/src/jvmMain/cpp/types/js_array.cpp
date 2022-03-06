@@ -18,18 +18,13 @@ void JsArray::New(JNIEnv *env, jobject j_this) {
 }
 
 jboolean JsArray::AddAll(JNIEnv *env, jobject j_this, jobjectArray j_elements) {
-  auto size = env->GetArrayLength(j_elements);
-  v8::Persistent<v8::Value> *elements[size];
-  for (int i = 0; i < size; ++i) {
-    auto element = env->GetObjectArrayElement(j_elements, i);
-    elements[i] = JsValue::Unwrap(env, element);
-    env->DeleteLocalRef(element);
-  }
   SETUP(env, j_this, v8::Array)
+  auto size = env->GetArrayLength(j_elements);
   v8::TryCatch try_catch(runtime->isolate_);
   auto index = that->Length();
   for (int i = 0; i < size; ++i) {
-    auto element = elements[i]->Get(isolate);
+    auto j_element = env->GetObjectArrayElement(j_elements, i);
+    v8::Local<v8::Value> element = JsValue::Value(context, isolate, env, j_element);
     if (!that->Set(context, index + i, element).ToChecked()) {
       return false;
     }

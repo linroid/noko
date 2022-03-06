@@ -6,13 +6,11 @@ import com.linroid.noko.NullNativePointer
 
 actual class JsArray : JsObject, MutableList<Any?> {
 
-  actual constructor(node: Node, data: Iterator<*>) : super(node, NullNativePointer) {
+  actual constructor(node: Node, data: Iterable<*>) : super(node, NullNativePointer) {
     nativeNew()
-    val array = ArrayList<Any?>()
-    data.forEach {
-      array.add(it)
+    if (data.any()) {
+      addAll(data)
     }
-    addAll(array)
   }
 
   internal actual constructor(node: Node, pointer: NativePointer) : super(node, pointer)

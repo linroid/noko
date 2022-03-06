@@ -20,10 +20,11 @@ jint JsValue::OnLoad(JNIEnv *env) {
 
   JNINativeMethod methods[] = {
       {"nativeToString", "()Ljava/lang/String;", (void *) JsValue::ToString},
-      {"nativeTypeOf",   "()Ljava/lang/String;", (void *) JsValue::TypeOf},
-      {"nativeToJson",   "()Ljava/lang/String;", (void *) JsValue::ToJson},
-      {"nativeDispose",  "()V",                  (void *) JsValue::Dispose},
-      {"nativeToNumber", "()D",                  (void *) JsValue::ToNumber},
+      {"nativeTypeOf", "()Ljava/lang/String;", (void *) JsValue::TypeOf},
+      {"nativeToJson", "()Ljava/lang/String;", (void *) JsValue::ToJson},
+      {"nativeDispose", "()V", (void *) JsValue::Dispose},
+      {"nativeToNumber", "()D", (void *) JsValue::ToNumber},
+      {"nativeEquals", "(Lcom/linroid/noko/types/JsValue;)Z", (void *) JsValue::Equals},
   };
 
   int rc = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
@@ -90,4 +91,10 @@ void JsValue::Dispose(JNIEnv *env, jobject j_this) {
   value->Reset();
   delete value;
   JsValue::SetPointer(env, j_this, 0);
+}
+
+jboolean JsValue::Equals(JNIEnv *env, jobject j_this, jobject j_other) {
+  SETUP(env, j_this, v8::Value)
+  auto other = Unwrap(env, j_other)->Get(isolate);
+  return that->Equals(context, other).ToChecked();
 }

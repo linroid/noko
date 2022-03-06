@@ -67,4 +67,13 @@ class JsArrayTest : WithNode() {
     assertEquals(3, array.size)
     assertContentEquals(arrayListOf(0, 1, 2), array)
   }
+
+  @Test
+  fun indexOf(): Unit = joinNode {
+    val array = JsArray(node, arrayListOf(0, 2, 3))
+    assertEquals(0, array.indexOf(0))
+    assertEquals(1, array.indexOf(2))
+    assertEquals(2, array.indexOf(3))
+    assertEquals(-1, array.indexOf(-1))
+  }
 }

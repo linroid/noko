@@ -42,4 +42,15 @@ class JsArrayTest : WithNode() {
     array.add(4)
     assertEquals(1, array.size)
   }
+
+  @Test
+  fun removeAt(): Unit = joinNode {
+    val array = JsArray(node, arrayListOf(0, 1, 2))
+    val result = array.removeAt(1)
+    assertIs<Int>(result)
+    assertEquals(1, result)
+    assertEquals(2, array.size)
+    assertEquals(0, array[0])
+    assertEquals(2, array[1])
+  }
 }

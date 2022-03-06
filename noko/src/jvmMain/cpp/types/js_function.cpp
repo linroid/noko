@@ -64,7 +64,6 @@ v8::Local<v8::Function> Init(JNIEnv *env, jobject j_this) {
 }
 
 JNICALL jobject Call(JNIEnv *env, jobject j_this, jobject j_receiver, jobjectArray j_parameters) {
-  auto receiver = JsValue::GetPointer(env, j_receiver);
 
   int argc = env->GetArrayLength(j_parameters);
   v8::Persistent<v8::Value> *parameters[argc];
@@ -75,12 +74,13 @@ JNICALL jobject Call(JNIEnv *env, jobject j_this, jobject j_receiver, jobjectArr
   }
 
   SETUP(env, j_this, v8::Function);
+  auto receiver = JsValue::GetPointer(env, j_receiver)->Get(isolate);
   auto *argv = new v8::Local<v8::Value>[argc];
   for (int i = 0; i < argc; ++i) {
     argv[i] = parameters[i]->Get(isolate);
   }
   v8::TryCatch try_catch(isolate);
-  auto result = that->Call(context, receiver->Get(isolate), argc, argv);
+  auto result = that->Call(context, receiver, argc, argv);
   if (result.IsEmpty()) {
     runtime->Throw(env, try_catch.Exception());
     return nullptr;

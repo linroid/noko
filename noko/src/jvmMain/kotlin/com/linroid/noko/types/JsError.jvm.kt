@@ -16,11 +16,11 @@ actual class JsError : JsObject {
   }
 
   actual fun message(): String {
-    return get<JsValue>("message").toString()
+    return get<String>("message").toString()
   }
 
   actual fun name(): String {
-    return get<JsValue>("name").toString()
+    return get<String>("name").toString()
   }
 
   companion object {

@@ -2,7 +2,6 @@
 #define NODE_JSNULL_H
 
 #include <jni.h>
-#include "../node_runtime.h"
 
 class JsNull {
 private:

@@ -1,6 +1,6 @@
 #include "js_function.h"
 #include "js_value.h"
-#include "js_string.h"
+#include "string.h"
 #include "js_error.h"
 #include "../util/java_callback.h"
 #include "../util/env_helper.h"

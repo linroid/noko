@@ -1,5 +1,5 @@
 #include <jni.h>
-#include "../node_runtime.h"
+#include "../runtime.h"
 #include "js_value.h"
 #include "js_error.h"
 

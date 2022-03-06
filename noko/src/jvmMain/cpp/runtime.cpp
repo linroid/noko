@@ -2,28 +2,32 @@
 #include <mutex>
 #include <uv.h>
 #include <v8.h>
-#include "node_runtime.h"
+#include "runtime.h"
 #include "types/js_value.h"
 #include "types/js_undefined.h"
-#include "types/js_boolean.h"
-#include "types/js_number.h"
+#include "types/boolean.h"
+#include "types/double.h"
 #include "types/js_object.h"
-#include "types/js_string.h"
+#include "types/string.h"  // NOLINT(modernize-deprecated-headers)
 #include "types/js_function.h"
 #include "types/js_null.h"
 #include "types/js_promise.h"
 #include "types/js_array.h"
 #include "types/js_error.h"
 #include "util/env_helper.h"
+#include "types/integer.h"
+#include "types/long.h"
 
-int NodeRuntime::instance_count_ = 0;
-std::mutex NodeRuntime::shared_mutex_;
-int NodeRuntime::sequence_ = 0;
+int Runtime::instance_count_ = 0;
+std::mutex Runtime::shared_mutex_;
+int Runtime::sequence_ = 0;
 
 bool node_initialized = false;
 std::unique_ptr<node::MultiIsolatePlatform> platform;
 
-NodeRuntime::NodeRuntime(
+thread_local Runtime *current_runtime_;
+
+Runtime::Runtime(
     JNIEnv *env,
     jobject j_this,
     bool keep_alive,
@@ -42,16 +46,13 @@ NodeRuntime::NodeRuntime(
   }
 }
 
-NodeRuntime::~NodeRuntime() {
+Runtime::~Runtime() {
   std::lock_guard<std::mutex> shared_lock(shared_mutex_);
   std::lock_guard<std::mutex> async_lock(async_mutex_);
 
   {
     EnvHelper env(vm_);
     env->DeleteGlobalRef(shared_undefined_);
-    env->DeleteGlobalRef(shared_null_);
-    env->DeleteGlobalRef(shared_true_);
-    env->DeleteGlobalRef(shared_false_);
     env->SetLongField(j_this_, pointer_field_id_, 0l);
     env->DeleteGlobalRef(j_this_);
     env->DeleteGlobalRef(j_global_);
@@ -62,34 +63,31 @@ NodeRuntime::~NodeRuntime() {
   --instance_count_;
 }
 
-void NodeRuntime::Attach() {
+Runtime *Runtime::Current() {
+  return current_runtime_;
+}
+
+void Runtime::Attach() {
   RUNTIME_V8_SCOPE();
   running_ = true;
+  current_runtime_ = this;
   EnvHelper env(vm_);
-  auto null_value = new v8::Persistent<v8::Value>(isolate_, v8::Null(isolate_));
   auto undefined_value = new v8::Persistent<v8::Value>(isolate_, v8::Undefined(isolate_));
-  auto true_value = new v8::Persistent<v8::Value>(isolate_, v8::True(isolate_));
-  auto false_value = new v8::Persistent<v8::Value>(isolate_, v8::False(isolate_));
-  this->shared_null_ = env->NewGlobalRef(JsNull::ToJava(*env, j_this_, (jlong) null_value));
   this->shared_undefined_ = env->NewGlobalRef(JsUndefined::ToJava(*env, j_this_, (jlong) undefined_value));
-  this->shared_true_ = env->NewGlobalRef(JsBoolean::ToJava(*env, j_this_, (jlong) true_value, true));
-  this->shared_false_ = env->NewGlobalRef(JsBoolean::ToJava(*env, j_this_, (jlong) false_value, false));
-  this->j_global_ = env->NewGlobalRef(JsObject::ToJava(*env, j_this_, (jlong) &global_));
+  this->j_global_ = env->NewGlobalRef(JsObject::Of(*env, j_this_, (jlong) &global_));
 
-  env->SetObjectField(j_this_, shared_null_field_id_, shared_null_);
   env->SetObjectField(j_this_, shared_undefined_field_id_, shared_undefined_);
-  env->SetObjectField(j_this_, shared_true_field_id_, shared_true_);
-  env->SetObjectField(j_this_, shared_false_field_id_, shared_false_);
 
   env->CallVoidMethod(j_this_, attach_method_id_, j_global_);
 }
 
-void NodeRuntime::Detach() const {
+void Runtime::Detach() const {
+  current_runtime_ = nullptr;
   EnvHelper env(vm_);
   env->CallVoidMethod(j_this_, detach_method_id_, j_this_);
 }
 
-int NodeRuntime::Start(std::vector<std::string> &args) {
+int Runtime::Start(std::vector<std::string> &args) {
   thread_id_ = std::this_thread::get_id();
 
   int exit_code = 0;
@@ -168,7 +166,7 @@ int NodeRuntime::Start(std::vector<std::string> &args) {
   return exit_code;
 }
 
-void NodeRuntime::CloseLoop() {
+void Runtime::CloseLoop() {
   // Unregister the Isolate with the platform and add a listener that is called
   // when the Platform is done cleaning up any state it had associated with
   // the Isolate.
@@ -182,13 +180,13 @@ void NodeRuntime::CloseLoop() {
   while (!platform_finished) {
     uv_run(event_loop_, UV_RUN_ONCE);
   }
-  int uvErrorCode = uv_loop_close(event_loop_);
+  int close_code = uv_loop_close(event_loop_);
   event_loop_ = nullptr;
-  // uv_loop_delete(loop);
-  // assert(err == 0);
+  // uv_loop_delete(event_loop_);
+  // assert(close_code == 0);
 }
 
-void NodeRuntime::RunLoop(node::Environment *env) {
+void Runtime::RunLoop(node::Environment *env) {
   v8::SealHandleScope seal(isolate_);
 
   int more;
@@ -214,7 +212,7 @@ void NodeRuntime::RunLoop(node::Environment *env) {
   } while (more);
 }
 
-void NodeRuntime::Exit(int code) {
+void Runtime::Exit(int code) {
   LOGW("exit(%d)", code);
   if (keep_alive_) {
     uv_async_send(keep_alive_handle_);
@@ -231,7 +229,7 @@ void NodeRuntime::Exit(int code) {
   });
 }
 
-bool NodeRuntime::InitLoop() {
+bool Runtime::InitLoop() {
   event_loop_ = uv_loop_new();
   int ret = uv_loop_init(event_loop_);
   if (ret != 0) {
@@ -257,43 +255,38 @@ bool NodeRuntime::InitLoop() {
   return true;
 }
 
-jobject NodeRuntime::ToJava(JNIEnv *env, v8::Local<v8::Value> value) const {
-  if (value->IsNull()) {
-    return this->shared_null_;
-  } else if (value->IsUndefined()) {
-    return this->shared_undefined_;
+jobject Runtime::ToJava(JNIEnv *env, v8::Local<v8::Value> value) const {
+  if (value->IsNullOrUndefined()) {
+    return nullptr;
   } else if (value->IsBoolean()) {
-    v8::Local<v8::Boolean> target = value->ToBoolean(isolate_);
-    if (target->Value()) {
-      return this->shared_true_;
-    } else {
-      return this->shared_false_;
-    }
+    return Boolean::Of(value);
+  } else if (value->IsString()) {
+    return String::Of(env, value);
+  } else if (value->IsInt32()) {
+    return Integer::Of(env, value);
+  } else if (value->IsBigInt()) {
+    return Long::Of(env, value);
+  } else if (value->IsNumber()) {
+    return Double::Of(env, value);
   } else {
     auto pointer = new v8::Persistent<v8::Value>(isolate_, value);
-    if (value->IsNumber()) {
-      return JsNumber::ToJava(env, j_this_, (jlong) pointer, value.As<v8::Number>()->Value());
-    } else if (value->IsObject()) {
+    if (value->IsObject()) {
       if (value->IsFunction()) {
-        return JsFunction::ToJava(env, j_this_, (jlong) pointer);
+        return JsFunction::Of(env, j_this_, (jlong) pointer);
       } else if (value->IsPromise()) {
-        return JsPromise::ToJava(env, j_this_, (jlong) pointer);
+        return JsPromise::Of(env, j_this_, (jlong) pointer);
       } else if (value->IsNativeError()) {
-        return JsError::ToJava(env, j_this_, (jlong) pointer);
+        return JsError::Of(env, j_this_, (jlong) pointer);
       } else if (value->IsArray()) {
-        return JsArray::ToJava(env, j_this_, (jlong) pointer);
+        return JsArray::Of(env, j_this_, (jlong) pointer);
       }
-      return JsObject::ToJava(env, j_this_, (jlong) pointer);
-    } else if (value->IsString()) {
-      v8::String::Value unicodeString(isolate_, value);
-      jstring jValue = env->NewString(*unicodeString, unicodeString.length());
-      return JsString::ToJava(env, j_this_, (jlong) pointer, jValue);
+      return JsObject::Of(env, j_this_, (jlong) pointer);
     }
-    return JsValue::ToJava(env, j_this_, (jlong) pointer);
+    return JsValue::Of(env, j_this_, (jlong) pointer);
   }
 }
 
-void NodeRuntime::TryLoop() {
+void Runtime::TryLoop() {
   if (!event_loop_) {
     LOGE("TryLoop() but eventLoop is null");
     return;
@@ -302,14 +295,14 @@ void NodeRuntime::TryLoop() {
     callback_handle_ = new uv_async_t();
     callback_handle_->data = this;
     uv_async_init(event_loop_, callback_handle_, [](uv_async_t *handle) {
-      auto *runtime = reinterpret_cast<NodeRuntime *>(handle->data);
+      auto *runtime = reinterpret_cast<Runtime *>(handle->data);
       runtime->Handle(handle);
     });
     uv_async_send(callback_handle_);
   }
 }
 
-bool NodeRuntime::Await(const std::function<void()> &runnable) {
+bool Runtime::Await(const std::function<void()> &runnable) {
   assert(isolate_ != nullptr);
   if (std::this_thread::get_id() == thread_id_) {
     runnable();
@@ -344,7 +337,7 @@ bool NodeRuntime::Await(const std::function<void()> &runnable) {
   }
 }
 
-bool NodeRuntime::Post(const std::function<void()> &runnable) {
+bool Runtime::Post(const std::function<void()> &runnable) {
   if (!running_) {
     return false;
   }
@@ -362,7 +355,7 @@ bool NodeRuntime::Post(const std::function<void()> &runnable) {
   }
 }
 
-void NodeRuntime::Handle(uv_async_t *handle) {
+void Runtime::Handle(uv_async_t *handle) {
   async_mutex_.lock();
   while (!callbacks_.empty()) {
     auto callback = callbacks_.front();
@@ -381,26 +374,26 @@ void NodeRuntime::Handle(uv_async_t *handle) {
   async_mutex_.unlock();
 }
 
-void NodeRuntime::MountFile(const char *src, const char *dst, const int mode) {
+void Runtime::MountFile(const char *src, const char *dst, const int mode) {
   RUNTIME_V8_SCOPE();
   auto env = node::GetCurrentEnvironment(context);
   node::Mount(env, src, dst, mode);
 }
 
-void NodeRuntime::Chroot(const char *path) {
+void Runtime::Chroot(const char *path) {
   RUNTIME_V8_SCOPE();
   auto env = node::GetCurrentEnvironment(context);
   node::Chroot(env, path);
 }
 
-void NodeRuntime::Throw(JNIEnv *env, v8::Local<v8::Value> exception) {
+void Runtime::Throw(JNIEnv *env, v8::Local<v8::Value> exception) {
   RUNTIME_V8_SCOPE();
   auto reference = new v8::Persistent<v8::Value>(isolate_, exception);
-  auto j_exception = JsError::ToException(env, JsError::ToJava(env, j_this_, (jlong) reference));
+  auto j_exception = JsError::ToException(env, JsError::Of(env, j_this_, (jlong) reference));
   env->Throw((jthrowable) j_exception);
 }
 
-void NodeRuntime::CheckThread() {
+void Runtime::CheckThread() {
   if (std::this_thread::get_id() != thread_id_) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wformat"
@@ -411,7 +404,7 @@ void NodeRuntime::CheckThread() {
   }
 }
 
-jobject NodeRuntime::Eval(const uint16_t *code, int code_len, const uint16_t *source, int source_len, int line) {
+jobject Runtime::Eval(const uint16_t *code, int code_len, const uint16_t *source, int source_len, int line) {
   RUNTIME_V8_SCOPE();
 
   v8::TryCatch try_catch(isolate_);
@@ -434,7 +427,7 @@ jobject NodeRuntime::Eval(const uint16_t *code, int code_len, const uint16_t *so
   return ToJava(*env, result.ToLocalChecked());
 }
 
-jobject NodeRuntime::ParseJson(const uint16_t *json, int json_len) {
+jobject Runtime::ParseJson(const uint16_t *json, int json_len) {
   RUNTIME_V8_SCOPE();
 
   v8::TryCatch try_catch(isolate_);
@@ -447,14 +440,14 @@ jobject NodeRuntime::ParseJson(const uint16_t *json, int json_len) {
   return ToJava(*env, result.ToLocalChecked());
 }
 
-jobject NodeRuntime::ThrowError(const uint16_t *message, int message_len) const {
+jobject Runtime::ThrowError(const uint16_t *message, int message_len) const {
   auto error = v8::Exception::Error(V8_STRING(isolate_, message, message_len));
   isolate_->ThrowException(error);
   EnvHelper env(vm_);
   return ToJava(*env, error);
 }
 
-jobject NodeRuntime::Require(const uint16_t *path, int path_len) {
+jobject Runtime::Require(const uint16_t *path, int path_len) {
   auto context = context_.Get(isolate_);
   auto *argv = new v8::Local<v8::Value>[1];
   argv[0] = V8_STRING(isolate_, path, path_len);
@@ -518,27 +511,27 @@ int init_node() {
 //     v8::V8::ShutdownPlatform();
 // }
 
-jmethodID NodeRuntime::attach_method_id_;
-jmethodID NodeRuntime::detach_method_id_;
-jfieldID NodeRuntime::shared_null_field_id_;
-jfieldID NodeRuntime::shared_undefined_field_id_;
-jfieldID NodeRuntime::shared_true_field_id_;
-jfieldID NodeRuntime::shared_false_field_id_;
-jfieldID NodeRuntime::pointer_field_id_;
+jmethodID Runtime::attach_method_id_;
+jmethodID Runtime::detach_method_id_;
+jfieldID Runtime::shared_undefined_field_id_;
+jfieldID Runtime::pointer_field_id_;
 
-jint NodeRuntime::OnLoad(JNIEnv *env) {
+jint Runtime::OnLoad(JNIEnv *env) {
   jclass clazz = env->FindClass("com/linroid/noko/Node");
   if (clazz == nullptr) {
     return JNI_ERR;
   }
-  shared_null_field_id_ = env->GetFieldID(clazz, "sharedNull", "Lcom/linroid/noko/types/JsNull;");
+
   shared_undefined_field_id_ = env->GetFieldID(clazz, "sharedUndefined",
                                                "Lcom/linroid/noko/types/JsUndefined;");
-  shared_true_field_id_ = env->GetFieldID(clazz, "sharedTrue", "Lcom/linroid/noko/types/JsBoolean;");
-  shared_false_field_id_ = env->GetFieldID(clazz, "sharedFalse", "Lcom/linroid/noko/types/JsBoolean;");
   pointer_field_id_ = env->GetFieldID(clazz, "pointer", "J");
 
   attach_method_id_ = env->GetMethodID(clazz, "attach", "(Lcom/linroid/noko/types/JsObject;)V");
   detach_method_id_ = env->GetMethodID(clazz, "detach", "(Lcom/linroid/noko/types/JsObject;)V");
   return JNI_OK;
+}
+
+Runtime *Runtime::Get(JNIEnv *env, jobject obj) {
+  jlong pointer = env->GetLongField(obj, pointer_field_id_);
+  return reinterpret_cast<Runtime *>(pointer);
 }

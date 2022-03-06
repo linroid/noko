@@ -2,7 +2,7 @@
 #define NOKO_JS_PROPERTIESOBSERVER_H
 
 #include <jni.h>
-#include "../node_runtime.h"
+#include "../runtime.h"
 
 class PropertiesObserver {
 private:
@@ -10,9 +10,9 @@ private:
   jmethodID methodId_;
   jobject that_;
 public:
-  NodeRuntime *runtime_ = nullptr;
+  Runtime *runtime_ = nullptr;
 
-  PropertiesObserver(NodeRuntime *node, JNIEnv *env, jobject that, jmethodID method_id);
+  PropertiesObserver(Runtime *node, JNIEnv *env, jobject that, jmethodID method_id);
 
   ~PropertiesObserver();
 

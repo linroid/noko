@@ -2,7 +2,7 @@
 #include <node.h>
 #include "js_object.h"
 #include "js_value.h"
-#include "js_string.h"
+#include "string.h"
 #include "js_undefined.h"
 #include "js_null.h"
 #include "../observable/properties_observer.h"

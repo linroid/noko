@@ -2,7 +2,7 @@
 #include "env_helper.h"
 
 JavaCallback::JavaCallback(
-    NodeRuntime *node,
+    Runtime *node,
     JNIEnv *env,
     jobject that,
     jclass clazz,

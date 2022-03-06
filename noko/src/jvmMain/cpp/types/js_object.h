@@ -10,7 +10,7 @@ private:
   static jmethodID init_method_id_;
 
 public:
-  static jobject ToJava(JNIEnv *env, jobject node, jlong pointer) {
+  static jobject Of(JNIEnv *env, jobject node, jlong pointer) {
     return env->NewObject(class_, init_method_id_, node, pointer);
   }
 

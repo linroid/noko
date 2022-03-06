@@ -5,18 +5,14 @@
 #include "v8.h"
 #include "log.h"
 
-#define V8_SCOPE_NEW(env, runtime_pointer) \
-  if (runtime_pointer == 0) { \
-    LOGE("Invalid runtime_pointer %s(%d)-<%s>", __FILE__, __LINE__, __FUNCTION__); \
-    env->FatalError("Invalid runtime_pointer"); \
-  } \
-  NodeRuntime *runtime = reinterpret_cast<NodeRuntime *>(runtime_pointer); \
+#define V8_SCOPE_NEW(env) \
+  auto runtime = Runtime::Current(); \
   auto isolate = runtime->isolate_; \
   v8::Locker locker(isolate); \
   v8::HandleScope handle_scope(isolate); \
 
 #define V8_SCOPE(env, j_this) \
-  auto runtime = JsValue::GetRuntime(env, j_this); \
+  auto runtime = Runtime::Current(); \
   if (runtime == nullptr) { \
     LOGE("GetRuntime runtime nullptr %s(%d)-<%s>", __FILE__, __LINE__, __FUNCTION__); \
     env->FatalError("GetRuntime returns nullptr"); \

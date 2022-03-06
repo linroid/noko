@@ -1,5 +1,5 @@
-#ifndef NODE_NOKO_H
-#define NODE_NOKO_H
+#ifndef NODE_RUNTIME_H
+#define NODE_RUNTIME_H
 
 #include <jni.h>
 #include <string>
@@ -17,34 +17,13 @@
 
 int init_node();
 
-enum JSType {
-  /** Cached types */
-  kNone,
-  kUndefined,
-  kNull,
-  kBoolean,
-
-  /** Non cached types */
-  kValue,
-  kArray,
-  kObject,
-  kString,
-  kNumber,
-  kFunction,
-  kPromise,
-  kError,
-};
-
-class NodeRuntime {
+class Runtime {
 
  private:
   static jmethodID attach_method_id_;
   static jmethodID detach_method_id_;
 
-  static jfieldID shared_null_field_id_;
   static jfieldID shared_undefined_field_id_;
-  static jfieldID shared_true_field_id_;
-  static jfieldID shared_false_field_id_;
   static jfieldID pointer_field_id_;
 
   static std::mutex shared_mutex_;
@@ -57,10 +36,7 @@ class NodeRuntime {
 
   jobject j_this_ = nullptr;
   jobject j_global_ = nullptr;
-  jobject shared_null_ = nullptr;
   jobject shared_undefined_ = nullptr;
-  jobject shared_true_ = nullptr;
-  jobject shared_false_ = nullptr;
 
   v8::Persistent<v8::Object> global_;
   v8::Persistent<v8::Function> require_;
@@ -96,9 +72,9 @@ class NodeRuntime {
   v8::Isolate *isolate_ = nullptr;
   v8::Persistent<v8::Context> context_;
 
-  NodeRuntime(JNIEnv *env, jobject j_this, bool keep_alive, bool strict);
+  Runtime(JNIEnv *env, jobject j_this, bool keep_alive, bool strict);
 
-  ~NodeRuntime();
+  ~Runtime();
 
   int Start(std::vector<std::string> &args);
 
@@ -118,9 +94,7 @@ class NodeRuntime {
 
   void CheckThread();
 
-  bool IsRunning() const {
-    return running_;
-  }
+  bool IsRunning() const { return running_; }
 
   jobject Eval(const uint16_t *code, int codeLen, const uint16_t *source, int source_len, int line);
 
@@ -130,12 +104,11 @@ class NodeRuntime {
 
   jobject Require(const uint16_t *path, int path_len);
 
-  static jint OnLoad(JNIEnv *env);
+  static Runtime *Get(JNIEnv *env, jobject obj);
 
-  static NodeRuntime *From(JNIEnv *env, jobject j_this) {
-    jlong pointer = env->GetLongField(j_this, pointer_field_id_);
-    return reinterpret_cast<NodeRuntime *>(pointer);
-  }
+  static Runtime *Current();
+
+  static jint OnLoad(JNIEnv *env);
 };
 
-#endif //NODE_NOKO_H
+#endif //NODE_RUNTIME_H

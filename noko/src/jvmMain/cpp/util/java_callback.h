@@ -2,7 +2,7 @@
 #define NOKO_JNICALLBACK_H
 
 #include <jni.h>
-#include "../node_runtime.h"
+#include "../runtime.h"
 #include "../types/js_value.h"
 
 class JavaCallback {
@@ -10,10 +10,10 @@ private:
   jclass class_;
   jmethodID method_id_;
 public:
-  NodeRuntime *runtime_ = nullptr;
+  Runtime *runtime_ = nullptr;
   jobject that_;
 
-  JavaCallback(NodeRuntime *node, JNIEnv *env, jobject that, jclass clazz, jmethodID method_id);
+  JavaCallback(Runtime *node, JNIEnv *env, jobject that, jclass clazz, jmethodID method_id);
 
   ~JavaCallback();
 

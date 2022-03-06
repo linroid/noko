@@ -25,14 +25,16 @@ message(LIBNODE_DIR: ${LIBNODE_DIR})
 set(SOURCES
         __onload.cpp
         util/env_helper.cpp
-        node_runtime.cpp
+        runtime.cpp
         observable/properties_observer.cpp
         types/js_value.cpp
         types/js_object.cpp
         types/js_undefined.cpp
-        types/js_boolean.cpp
-        types/js_number.cpp
-        types/js_string.cpp
+        types/boolean.cpp
+        types/double.cpp
+        types/string.cpp
+        types/integer.cpp
+        types/long.cpp
         types/js_array.cpp
         types/js_null.cpp
         types/js_function.cpp

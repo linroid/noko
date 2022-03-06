@@ -1,5 +1,5 @@
 #include "js_value.h"
-#include "js_string.h"
+#include "string.h"
 #include "js_error.h"
 
 jclass JsError::class_;

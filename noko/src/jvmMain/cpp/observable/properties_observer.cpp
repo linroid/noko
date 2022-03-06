@@ -3,7 +3,7 @@
 #include "../util/env_helper.h"
 
 PropertiesObserver::PropertiesObserver(
-    NodeRuntime *node,
+    Runtime *node,
     JNIEnv *env,
     jobject that,
     jmethodID method_id

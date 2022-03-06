@@ -10,11 +10,10 @@ jint JsArray::Size(JNIEnv *env, jobject j_this) {
   return (jint) that->Length();
 }
 
-void JsArray::New(JNIEnv *env, jobject j_this) {
-  V8_SCOPE(env, j_this)
+jlong JsArray::New(JNIEnv *env, jclass clazz) {
+  V8_SCOPE_NEW(env)
   auto value = v8::Array::New(runtime->isolate_);
-  auto result = new v8::Persistent<v8::Value>(runtime->isolate_, value);
-  JsValue::SetPointer(env, j_this, (jlong) result);
+  return (jlong) new v8::Persistent<v8::Value>(runtime->isolate_, value);
 }
 
 jboolean JsArray::AddAll(JNIEnv *env, jobject j_this, jobjectArray j_elements) {
@@ -36,25 +35,6 @@ jboolean JsArray::AddAll(JNIEnv *env, jobject j_this, jobjectArray j_elements) {
   return true;
 }
 
-jint JsArray::OnLoad(JNIEnv *env) {
-  jclass clazz = env->FindClass("com/linroid/noko/types/JsArray");
-  if (!clazz) {
-    return JNI_ERR;
-  }
-
-  JNINativeMethod methods[] = {
-      {"nativeSize", "()I", (void *) (Size)},
-      {"nativeNew", "()V", (void *) (New)},
-      {"nativeAddAll", "([Ljava/lang/Object;)Z", (void *) (AddAll)},
-      {"nativeGet", "(I)Ljava/lang/Object;", (void *) (Get)},
-      {"nativeAdd", "(Ljava/lang/Object;)Z", (void *) (Add)},
-  };
-  class_ = (jclass) env->NewGlobalRef(clazz);
-  init_method_id_ = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;J)V");
-  env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
-  return JNI_OK;
-}
-
 jobject JsArray::Get(JNIEnv *env, jobject j_this, jint j_index) {
   SETUP(env, j_this, v8::Array)
   v8::TryCatch try_catch(runtime->isolate_);
@@ -67,13 +47,42 @@ jobject JsArray::Get(JNIEnv *env, jobject j_this, jint j_index) {
 }
 
 jboolean JsArray::Add(JNIEnv *env, jobject j_this, jobject j_element) {
-  auto element = JsValue::Unwrap(env, j_element);
-  SETUP(env, j_this, v8::TypedArray)
-  v8::TryCatch try_catch(runtime->isolate_);
-  auto success = that->Set(context, that->Length(), element->Get(isolate)).ToChecked();
+  SETUP(env, j_this, v8::Array)
+  auto element = JsValue::Value(context, isolate, env, j_element);
+  v8::TryCatch try_catch(isolate);
+  auto success = that->Set(context, that->Length(), element).ToChecked();
   if (try_catch.HasCaught()) {
     runtime->Throw(env, try_catch.Exception());
     return 0;
   }
   return static_cast<jboolean>(success);
+}
+
+void JNICALL Clear(JNIEnv *env, jobject j_this) {
+  SETUP(env, j_this, v8::Array)
+  // auto size = that->Length();
+  // while (size-- > 0) {
+  //   that->Delete(context, size - 1).Check();
+  // }
+  that->Set(context, V8_UTF_STRING(isolate, "length"), v8::Number::New(isolate, 0)).Check();
+}
+
+jint JsArray::OnLoad(JNIEnv *env) {
+  jclass clazz = env->FindClass("com/linroid/noko/types/JsArray");
+  if (!clazz) {
+    return JNI_ERR;
+  }
+
+  JNINativeMethod methods[] = {
+      {"nativeSize", "()I", (void *) (Size)},
+      {"nativeNew", "()J", (void *) (New)},
+      {"nativeAddAll", "([Ljava/lang/Object;)Z", (void *) (AddAll)},
+      {"nativeGet", "(I)Ljava/lang/Object;", (void *) (Get)},
+      {"nativeAdd", "(Ljava/lang/Object;)Z", (void *) (Add)},
+      {"nativeClear", "()V", (void *) (Clear)},
+  };
+  class_ = (jclass) env->NewGlobalRef(clazz);
+  init_method_id_ = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;J)V");
+  env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
+  return JNI_OK;
 }

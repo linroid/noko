@@ -15,7 +15,7 @@ public:
 
   JNICALL static jint Size(JNIEnv *env, jobject j_this);
 
-  JNICALL static void New(JNIEnv *env, jobject j_this);
+  JNICALL static jlong New(JNIEnv *env, jclass clazz);
 
   JNICALL static jobject Get(JNIEnv *env, jobject j_this, jint j_index);
 

@@ -26,7 +26,7 @@
   auto reference = JsValue::Unwrap(env, j_this); \
   auto context = runtime->context_.Get(isolate); \
   auto persistent = reinterpret_cast<v8::Persistent<type> *>(reference); \
-  auto that = v8::Local<type>::New(runtime->isolate_, *persistent);
+  auto that = persistent->Get(isolate);
 
 
 #define V8_UTF_STRING(isolate, str) v8::String::NewFromUtf8(isolate, str, v8::NewStringType::kNormal).ToLocalChecked()

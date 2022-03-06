@@ -6,8 +6,7 @@ import com.linroid.noko.NullNativePointer
 
 actual class JsArray : JsObject, MutableList<Any?> {
 
-  actual constructor(node: Node, data: Iterable<*>) : super(node, NullNativePointer) {
-    nativeNew()
+  actual constructor(node: Node, data: Iterable<*>) : super(node, nativeNew()) {
     if (data.any()) {
       addAll(data)
     }
@@ -132,5 +131,9 @@ actual class JsArray : JsObject, MutableList<Any?> {
   private external fun nativeAddAll(elements: Array<Any?>): Boolean
   private external fun nativeAddAllAt(index: Int, elements: Array<Any?>): Boolean
   private external fun nativeClear()
-  private external fun nativeNew()
+
+  companion object {
+    @JvmStatic
+    private external fun nativeNew(): NativePointer
+  }
 }

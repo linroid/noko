@@ -122,7 +122,7 @@ actual class JsArray : JsObject, MutableList<Any?> {
   private external fun nativeGet(index: Int): Any?
   private external fun nativeSetAt(index: Int, element: Any?): Any?
   private external fun nativeAdd(value: Any?): Boolean
-  private external fun nativeAddAt(index: Int, value: Any?): Any?
+  private external fun nativeAddAt(index: Int, value: Any?)
   private external fun nativeContains(element: Any?): Boolean
   private external fun nativeContainsAll(elements: Array<Any?>): Boolean
   private external fun nativeIndexOf(element: Any?): Int

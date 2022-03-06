@@ -50,7 +50,15 @@ class JsArrayTest : WithNode() {
     assertIs<Int>(result)
     assertEquals(1, result)
     assertEquals(2, array.size)
-    assertEquals(0, array[0])
-    assertEquals(2, array[1])
+
+    assertContentEquals(arrayListOf(0, 2), array)
+  }
+
+  @Test
+  fun addAt(): Unit = joinNode {
+    val array = JsArray(node, arrayListOf(0, 2, 3))
+    array.add(1, 1)
+    assertEquals(4, array.size)
+    assertContentEquals(arrayListOf(0, 1, 2, 3), array)
   }
 }

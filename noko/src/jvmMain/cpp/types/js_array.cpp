@@ -81,18 +81,50 @@ jobject JNICALL RemoveAt(JNIEnv *env, jobject j_this, jint index) {
     LOGE("Couldn't find 'splice' function for v8::Array");
     return nullptr;
   }
+  v8::TryCatch try_catch(isolate);
+
   auto value = that->Get(context, index);
   auto *argv = new v8::Local<v8::Value>[2];
   argv[0] = v8::Int32::New(isolate, index); // start
   argv[1] = v8::Int32::New(isolate, 1); // end
   auto result = splice_func.ToLocalChecked().As<v8::Function>()->Call(context, that, 2, argv);
+
+  if (try_catch.HasCaught()) {
+    runtime->Throw(env, try_catch.Exception());
+    return nullptr;
+  }
+
   if (result.IsEmpty()) {
     return nullptr;
   }
+
   if (value.IsEmpty()) {
     return nullptr;
   }
   return runtime->ToJava(env, value.ToLocalChecked());
+}
+
+void JNICALL AddAt(JNIEnv *env, jobject j_this, jint index, jobject j_value) {
+  SETUP(env, j_this, v8::Array);
+  auto value = JsValue::Value(isolate, env, j_value);
+  v8::TryCatch try_catch(isolate);
+  auto splice_func = that->Get(context, V8_UTF_STRING(isolate, "splice"));
+  if (splice_func.IsEmpty()) {
+    LOGE("Couldn't find 'splice' function for v8::Array");
+    return;
+  }
+  auto *argv = new v8::Local<v8::Value>[3];
+  argv[0] = v8::Int32::New(isolate, index);
+  argv[1] = v8::Int32::New(isolate, 0);
+  argv[2] = value;
+  auto result = splice_func.ToLocalChecked().As<v8::Function>()->Call(context, that, 3, argv);
+  if (try_catch.HasCaught()) {
+    runtime->Throw(env, try_catch.Exception());
+    return;
+  }
+  if (result.IsEmpty()) {
+    return;
+  }
 }
 
 jint OnLoad(JNIEnv *env) {
@@ -102,13 +134,14 @@ jint OnLoad(JNIEnv *env) {
   }
 
   JNINativeMethod methods[] = {
-      {"nativeSize", "()I", (void *) (Size)},
-      {"nativeNew", "()J", (void *) (New)},
-      {"nativeAddAll", "([Ljava/lang/Object;)Z", (void *) (AddAll)},
-      {"nativeGet", "(I)Ljava/lang/Object;", (void *) (Get)},
-      {"nativeAdd", "(Ljava/lang/Object;)Z", (void *) (Add)},
-      {"nativeClear", "()V", (void *) (Clear)},
-      {"nativeRemoveAt", "(I)Ljava/lang/Object;", (void *) (RemoveAt)},
+      {"nativeSize", "()I", (void *) Size},
+      {"nativeNew", "()J", (void *) New},
+      {"nativeAddAll", "([Ljava/lang/Object;)Z", (void *) AddAll},
+      {"nativeGet", "(I)Ljava/lang/Object;", (void *) Get},
+      {"nativeAdd", "(Ljava/lang/Object;)Z", (void *) Add},
+      {"nativeClear", "()V", (void *) Clear},
+      {"nativeRemoveAt", "(I)Ljava/lang/Object;", (void *) RemoveAt},
+      {"nativeAddAt", "(ILjava/lang/Object;)V", (void *) AddAt},
   };
   class_ = (jclass) env->NewGlobalRef(clazz);
   init_method_id_ = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;J)V");

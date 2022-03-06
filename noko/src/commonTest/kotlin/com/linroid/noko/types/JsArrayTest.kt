@@ -23,10 +23,7 @@ class JsArrayTest : WithNode() {
     val obj = JsObject(node)
     val array = JsArray(node, arrayListOf(0, 1, obj))
     array.add(3)
-    assertEquals(array[0], 0)
-    assertEquals(array[1], 1)
-    assertEquals(array[2], obj)
-    assertEquals(array[3], 3)
+    assertContentEquals(arrayListOf(0, 1, obj, 3), array)
   }
 
   @Test
@@ -60,5 +57,14 @@ class JsArrayTest : WithNode() {
     array.add(1, 1)
     assertEquals(4, array.size)
     assertContentEquals(arrayListOf(0, 1, 2, 3), array)
+  }
+
+  @Test
+  fun replaceAt(): Unit = joinNode {
+    val array = JsArray(node, arrayListOf(0, 2, 3))
+    array[1] = 1
+    array[2] = 2
+    assertEquals(3, array.size)
+    assertContentEquals(arrayListOf(0, 1, 2), array)
   }
 }

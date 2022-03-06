@@ -127,6 +127,30 @@ void JNICALL AddAt(JNIEnv *env, jobject j_this, jint index, jobject j_value) {
   }
 }
 
+jobject JNICALL SetAt(JNIEnv *env, jobject j_this, jint index, jobject j_value) {
+  SETUP(env, j_this, v8::Array);
+  auto value = JsValue::Value(isolate, env, j_value);
+  v8::TryCatch try_catch(isolate);
+  auto splice_func = that->Get(context, V8_UTF_STRING(isolate, "splice"));
+  if (splice_func.IsEmpty()) {
+    LOGE("Couldn't find 'splice' function for v8::Array");
+    return nullptr;
+  }
+  auto *argv = new v8::Local<v8::Value>[3];
+  argv[0] = v8::Int32::New(isolate, index);
+  argv[1] = v8::Int32::New(isolate, 1);
+  argv[2] = value;
+  auto result = splice_func.ToLocalChecked().As<v8::Function>()->Call(context, that, 3, argv);
+  if (try_catch.HasCaught()) {
+    runtime->Throw(env, try_catch.Exception());
+    return nullptr;
+  }
+  if (result.IsEmpty()) {
+    return nullptr;
+  }
+  return runtime->ToJava(env, result.ToLocalChecked());
+}
+
 jint OnLoad(JNIEnv *env) {
   jclass clazz = env->FindClass("com/linroid/noko/types/JsArray");
   if (!clazz) {
@@ -142,6 +166,7 @@ jint OnLoad(JNIEnv *env) {
       {"nativeClear", "()V", (void *) Clear},
       {"nativeRemoveAt", "(I)Ljava/lang/Object;", (void *) RemoveAt},
       {"nativeAddAt", "(ILjava/lang/Object;)V", (void *) AddAt},
+      {"nativeSetAt", "(ILjava/lang/Object;)Ljava/lang/Object;", (void *) SetAt},
   };
   class_ = (jclass) env->NewGlobalRef(clazz);
   init_method_id_ = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;J)V");

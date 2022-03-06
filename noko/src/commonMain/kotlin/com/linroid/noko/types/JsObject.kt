@@ -15,9 +15,7 @@ expect open class JsObject : JsValue {
 
   fun set(key: String, value: Any?)
 
-  inline fun <reified T : Any> get(key: String): T
-
-  inline fun <reified T : Any> opt(key: String): T?
+  inline fun <reified T : Any> get(key: String): T?
 
   fun delete(key: String)
 

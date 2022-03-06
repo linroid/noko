@@ -1,4 +1,5 @@
 #include "env_helper.h"
+#include "jni_helper.h"
 
 EnvHelper::EnvHelper(JavaVM *vm) : vm_(vm) {
   stat_ = vm->GetEnv((void **) (&env_), JNI_VERSION_1_6);
@@ -10,15 +11,17 @@ EnvHelper::EnvHelper(JavaVM *vm) : vm_(vm) {
 #endif
   }
   if (env_->ExceptionCheck()) {
-    LOGE("Attach JNI with pending exception");
-    env_->Throw(env_->ExceptionOccurred());
+    auto error = env_->ExceptionOccurred();
+    LOGE("Attach JNI with pending exception: %s", JniHelper::GetStackTrace(env_, error).c_str());
+    abort();
   }
 }
 
 EnvHelper::~EnvHelper() {
   if (env_->ExceptionCheck()) {
-    LOGE("Detach JNI with pending exception");
-    env_->Throw(env_->ExceptionOccurred());
+    auto error = env_->ExceptionOccurred();
+    LOGE("Detach JNI with pending exception: %s", JniHelper::GetStackTrace(env_, error).c_str());
+    abort();
   }
   if (stat_ == JNI_EDETACHED) {
     vm_->DetachCurrentThread();

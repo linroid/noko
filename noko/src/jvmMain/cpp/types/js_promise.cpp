@@ -14,7 +14,7 @@ jint JsPromise::OnLoad(JNIEnv *env) {
   JNINativeMethod methods[] = {
       {"nativeNew",     "()V",                                    (void *) JsPromise::New},
       {"nativeReject",  "(Lcom/linroid/noko/types/JsError;)V",    (void *) JsPromise::Reject},
-      {"nativeResolve", "(Lcom/linroid/noko/types/JsValue;)V",    (void *) JsPromise::Resolve},
+      {"nativeResolve", "(Ljava/lang/Object;)V",                  (void *) JsPromise::Resolve},
       {"nativeThen",    "(Lcom/linroid/noko/types/JsFunction;)V", (void *) JsPromise::Then},
       {"nativeCatch",   "(Lcom/linroid/noko/types/JsFunction;)V", (void *) JsPromise::Catch},
   };

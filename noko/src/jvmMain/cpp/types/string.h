@@ -12,6 +12,7 @@ v8::Local<v8::String> Value(JNIEnv *env, jstring value);
 
 jint OnLoad(JNIEnv *env);
 
-};
+bool Is(JNIEnv *env, jobject obj);
+}
 
 #endif //NODE_JSSTRING_H

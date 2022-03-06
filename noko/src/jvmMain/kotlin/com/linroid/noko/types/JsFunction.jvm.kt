@@ -4,7 +4,7 @@ import com.linroid.noko.NativePointer
 import com.linroid.noko.Node
 import java.lang.reflect.InvocationTargetException
 
-typealias Callable = (receiver: JsValue, parameters: Array<out JsValue>) -> JsValue?
+typealias Callable = (receiver: JsValue, parameters: Array<out Any?>) -> JsValue?
 
 actual open class JsFunction : JsObject {
 
@@ -20,7 +20,7 @@ actual open class JsFunction : JsObject {
     nativeNew(name)
   }
 
-  protected actual open fun onCall(receiver: JsValue, parameters: Array<out JsValue>): JsValue? {
+  protected actual open fun onCall(receiver: JsValue, parameters: Array<out Any?>): Any? {
     if (callable != null) {
       return try {
         callable.invoke(receiver, parameters)
@@ -33,13 +33,12 @@ actual open class JsFunction : JsObject {
     return null
   }
 
-  actual fun call(receiver: JsValue, vararg parameters: Any?): JsValue {
+  actual fun call(receiver: JsValue, vararg parameters: Any?): Any? {
     node.checkThread()
     check(node.pointer != 0L) { "node has already been disposed" }
-    val v8Parameters = Array(parameters.size) { from(node, parameters[it]) }
-    return nativeCall(receiver, v8Parameters)
+    return nativeCall(receiver, parameters)
   }
 
-  private external fun nativeCall(receiver: JsValue, parameters: Array<out JsValue>): JsValue
+  private external fun nativeCall(receiver: JsValue, parameters: Array<out Any?>): Any?
   private external fun nativeNew(name: String)
 }

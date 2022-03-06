@@ -6,6 +6,7 @@
 class JsFunction {
 private:
   static jclass class_;
+  static jclass object_class_;
   static jmethodID init_method_id_;
   static jmethodID call_method_id_;
 

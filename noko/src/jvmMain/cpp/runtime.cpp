@@ -10,7 +10,6 @@
 #include "types/js_object.h"
 #include "types/string.h"  // NOLINT(modernize-deprecated-headers)
 #include "types/js_function.h"
-#include "types/js_null.h"
 #include "types/js_promise.h"
 #include "types/js_array.h"
 #include "types/js_error.h"

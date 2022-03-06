@@ -48,13 +48,11 @@ jint JsArray::OnLoad(JNIEnv *env) {
   }
 
   JNINativeMethod methods[] = {
-      {"nativeSize",   "()I",                                  (void *) (Size)},
-      {"nativeNew",    "()V",                                  (void *) (New)},
-      {"nativeAddAll", "([Lcom/linroid/noko/types/JsValue;)Z", (void *) (AddAll)},
-      {"nativeGet",    "(I)Lcom/linroid/noko/types/JsValue;",  (void *) (Get)},
-      {"nativeAdd",    "(Lcom/linroid/noko/types/JsValue;)Z",  (void *) (Add)},
-      // {"nativeAddAllAt", "(I[Lcom/linroid/noko/types/JsValue;)Z",                             (void *) (AddAllAt)},
-      // {"nativeAddAt",    "(ILcom/linroid/noko/types/JsValue;)Lcom/linroid/noko/types/JsValue;", (void *) (AddAllAt)},
+      {"nativeSize", "()I", (void *) (Size)},
+      {"nativeNew", "()V", (void *) (New)},
+      {"nativeAddAll", "([Ljava/lang/Object;)Z", (void *) (AddAll)},
+      {"nativeGet", "(I)Ljava/lang/Object;", (void *) (Get)},
+      {"nativeAdd", "(Ljava/lang/Object;)Z", (void *) (Add)},
   };
   class_ = (jclass) env->NewGlobalRef(clazz);
   init_method_id_ = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;J)V");

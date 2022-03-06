@@ -9,11 +9,12 @@
 #include "types/js_value.h"
 #include "types/js_object.h"
 #include "types/js_undefined.h"
+#include "types/integer.h"
 #include "types/double.h"
-#include "types/string.h"
+#include "types/string.h" // NOLINT(modernize-deprecated-headers)
 #include "types/boolean.h"
+#include "types/long.h"
 #include "types/js_array.h"
-#include "types/js_null.h"
 #include "types/js_function.h"
 #include "types/js_error.h"
 #include "types/js_promise.h"
@@ -24,20 +25,19 @@
 
 static jmethodID run_method_id_;
 
-JNICALL jint Start(JNIEnv *env, jobject jThis, jobjectArray jArgs) {
-  auto runtime = Runtime::Get(env, jThis);
-  jsize argc = env->GetArrayLength(jArgs);
+JNICALL jint Start(JNIEnv *env, jobject j_this, jobjectArray j_args) {
+  auto runtime = Runtime::Get(env, j_this);
+  jsize argc = env->GetArrayLength(j_args);
   std::vector<std::string> args(static_cast<unsigned long>(argc));
 
   for (int i = 0; i < argc; ++i) {
-    auto string = (jstring) env->GetObjectArrayElement(jArgs, i);
+    auto string = (jstring) env->GetObjectArrayElement(j_args, i);
     const char *rawString = env->GetStringUTFChars(string, nullptr);
     args[i] = std::string(rawString);
     env->ReleaseStringUTFChars(string, rawString);
   }
 
   int code = jint(runtime->Start(args));
-  LOGI("free runtime=%p", runtime);
   delete runtime;
   return code;
 }
@@ -47,9 +47,9 @@ struct PostMessage {
   Runtime *runtime;
 };
 
-JNICALL jboolean Post(JNIEnv *env, jobject jThis, jobject jRunnable) {
+JNICALL jboolean Post(JNIEnv *env, jobject j_this, jobject jRunnable) {
   auto *message = new PostMessage();
-  message->runtime = Runtime::Get(env, jThis);
+  message->runtime = Runtime::Get(env, j_this);
   message->runnable = env->NewGlobalRef(jRunnable);
   auto success = message->runtime->Post([message] {
     EnvHelper _env(message->runtime->vm_);
@@ -64,37 +64,37 @@ JNICALL jboolean Post(JNIEnv *env, jobject jThis, jobject jRunnable) {
   return 1;
 }
 
-JNICALL void MountFile(JNIEnv *env, jobject jThis, jstring jSrc, jstring jDst, jint mode) {
-  const char *src = env->GetStringUTFChars(jSrc, nullptr);
-  const char *dst = env->GetStringUTFChars(jDst, nullptr);
+JNICALL void MountFile(JNIEnv *env, jobject j_this, jstring j_src, jstring j_dst, jint mode) {
+  const char *src = env->GetStringUTFChars(j_src, nullptr);
+  const char *dst = env->GetStringUTFChars(j_dst, nullptr);
 
-  auto runtime = Runtime::Get(env, jThis);
+  auto runtime = Runtime::Get(env, j_this);
   runtime->MountFile(src, dst, mode);
 
-  env->ReleaseStringUTFChars(jDst, src);
-  env->ReleaseStringUTFChars(jSrc, dst);
+  env->ReleaseStringUTFChars(j_dst, src);
+  env->ReleaseStringUTFChars(j_src, dst);
 }
 
-JNICALL void Chroot(JNIEnv *env, jobject jThis, jstring jPath) {
-  const char *path = env->GetStringUTFChars(jPath, nullptr);
+JNICALL void Chroot(JNIEnv *env, jobject j_this, jstring j_path) {
+  const char *path = env->GetStringUTFChars(j_path, nullptr);
 
-  auto runtime = Runtime::Get(env, jThis);
+  auto runtime = Runtime::Get(env, j_this);
   runtime->Chroot(path);
 
-  env->ReleaseStringUTFChars(jPath, path);
+  env->ReleaseStringUTFChars(j_path, path);
 }
 
-JNICALL jlong New(JNIEnv *env, jobject jThis, jboolean keepAlive, jboolean strict) {
-  auto *runtime = new Runtime(env, jThis, keepAlive, strict);
+JNICALL jlong New(JNIEnv *env, jobject j_this, jboolean keep_alive, jboolean strict) {
+  auto *runtime = new Runtime(env, j_this, keep_alive, strict);
   return reinterpret_cast<jlong>(runtime);
 }
 
-JNICALL void Exit(JNIEnv *env, jobject jThis, jint exitCode) {
-  auto runtime = Runtime::Get(env, jThis);
-  runtime->Exit(exitCode);
+JNICALL void Exit(JNIEnv *env, jobject j_this, jint code) {
+  auto runtime = Runtime::Get(env, j_this);
+  runtime->Exit(code);
 }
 
-JNICALL void Setup(__unused JNIEnv *env, __unused jclass jThis, jobject connectivity_manager) {
+JNICALL void Setup(__unused JNIEnv *env, __unused jclass j_this, jobject connectivity_manager) {
 #if defined(__ANDROID__)
   ares_library_init_android(connectivity_manager);
   LOGI("ares_library_android_initialized: %d", ares_library_android_initialized());
@@ -104,45 +104,45 @@ JNICALL void Setup(__unused JNIEnv *env, __unused jclass jThis, jobject connecti
   // ares_get_server_list_from_env(max, &num);
 }
 
-JNICALL jobject Eval(JNIEnv *env, jobject jThis, jstring jCode, jstring jSource, jint jLine) {
-  auto node = Runtime::Get(env, jThis);
+JNICALL jobject Eval(JNIEnv *env, jobject j_this, jstring j_code, jstring j_source, jint line) {
+  auto node = Runtime::Get(env, j_this);
 
-  jint codeLen = env->GetStringLength(jCode);
-  auto code = env->GetStringChars(jCode, nullptr);
-  jint sourceLen = env->GetStringLength(jSource);
-  auto source = env->GetStringChars(jSource, nullptr);
+  jint codeLen = env->GetStringLength(j_code);
+  auto code = env->GetStringChars(j_code, nullptr);
+  jint sourceLen = env->GetStringLength(j_source);
+  auto source = env->GetStringChars(j_source, nullptr);
 
-  auto result = node->Eval(code, codeLen, source, sourceLen, jLine);
-  env->ReleaseStringChars(jCode, code);
-  env->ReleaseStringChars(jSource, source);
+  auto result = node->Eval(code, codeLen, source, sourceLen, line);
+  env->ReleaseStringChars(j_code, code);
+  env->ReleaseStringChars(j_source, source);
   return result;
 }
 
-JNICALL jobject ParseJson(JNIEnv *env, jobject jThis, jstring jJson) {
-  const uint16_t *json = env->GetStringChars(jJson, nullptr);
-  const jint jsonLen = env->GetStringLength(jJson);
-  auto node = Runtime::Get(env, jThis);
+JNICALL jobject ParseJson(JNIEnv *env, jobject j_this, jstring j_json) {
+  const uint16_t *json = env->GetStringChars(j_json, nullptr);
+  const jint jsonLen = env->GetStringLength(j_json);
+  auto node = Runtime::Get(env, j_this);
   auto result = node->ParseJson(json, jsonLen);
-  env->ReleaseStringChars(jJson, json);
+  env->ReleaseStringChars(j_json, json);
   return result;
 }
 
-JNICALL jobject ThrowError(JNIEnv *env, jobject jThis, jstring jMessage) {
-  const uint16_t *message = env->GetStringChars(jMessage, nullptr);
-  const jint messageLen = env->GetStringLength(jMessage);
-  auto node = Runtime::Get(env, jThis);
+JNICALL jobject ThrowError(JNIEnv *env, jobject j_this, jstring j_message) {
+  const uint16_t *message = env->GetStringChars(j_message, nullptr);
+  const jint messageLen = env->GetStringLength(j_message);
+  auto node = Runtime::Get(env, j_this);
   auto result = node->ThrowError(message, messageLen);
-  env->ReleaseStringChars(jMessage, message);
+  env->ReleaseStringChars(j_message, message);
   return result;
 }
 
 // TODO: Not working, illegal context
-JNICALL jobject Require(JNIEnv *env, jobject jThis, jstring jPath) {
-  jint pathLen = env->GetStringLength(jPath);
-  auto path = env->GetStringChars(jPath, nullptr);
-  auto node = Runtime::Get(env, jThis);
+JNICALL jobject Require(JNIEnv *env, jobject j_this, jstring j_path) {
+  jint pathLen = env->GetStringLength(j_path);
+  auto path = env->GetStringChars(j_path, nullptr);
+  auto node = Runtime::Get(env, j_this);
   auto result = node->Require(path, pathLen);
-  env->ReleaseStringChars(jPath, path);
+  env->ReleaseStringChars(j_path, path);
   return result;
 }
 
@@ -186,7 +186,7 @@ static JNINativeMethod nodeMethods[] = {
     {"nativeMountFile", "(Ljava/lang/String;Ljava/lang/String;I)V", (void *) MountFile},
     {"nativeChroot", "(Ljava/lang/String;)V", (void *) Chroot},
     {"nativePost", "(Ljava/lang/Runnable;)Z", (void *) Post},
-    {"nativeEval", "(Ljava/lang/String;Ljava/lang/String;I)Lcom/linroid/noko/types/JsValue;",
+    {"nativeEval", "(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/Object;",
      (void *) Eval},
     {"nativeParseJson", "(Ljava/lang/String;)Lcom/linroid/noko/types/JsValue;", (void *) ParseJson},
     {"nativeThrowError", "(Ljava/lang/String;)Lcom/linroid/noko/types/JsError;",
@@ -219,12 +219,13 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
   LOAD_JNI_CLASS(Runtime)
   LOAD_JNI_CLASS(JsValue)
   LOAD_JNI_CLASS(JsObject)
+  LOAD_JNI_CLASS(Integer)
   LOAD_JNI_CLASS(Boolean)
   LOAD_JNI_CLASS(Double)
   LOAD_JNI_CLASS(String)
+  LOAD_JNI_CLASS(Long)
   LOAD_JNI_CLASS(JsArray)
   LOAD_JNI_CLASS(JsUndefined)
-  LOAD_JNI_CLASS(JsNull)
   LOAD_JNI_CLASS(JsFunction)
   LOAD_JNI_CLASS(JsError)
   LOAD_JNI_CLASS(JsPromise)

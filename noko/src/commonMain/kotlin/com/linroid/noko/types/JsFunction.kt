@@ -8,7 +8,7 @@ expect open class JsFunction internal constructor(
   pointer: NativePointer,
 ) : JsObject {
 
-  protected open fun onCall(receiver: JsValue, parameters: Array<out JsValue>): JsValue?
+  protected open fun onCall(receiver: JsValue, parameters: Array<out Any?>): Any?
 
-  fun call(receiver: JsValue, vararg parameters: Any?): JsValue
+  fun call(receiver: JsValue, vararg parameters: Any?): Any?
 }

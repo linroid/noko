@@ -44,10 +44,7 @@ actual class Node actual constructor(
     nativeClearReference(ref)
   }
 
-  internal lateinit var sharedNull: JsNull
   internal lateinit var sharedUndefined: JsUndefined
-  internal lateinit var sharedTrue: JsBoolean
-  internal lateinit var sharedFalse: JsBoolean
 
   /**
    * The thread that running node
@@ -214,17 +211,17 @@ process.stdout.isRaw = true;
   }
 
   private fun attachStdOutput(global: JsObject) {
-    val process: JsObject = global.get("process")
-    val stdout: JsObject = process.get("stdout")
+    val process: JsObject = global.get("process")!!
+    val stdout: JsObject = process.get("stdout")!!
     stdout.set("write", object : JsFunction(this@Node, "write") {
-      override fun onCall(receiver: JsValue, parameters: Array<out JsValue>): JsValue? {
+      override fun onCall(receiver: JsValue, parameters: Array<out Any?>): Any? {
         output.stdout(parameters[0].toString())
         return null
       }
     })
-    val stderr: JsObject = process.get("stderr")
+    val stderr: JsObject = process.get("stderr")!!
     stderr.set("write", object : JsFunction(this@Node, "write") {
-      override fun onCall(receiver: JsValue, parameters: Array<out JsValue>): JsValue? {
+      override fun onCall(receiver: JsValue, parameters: Array<out Any?>): Any? {
         output.stderr(parameters[0].toString())
         return null
       }
@@ -276,7 +273,7 @@ process.stdout.isRaw = true;
   }
 
   @Throws(JsException::class)
-  actual fun eval(code: String, source: String, line: Int): JsValue {
+  actual fun eval(code: String, source: String, line: Int): Any? {
     return nativeEval(code, source, line)
   }
 
@@ -301,7 +298,7 @@ process.stdout.isRaw = true;
   private external fun nativePost(action: Runnable): Boolean
   private external fun nativeMountFile(src: String, dst: String, mode: Int)
   private external fun nativeChroot(path: String)
-  private external fun nativeEval(code: String, source: String, line: Int): JsValue
+  private external fun nativeEval(code: String, source: String, line: Int): Any?
   private external fun nativeParseJson(json: String): JsValue
   private external fun nativeThrowError(message: String): JsError
   private external fun nativeRequire(path: String): JsObject

@@ -22,6 +22,10 @@ v8::Local<v8::String> Value(JNIEnv *env, jstring value) {
   return handle_scope.Escape(result.ToLocalChecked());
 }
 
+bool Is(JNIEnv *env, jobject obj) {
+  return env->IsInstanceOf(obj, class_);
+}
+
 jint OnLoad(JNIEnv *env) {
   jclass clazz = env->FindClass("java/lang/String");
   if (!clazz) {

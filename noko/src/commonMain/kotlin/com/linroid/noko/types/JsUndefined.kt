@@ -6,7 +6,7 @@ import com.linroid.noko.Node
 class JsUndefined internal constructor(
   node: Node,
   pointer: NativePointer,
-) : JsPrimitive<Unit>(node, pointer, Unit) {
+) : JsValue(node, pointer) {
   override fun toString(): String {
     return "undefined"
   }

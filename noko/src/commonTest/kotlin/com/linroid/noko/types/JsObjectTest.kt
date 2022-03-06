@@ -21,29 +21,25 @@ class JsObjectTest : WithNode() {
   @Test
   fun setterAndGetter(): Unit = joinNode {
     obj.set("intValue", 1)
-    val intValue = obj.get<JsValue>("intValue")
-    assertIs<JsNumber<*>>(intValue)
-    assertEquals(1, intValue.toNumber().toInt())
+    val intValue = obj.get<Int>("intValue")
+    assertEquals(1, intValue)
 
-    obj.set("floatValue", 1.0f)
-    val floatValue = obj.get<JsValue>("floatValue")
-    assertIs<JsNumber<*>>(floatValue)
-    assertEquals(1.0f, intValue.toNumber().toFloat())
+    obj.set("floatValue", 1.1f)
+    val floatValue = obj.get<Float>("floatValue")
+    assertEquals(1.1f, floatValue)
 
-    obj.set("doubleValue", 1.0)
-    val doubleValue = obj.get<JsValue>("doubleValue")
-    assertIs<JsNumber<*>>(doubleValue)
-    assertEquals(1.0, doubleValue.toNumber())
+    obj.set("doubleValue", 1.1)
+    val doubleValue = obj.get<Double>("doubleValue")
+    assertEquals(1.1, doubleValue)
 
     obj.set("stringValue", "string")
     obj.set("stringValue", "string2")
-    val stringValue = obj.get<JsValue>("stringValue")
-    assertIs<JsString>(stringValue)
-    assertEquals("string2", stringValue.toString())
+    val stringValue = obj.get<String>("stringValue")
+    assertEquals("string2", stringValue)
 
-    assertIs<JsNumber<*>>(obj.get("floatValue"))
-    assertIs<JsNumber<*>>(obj.get("doubleValue"))
-    assertIs<JsString>(obj.get("stringValue"))
+    assertIs<Double>(obj.get("floatValue"))
+    assertIs<Double>(obj.get("doubleValue"))
+    assertIs<String>(obj.get("stringValue"))
   }
 
   @Test
@@ -71,12 +67,12 @@ class JsObjectTest : WithNode() {
     obj.set("name", "Foo")
     obj.set("name", "Bar")
     verify(atLeast = 2) {
-      observer.onPropertyChanged(eq("name"), any<JsString>())
+      observer.onPropertyChanged(eq("name"), any())
     }
 
     obj.set("age", 18)
     verify {
-      observer.onPropertyChanged(eq("age"), any<JsString>())
+      observer.onPropertyChanged(eq("age"), any())
     }
   }
 }

@@ -25,6 +25,7 @@ message(LIBNODE_DIR: ${LIBNODE_DIR})
 set(SOURCES
         __onload.cpp
         util/env_helper.cpp
+        util/jni_helper.cpp
         runtime.cpp
         observable/properties_observer.cpp
         types/js_value.cpp
@@ -36,7 +37,6 @@ set(SOURCES
         types/integer.cpp
         types/long.cpp
         types/js_array.cpp
-        types/js_null.cpp
         types/js_function.cpp
         util/java_callback.cpp
         types/js_error.cpp

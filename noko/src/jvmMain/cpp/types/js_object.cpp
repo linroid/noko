@@ -1,26 +1,56 @@
 #include <jni.h>
 #include <node.h>
-#include "js_object.h"
-#include "js_value.h"
-#include "string.h"
-#include "js_undefined.h"
-#include "js_null.h"
 #include "../observable/properties_observer.h"
 #include "../util/env_helper.h"
+#include "../util/jni_helper.h"
+#include "js_object.h"
+#include "js_value.h"
+#include "js_undefined.h"
+#include "boolean.h"
+#include "integer.h"
+#include "string.h" // NOLINT(modernize-deprecated-headers)
+#include "double.h"
+#include "long.h"
 
 jclass JsObject::class_;
 jclass JsObject::string_class_;
 jmethodID JsObject::init_method_id_;
 
+uint64_t getRepresentation(const double number) {
+  uint64_t representation;
+  memcpy(&representation, &number, sizeof representation);
+  return representation;
+}
+
 JNICALL void JsObject::Set(JNIEnv *env, jobject j_this, jstring j_key, jobject j_value) {
-  const jchar *key = env->GetStringChars(j_key, nullptr);
+  const jchar *key_chars = env->GetStringChars(j_key, nullptr);
   const jint key_len = env->GetStringLength(j_key);
 
-  auto value = JsValue::Unwrap(env, j_value);
   SETUP(env, j_this, v8::Object)
-  // CHECK_NOT_NULL(*that);
-  UNUSED(that->Set(context, V8_STRING(isolate, key, key_len), value->Get(isolate)));
-  env->ReleaseStringChars(j_key, key);
+
+  auto key = V8_STRING(isolate, key_chars, key_len);
+  env->ReleaseStringChars(j_key, key_chars);
+  if (j_value == nullptr) {
+    that->Set(context, key, v8::Null(isolate)).Check();
+  } else if (JsValue::Is(env, j_value)) {
+    auto value = JsValue::Unwrap(env, j_value);
+    that->Set(context, key, value->Get(isolate)).Check();
+  } else if (String::Is(env, j_value)) {
+    that->Set(context, key, String::Value(env, (jstring) j_value)).Check();
+  } else if (Boolean::Is(env, j_value)) {
+    auto value = Boolean::Value(env, j_value) ? v8::True(isolate) : v8::False(isolate);
+    that->Set(context, key, value).Check();
+  } else if (Integer::Is(env, j_value)) {
+    that->Set(context, key, v8::Int32::New(isolate, Integer::Value(env, j_value))).Check();
+  } else if (Long::Is(env, j_value)) {
+    that->Set(context, key, v8::BigInt::New(isolate, Long::Value(env, j_value))).Check();
+  } else if (Double::Is(env, j_value)) {
+    auto value = v8::Number::New(isolate, Double::Value(env, j_value));
+    that->Set(context, key, value).Check();
+  } else {
+    auto class_name = JniHelper::GetClassName(env, j_value);
+    LOGE("Not supported type: %s", class_name.c_str());
+  }
 }
 
 JNICALL jobject JsObject::Get(JNIEnv *env, jobject j_this, jstring j_key) {
@@ -119,7 +149,7 @@ void JsObject::Watch(JNIEnv *env, jobject j_this, jobjectArray j_keys, jobject j
   auto length = env->GetArrayLength(j_keys);
 
   jmethodID method_id = env->GetMethodID(env->GetObjectClass(j_observer), "onPropertyChanged",
-                                         "(Ljava/lang/String;Lcom/linroid/noko/types/JsValue;)V");
+                                         "(Ljava/lang/String;Ljava/lang/Object;)V");
 
   for (int i = 0; i < length; ++i) {
     auto j_key = (jstring) env->GetObjectArrayElement(j_keys, i);
@@ -174,13 +204,13 @@ jint JsObject::OnLoad(JNIEnv *env) {
   }
 
   JNINativeMethod methods[] = {
-      {"nativeGet",    "(Ljava/lang/String;)Lcom/linroid/noko/types/JsValue;",                   (void *) (JsObject::Get)},
-      {"nativeSet",    "(Ljava/lang/String;Lcom/linroid/noko/types/JsValue;)V",                  (void *) (JsObject::Set)},
-      {"nativeNew",    "()V",                                                                    (void *) (JsObject::New)},
-      {"nativeHas",    "(Ljava/lang/String;)Z",                                                  (void *) (JsObject::Has)},
-      {"nativeDelete", "(Ljava/lang/String;)V",                                                  (void *) (JsObject::Delete)},
-      {"nativeKeys",   "()[Ljava/lang/String;",                                                  (void *) (JsObject::Keys)},
-      {"nativeWatch",  "([Ljava/lang/String;Lcom/linroid/noko/observable/PropertiesObserver;)V", (void *) (JsObject::Watch)},
+      {"nativeGet", "(Ljava/lang/String;)Ljava/lang/Object;", (void *) (JsObject::Get)},
+      {"nativeSet", "(Ljava/lang/String;Ljava/lang/Object;)V", (void *) (JsObject::Set)},
+      {"nativeNew", "()V", (void *) (JsObject::New)},
+      {"nativeHas", "(Ljava/lang/String;)Z", (void *) (JsObject::Has)},
+      {"nativeDelete", "(Ljava/lang/String;)V", (void *) (JsObject::Delete)},
+      {"nativeKeys", "()[Ljava/lang/String;", (void *) (JsObject::Keys)},
+      {"nativeWatch", "([Ljava/lang/String;Lcom/linroid/noko/observable/PropertiesObserver;)V", (void *) (JsObject::Watch)},
   };
   class_ = (jclass) env->NewGlobalRef(clazz);
   init_method_id_ = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;J)V");

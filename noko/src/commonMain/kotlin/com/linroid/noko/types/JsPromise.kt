@@ -11,14 +11,14 @@ expect class JsPromise(node: Node) : JsObject {
 
   fun resolve(value: Any?)
 
-  fun then(callback: (JsValue) -> Unit): JsPromise
+  fun then(callback: (Any?) -> Unit): JsPromise
 
   fun catch(callback: (JsObject) -> Unit): JsPromise
 
-  suspend fun await(): JsValue
+  suspend fun await(): Any?
 }
 
-suspend fun JsValue.awaitIfPromise(): JsValue {
+suspend fun JsValue.awaitIfPromise(): Any? {
   if (this is JsPromise) {
     return this.await()
   }

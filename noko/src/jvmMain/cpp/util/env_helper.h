@@ -1,17 +1,17 @@
+#ifndef NOKO_UTIL_ENVHELPER_H
+#define NOKO_UTIL_ENVHELPER_H
+
 #include <jni.h>
+#include <string>
 #include "log.h"
 
-#ifndef NOKO_JS_JNIENV_H
-#define NOKO_JS_JNIENV_H
-
-
 class EnvHelper {
-private:
+ private:
   JavaVM *vm_;
   JNIEnv *env_ = nullptr;
   int stat_ = JNI_OK;
 
-public:
+ public:
   EnvHelper(JavaVM *vm);
 
   ~EnvHelper();
@@ -30,5 +30,4 @@ public:
   }
 };
 
-
-#endif //NOKO_JS_JNIENV_H
+#endif //NOKO_UTIL_ENVHELPER_H

@@ -73,7 +73,7 @@ expect class Node(
     code: String,
     source: String = "",
     line: Int = 0,
-  ): JsValue
+  ): Any?
 
   @Throws(JsException::class)
   fun parseJson(json: String): JsValue

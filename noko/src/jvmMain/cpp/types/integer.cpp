@@ -1,4 +1,5 @@
 #include "integer.h"
+#include "../util/log.h"
 
 namespace Integer {
 
@@ -11,7 +12,7 @@ bool Is(JNIEnv *env, jobject obj) {
 }
 
 jobject Of(JNIEnv *env, v8::Local<v8::Value> &value) {
-  auto raw_value = value.As<v8::Int32>()->Value();
+  jint raw_value = value.As<v8::Int32>()->Value();
   return env->CallStaticObjectMethod(class_, value_of_method_id_, raw_value);
 }
 

@@ -7,9 +7,11 @@
 
 namespace Double {
 
-inline jdouble Value(JNIEnv *env, jobject obj);
+jdouble Value(JNIEnv *env, jobject obj);
 
 jobject Of(JNIEnv *env, v8::Local<v8::Value> &value);
+
+bool Is(JNIEnv *env, jobject obj);
 
 jint OnLoad(JNIEnv *env);
 

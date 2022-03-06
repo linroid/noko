@@ -27,15 +27,14 @@ actual class JsPromise : JsObject {
 
   actual fun resolve(value: Any?) {
     node.post {
-      nativeResolve(from(node, value))
+      nativeResolve(value)
     }
   }
 
-  actual fun then(callback: (JsValue) -> Unit): JsPromise {
+  actual fun then(callback: (Any?) -> Unit): JsPromise {
     val then = JsFunction(node, "then") { _, argv ->
       check(argv.isNotEmpty()) { "then() should receive a JsValue argument" }
-      val result: JsValue = argv[0]
-      callback.invoke(result)
+      callback.invoke(argv[0])
       return@JsFunction null
     }
     nativeThen(then)
@@ -44,8 +43,9 @@ actual class JsPromise : JsObject {
 
   actual fun catch(callback: (JsObject) -> Unit): JsPromise {
     val then = JsFunction(node, "catch") { _, argv ->
-      val result: JsValue = argv[0]
-      check(result is JsObject) { "catch() should receive an JsObject parameter not ${result::class.simpleName}(${result.typeOf()})}: ${result.toJson()}" }
+      val result = argv[0]
+      checkNotNull(result)
+      check(result is JsObject) { "catch() should receive an JsObject parameter not ${result.javaClass.simpleName}" }
       callback.invoke(result)
       return@JsFunction null
     }
@@ -53,7 +53,7 @@ actual class JsPromise : JsObject {
     return this
   }
 
-  actual suspend fun await(): JsValue {
+  actual suspend fun await(): Any? {
     return suspendCancellableCoroutine { continuation ->
       if (!node.post {
           then {
@@ -69,7 +69,7 @@ actual class JsPromise : JsObject {
 
   private external fun nativeNew()
   private external fun nativeReject(error: JsError)
-  private external fun nativeResolve(value: JsValue)
+  private external fun nativeResolve(value: Any?)
 
   private external fun nativeThen(callback: JsFunction)
   private external fun nativeCatch(callback: JsFunction)

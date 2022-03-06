@@ -4,7 +4,6 @@ import com.linroid.noko.NativePointer
 import com.linroid.noko.Node
 import com.linroid.noko.NullNativePointer
 import com.linroid.noko.observable.PropertiesObserver
-import kotlin.reflect.KClass
 
 actual open class JsObject : JsValue {
 
@@ -43,39 +42,48 @@ actual open class JsObject : JsValue {
     //   }
   }
 
-  private fun convertParameters(
-    parameters: Array<out JsValue>,
-    parameterTypes: Array<Class<*>>
-  ): Array<Any?> {
-    val argc = parameterTypes.size
-    return Array(argc) { i ->
-      val value = parameters[i]
-      val type = parameterTypes[i]
-      value.toType(type)
-    }
-  }
-
   actual fun has(key: String): Boolean {
     return nativeHas(key)
   }
 
   actual fun set(key: String, value: Any?) {
-    nativeSet(key, from(node, value))
+    nativeSet(key, value)
   }
 
-  actual inline fun <reified T : Any> get(key: String): T {
-    return get(key, T::class.java)
-      ?: throw IllegalStateException("get $key from $this shouldn't return null")
-  }
-
-  actual inline fun <reified T : Any> opt(key: String): T? {
+  actual inline fun <reified T : Any> get(key: String): T? {
     return get(key, T::class.java)
   }
 
+  @Suppress("UNCHECKED_CAST")
   fun <T : Any> get(key: String, clazz: Class<T>): T? {
     node.checkThread()
-    val value = nativeGet(key)
-    return value.toType(clazz)
+    val value = nativeGet(key) ?: return null
+    if (clazz.isInstance(value)) {
+      return value as T
+    }
+    if (clazz == String::class.java) {
+      return value.toString() as T
+    }
+    if (value is Number) {
+      when (clazz) {
+        java.lang.Integer::class.java -> {
+          return value.toInt() as T
+        }
+        java.lang.Long::class.java -> {
+          return value.toLong() as T
+        }
+        java.lang.Double::class.java -> {
+          return value.toDouble() as T
+        }
+        java.lang.Boolean::class.java -> {
+          return (value.toInt() != 0) as T
+        }
+        java.lang.Float::class.java -> {
+          return value.toFloat() as T
+        }
+      }
+    }
+    TODO("Convert type ${value.javaClass} to $clazz")
   }
 
   actual fun delete(key: String) {
@@ -90,10 +98,10 @@ actual open class JsObject : JsValue {
     nativeWatch(properties, observer)
   }
 
-  private external fun nativeGet(key: String): JsValue
+  private external fun nativeGet(key: String): Any?
   private external fun nativeKeys(): Array<String>
   private external fun nativeHas(key: String): Boolean
-  private external fun nativeSet(key: String, value: JsValue?)
+  private external fun nativeSet(key: String, value: Any?)
   private external fun nativeDelete(key: String)
   private external fun nativeNew()
   private external fun nativeWatch(properties: Array<out String>, observer: PropertiesObserver)

@@ -4,13 +4,13 @@ import com.linroid.noko.NativePointer
 import com.linroid.noko.Node
 import com.linroid.noko.NullNativePointer
 
-actual class JsArray : JsObject, MutableList<JsValue> {
+actual class JsArray : JsObject, MutableList<Any?> {
 
   actual constructor(node: Node, data: Iterator<*>) : super(node, NullNativePointer) {
     nativeNew()
-    val array = ArrayList<JsValue>()
+    val array = ArrayList<Any?>()
     data.forEach {
-      array.add(from(node, it))
+      array.add(it)
     }
     addAll(array)
   }
@@ -20,19 +20,19 @@ actual class JsArray : JsObject, MutableList<JsValue> {
   override val size: Int
     get() = nativeSize()
 
-  override fun contains(element: JsValue): Boolean {
+  override fun contains(element: Any?): Boolean {
     return nativeContains(element)
   }
 
-  override fun containsAll(elements: Collection<JsValue>): Boolean {
+  override fun containsAll(elements: Collection<Any?>): Boolean {
     return nativeContainsAll(elements.toTypedArray())
   }
 
-  override fun get(index: Int): JsValue {
+  override fun get(index: Int): Any? {
     return nativeGet(index)
   }
 
-  override fun indexOf(element: JsValue): Int {
+  override fun indexOf(element: Any?): Int {
     return nativeIndexOf(element)
   }
 
@@ -40,14 +40,14 @@ actual class JsArray : JsObject, MutableList<JsValue> {
     return nativeSize() == 0
   }
 
-  override fun iterator(): MutableIterator<JsValue> {
-    return object : MutableIterator<JsValue> {
+  override fun iterator(): MutableIterator<Any?> {
+    return object : MutableIterator<Any?> {
       /** the index of the item that will be returned on the next call to [next]`()` */
       private var index = 0
 
       override fun hasNext(): Boolean = index < size
 
-      override fun next(): JsValue {
+      override fun next(): Any? {
         if (!hasNext()) throw NoSuchElementException()
         return get(index++)
       }
@@ -57,31 +57,31 @@ actual class JsArray : JsObject, MutableList<JsValue> {
     }
   }
 
-  override fun listIterator(): MutableListIterator<JsValue> {
+  override fun listIterator(): MutableListIterator<Any?> {
     TODO("not implemented")
   }
 
-  override fun listIterator(index: Int): MutableListIterator<JsValue> {
+  override fun listIterator(index: Int): MutableListIterator<Any?> {
     TODO("not implemented")
   }
 
-  override fun subList(fromIndex: Int, toIndex: Int): MutableList<JsValue> {
+  override fun subList(fromIndex: Int, toIndex: Int): MutableList<Any?> {
     TODO("not implemented")
   }
 
-  override fun add(element: JsValue): Boolean {
+  override fun add(element: Any?): Boolean {
     return nativeAdd(element)
   }
 
-  override fun add(index: Int, element: JsValue) {
+  override fun add(index: Int, element: Any?) {
     nativeAddAt(index, element)
   }
 
-  override fun addAll(index: Int, elements: Collection<JsValue>): Boolean {
+  override fun addAll(index: Int, elements: Collection<Any?>): Boolean {
     return nativeAddAllAt(index, elements.toTypedArray())
   }
 
-  override fun addAll(elements: Collection<JsValue>): Boolean {
+  override fun addAll(elements: Collection<Any?>): Boolean {
     return nativeAddAll(elements.toTypedArray())
   }
 
@@ -89,11 +89,11 @@ actual class JsArray : JsObject, MutableList<JsValue> {
     nativeClear()
   }
 
-  override fun remove(element: JsValue): Boolean {
+  override fun remove(element: Any?): Boolean {
     return nativeRemove(element)
   }
 
-  override fun removeAll(elements: Collection<JsValue>): Boolean {
+  override fun removeAll(elements: Collection<Any?>): Boolean {
     elements.forEach {
       if (contains(it)) {
         if (!remove(it)) {
@@ -104,35 +104,35 @@ actual class JsArray : JsObject, MutableList<JsValue> {
     return true
   }
 
-  override fun removeAt(index: Int): JsValue {
+  override fun removeAt(index: Int): Any? {
     return nativeRemoveAt(index)
   }
 
-  override fun retainAll(elements: Collection<JsValue>): Boolean {
+  override fun retainAll(elements: Collection<Any?>): Boolean {
     TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
   }
 
-  override fun set(index: Int, element: JsValue): JsValue {
+  override fun set(index: Int, element: Any?): Any? {
     return nativeSetAt(index, element)
   }
 
-  override fun lastIndexOf(element: JsValue): Int {
+  override fun lastIndexOf(element: Any?): Int {
     return nativeLastIndexOf(element)
   }
 
-  private external fun nativeRemoveAt(index: Int): JsValue
-  private external fun nativeRemove(element: JsValue): Boolean
-  private external fun nativeGet(index: Int): JsValue
-  private external fun nativeSetAt(index: Int, element: JsValue): JsValue
-  private external fun nativeAdd(value: JsValue): Boolean
-  private external fun nativeAddAt(index: Int, value: JsValue): JsValue
-  private external fun nativeContains(element: JsValue): Boolean
-  private external fun nativeContainsAll(elements: Array<JsValue>): Boolean
-  private external fun nativeIndexOf(element: JsValue): Int
-  private external fun nativeLastIndexOf(element: JsValue): Int
+  private external fun nativeRemoveAt(index: Int): Any?
+  private external fun nativeRemove(element: Any?): Boolean
+  private external fun nativeGet(index: Int): Any?
+  private external fun nativeSetAt(index: Int, element: Any?): Any?
+  private external fun nativeAdd(value: Any?): Boolean
+  private external fun nativeAddAt(index: Int, value: Any?): Any?
+  private external fun nativeContains(element: Any?): Boolean
+  private external fun nativeContainsAll(elements: Array<Any?>): Boolean
+  private external fun nativeIndexOf(element: Any?): Int
+  private external fun nativeLastIndexOf(element: Any?): Int
   private external fun nativeSize(): Int
-  private external fun nativeAddAll(elements: Array<JsValue>): Boolean
-  private external fun nativeAddAllAt(index: Int, elements: Array<JsValue>): Boolean
+  private external fun nativeAddAll(elements: Array<Any?>): Boolean
+  private external fun nativeAddAllAt(index: Int, elements: Array<Any?>): Boolean
   private external fun nativeClear()
   private external fun nativeNew()
 }

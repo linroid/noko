@@ -21,7 +21,7 @@ jint OnLoad(JNIEnv *env) {
   return JNI_OK;
 }
 
-inline jboolean Value(JNIEnv *env, jobject obj) {
+jboolean Value(JNIEnv *env, jobject obj) {
   return env->CallBooleanMethod(obj, boolean_value_method_id_);
 }
 

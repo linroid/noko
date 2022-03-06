@@ -1,14 +1,17 @@
 #include "java_callback.h"
 #include "env_helper.h"
+#include "jni_helper.h"
 
 JavaCallback::JavaCallback(
-    Runtime *node,
+    Runtime *runtime,
     JNIEnv *env,
     jobject that,
     jclass clazz,
     jmethodID method_id
-) : runtime_(node), that_(env->NewGlobalRef(that)), class_(clazz), method_id_(method_id) {
-
+) : runtime_(runtime),
+    that_(env->NewGlobalRef(that)),
+    class_(clazz),
+    method_id_(method_id) {
 }
 
 void JavaCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
@@ -23,7 +26,6 @@ void JavaCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
   auto j_caller = runtime_->ToJava(*env, caller);
   auto j_result = env->CallObjectMethod(that_, method_id_, j_caller, parameters);
   env->DeleteLocalRef(j_caller);
-
   env->DeleteLocalRef(parameters);
 
   if (env->ExceptionCheck()) {

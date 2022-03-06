@@ -6,6 +6,7 @@
 #include "../util/env_helper.h"
 
 jclass JsFunction::class_;
+jclass JsFunction::object_class_;
 jmethodID JsFunction::init_method_id_;
 jmethodID JsFunction::call_method_id_;
 
@@ -28,7 +29,7 @@ void JsFunction::New(JNIEnv *env, jobject j_this, jstring jName) {
   const uint16_t *name = env->GetStringChars(jName, nullptr);
   const jint name_len = env->GetStringLength(jName);
   V8_SCOPE(env, j_this)
-  auto callback = new JavaCallback(runtime, env, j_this, JsValue::class_, call_method_id_);
+  auto callback = new JavaCallback(runtime, env, j_this, object_class_, call_method_id_);
   auto data = v8::External::New(isolate, callback);
   auto context = runtime->context_.Get(isolate);
   auto func = v8::FunctionTemplate::New(isolate, StaticCallback, data)->GetFunction(context).ToLocalChecked();
@@ -72,13 +73,15 @@ jint JsFunction::OnLoad(JNIEnv *env) {
   }
 
   JNINativeMethod methods[] = {
-      {"nativeCall", "(Lcom/linroid/noko/types/JsValue;[Lcom/linroid/noko/types/JsValue;)Lcom/linroid/noko/types/JsValue;", (void *) JsFunction::Call},
-      {"nativeNew",  "(Ljava/lang/String;)V",                                                                               (void *) JsFunction::New},
+      {"nativeCall", "(Lcom/linroid/noko/types/JsValue;[Ljava/lang/Object;)Ljava/lang/Object;", (void *) JsFunction::Call},
+      {"nativeNew", "(Ljava/lang/String;)V", (void *) JsFunction::New},
   };
   class_ = (jclass) env->NewGlobalRef(clazz);
   init_method_id_ = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;J)V");
   call_method_id_ = env->GetMethodID(clazz, "onCall",
-                                     "(Lcom/linroid/noko/types/JsValue;[Lcom/linroid/noko/types/JsValue;)Lcom/linroid/noko/types/JsValue;");
+                                     "(Lcom/linroid/noko/types/JsValue;[Ljava/lang/Object;)Ljava/lang/Object;");
+
+  object_class_ = (jclass) env->NewGlobalRef(env->FindClass("java/lang/Object"));
   env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
   return JNI_OK;
 }

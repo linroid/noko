@@ -24,6 +24,10 @@ class JsValue {
     return env->NewObject(class_, init_method_id_, node, pointer);
   }
 
+  inline static bool Is(JNIEnv *env, jobject obj) {
+    return env->IsInstanceOf(obj, class_);
+  }
+
   inline static v8::Persistent<v8::Value> *Unwrap(JNIEnv *env, jobject obj) {
     return reinterpret_cast<v8::Persistent<v8::Value> *>(GetPointer(env, obj));
   }

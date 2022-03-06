@@ -1,4 +1,5 @@
 #include "long.h"
+#include "../util/log.h"
 
 namespace Long {
 
@@ -15,7 +16,7 @@ jobject Of(JNIEnv *env, v8::Local<v8::Value> &value) {
   return env->CallStaticObjectMethod(class_, value_of_method_id_, raw_value);
 }
 
-inline jlong Value(JNIEnv *env, jobject obj) {
+jlong Value(JNIEnv *env, jobject obj) {
   return env->CallLongMethod(obj, int_value_method_id_);
 }
 

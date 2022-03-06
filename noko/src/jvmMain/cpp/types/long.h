@@ -8,7 +8,7 @@ namespace Long {
 
 jobject Of(JNIEnv *env, v8::Local<v8::Value> &value);
 
-inline jlong Value(JNIEnv *env, jobject obj);
+jlong Value(JNIEnv *env, jobject obj);
 
 bool Is(JNIEnv *env, jobject obj);
 

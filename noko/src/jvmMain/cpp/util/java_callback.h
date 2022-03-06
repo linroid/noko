@@ -13,7 +13,7 @@ public:
   Runtime *runtime_ = nullptr;
   jobject that_;
 
-  JavaCallback(Runtime *node, JNIEnv *env, jobject that, jclass clazz, jmethodID method_id);
+  JavaCallback(Runtime *runtime, JNIEnv *env, jobject that, jclass clazz, jmethodID method_id);
 
   ~JavaCallback();
 

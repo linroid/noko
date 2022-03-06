@@ -25,18 +25,18 @@ JNICALL void Set(JNIEnv *env, jobject j_this, jstring j_key, jobject j_value) {
   const jchar *key_chars = env->GetStringChars(j_key, nullptr);
   const jint key_len = env->GetStringLength(j_key);
 
-  SETUP(env, j_this, v8::Object)
+  SETUP(env, j_this, v8::Object);
 
   auto key = V8_STRING(isolate, key_chars, key_len);
   env->ReleaseStringChars(j_key, key_chars);
-  auto value = JsValue::Value(context, isolate, env, j_value);
+  auto value = JsValue::Value(isolate, env, j_value);
   that->Set(context, key, value).Check();
 }
 
 JNICALL jobject Get(JNIEnv *env, jobject j_this, jstring j_key) {
   const uint16_t *key = env->GetStringChars(j_key, nullptr);
   const jint key_len = env->GetStringLength(j_key);
-  SETUP(env, j_this, v8::Object)
+  SETUP(env, j_this, v8::Object);
   auto value = that->Get(context, V8_STRING(isolate, key, key_len)).ToLocalChecked();
   env->ReleaseStringChars(j_key, key);
   return runtime->ToJava(env, value);
@@ -45,14 +45,14 @@ JNICALL jobject Get(JNIEnv *env, jobject j_this, jstring j_key) {
 jboolean Has(JNIEnv *env, jobject j_this, jstring j_key) {
   const uint16_t *key = env->GetStringChars(j_key, nullptr);
   const jint key_len = env->GetStringLength(j_key);
-  SETUP(env, j_this, v8::Object)
+  SETUP(env, j_this, v8::Object);
   bool result = that->Has(context, V8_STRING(isolate, key, key_len)).ToChecked();
   env->ReleaseStringChars(j_key, key);
   return static_cast<jboolean>(result);
 }
 
 jobjectArray Keys(JNIEnv *env, jobject j_this) {
-  SETUP(env, j_this, v8::Object)
+  SETUP(env, j_this, v8::Object);
   v8::TryCatch try_catch(isolate);
   auto names = that->GetPropertyNames(context);
   if (names.IsEmpty()) {
@@ -75,17 +75,17 @@ jobjectArray Keys(JNIEnv *env, jobject j_this) {
   return result;
 }
 
-void New(JNIEnv *env, jobject j_this) {
-  V8_SCOPE(env, j_this)
-  auto value = v8::Object::New(runtime->isolate_);
-  auto result = new v8::Persistent<v8::Value>(runtime->isolate_, value);
-  JsValue::SetPointer(env, j_this, result);
+jlong New(JNIEnv *env, jclass clazz) {
+  UNUSED(clazz);
+  V8_SCOPE(env);
+  auto value = v8::Object::New(isolate);
+  return (jlong) new v8::Persistent<v8::Value>(isolate, value);
 }
 
 void Delete(JNIEnv *env, jobject j_this, jstring j_key) {
   const uint16_t *key = env->GetStringChars(j_key, nullptr);
   const jint key_len = env->GetStringLength(j_key);
-  SETUP(env, j_this, v8::Object)
+  SETUP(env, j_this, v8::Object);
   that->Delete(context, V8_STRING(isolate, key, key_len)).Check();
   env->ReleaseStringChars(j_key, key);
 }
@@ -125,7 +125,7 @@ static void ObserverWeakCallback(const v8::WeakCallbackInfo<PropertiesObserver> 
 }
 
 void Watch(JNIEnv *env, jobject j_this, jobjectArray j_keys, jobject j_observer) {
-  SETUP(env, j_this, v8::Object)
+  SETUP(env, j_this, v8::Object);
   auto length = env->GetArrayLength(j_keys);
 
   jmethodID method_id = env->GetMethodID(env->GetObjectClass(j_observer), "onPropertyChanged",
@@ -186,7 +186,7 @@ jint OnLoad(JNIEnv *env) {
   JNINativeMethod methods[] = {
       {"nativeGet", "(Ljava/lang/String;)Ljava/lang/Object;", (void *) (Get)},
       {"nativeSet", "(Ljava/lang/String;Ljava/lang/Object;)V", (void *) (Set)},
-      {"nativeNew", "()V", (void *) (New)},
+      {"nativeInit", "()J", (void *) (New)},
       {"nativeHas", "(Ljava/lang/String;)Z", (void *) (Has)},
       {"nativeDelete", "(Ljava/lang/String;)V", (void *) (Delete)},
       {"nativeKeys", "()[Ljava/lang/String;", (void *) (Keys)},

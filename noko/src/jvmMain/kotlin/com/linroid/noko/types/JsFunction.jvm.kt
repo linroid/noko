@@ -2,6 +2,7 @@ package com.linroid.noko.types
 
 import com.linroid.noko.NativePointer
 import com.linroid.noko.Node
+import com.linroid.noko.NullNativePointer
 import java.lang.reflect.InvocationTargetException
 
 typealias Callable = (receiver: JsValue, parameters: Array<out Any?>) -> JsValue?
@@ -9,15 +10,20 @@ typealias Callable = (receiver: JsValue, parameters: Array<out Any?>) -> JsValue
 actual open class JsFunction : JsObject {
 
   private val callable: Callable?
+  private var name: String? = null
 
   internal actual constructor(node: Node, pointer: NativePointer) : super(node, pointer) {
     this.callable = null
   }
 
-  constructor(node: Node, name: String, callable: Callable? = null) : super(node, 0) {
+  /**
+   * Won't create the associated v8 object until we set it into any v8 objects,
+   * and a global reference will be created at that time to prevent this object from being recycled by jvm GC,
+   * the global reference will be deleted when the v8 object gets cleaned
+   */
+  constructor(node: Node, name: String, callable: Callable? = null) : super(node, NullNativePointer) {
     this.callable = callable
-    node.checkThread()
-    nativeNew(name)
+    this.name = name
   }
 
   protected actual open fun onCall(receiver: JsValue, parameters: Array<out Any?>): Any? {
@@ -25,7 +31,7 @@ actual open class JsFunction : JsObject {
       return try {
         callable.invoke(receiver, parameters)
       } catch (error: InvocationTargetException) {
-        node.throwError("An unexpected error occurred during call native function: ${error.targetException.message}")
+        node.throwError("An unexpected error occurred during calling native function: ${error.targetException.message}")
       } catch (error: Exception) {
         throw error
       }
@@ -40,5 +46,6 @@ actual open class JsFunction : JsObject {
   }
 
   private external fun nativeCall(receiver: JsValue, parameters: Array<out Any?>): Any?
-  private external fun nativeNew(name: String)
+
+  private external fun nativeInit(name: String)
 }

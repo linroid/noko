@@ -26,7 +26,7 @@ bool Is(JNIEnv *env, jobject obj) {
 }
 
 jstring ToString(JNIEnv *env, jobject j_this) {
-  SETUP(env, j_this, v8::Value)
+  SETUP(env, j_this, v8::Value);
   v8::TryCatch try_catch(isolate);
   if (that.IsEmpty()) {
     return env->NewStringUTF("null");
@@ -41,7 +41,7 @@ jstring ToString(JNIEnv *env, jobject j_this) {
 }
 
 jstring TypeOf(JNIEnv *env, jobject j_this) {
-  SETUP(env, j_this, v8::Value)
+  SETUP(env, j_this, v8::Value);
   auto type = that->TypeOf(isolate);
   v8::String::Value unicode_string(isolate, type);
   uint16_t *unicode_chars = *unicode_string;
@@ -49,8 +49,8 @@ jstring TypeOf(JNIEnv *env, jobject j_this) {
 }
 
 jstring ToJson(JNIEnv *env, jobject j_this) {
-  SETUP(env, j_this, v8::Value)
-  v8::TryCatch try_catch(runtime->isolate_);
+  SETUP(env, j_this, v8::Value);
+  v8::TryCatch try_catch(isolate);
   auto str = v8::JSON::Stringify(context, that);
   if (str.IsEmpty()) {
     if (try_catch.HasCaught()) {
@@ -66,8 +66,8 @@ jstring ToJson(JNIEnv *env, jobject j_this) {
 }
 
 jdouble ToNumber(JNIEnv *env, jobject j_this) {
-  SETUP(env, j_this, v8::Value)
-  v8::TryCatch try_catch(runtime->isolate_);
+  SETUP(env, j_this, v8::Value);
+  v8::TryCatch try_catch(isolate);
   auto number = that->ToNumber(context);
   if (number.IsEmpty()) {
     runtime->Throw(env, try_catch.Exception());
@@ -85,7 +85,7 @@ void Dispose(JNIEnv *env, jobject j_this) {
 }
 
 jboolean Equals(JNIEnv *env, jobject j_this, jobject j_other) {
-  SETUP(env, j_this, v8::Value)
+  SETUP(env, j_this, v8::Value);
   auto other = GetPointer(env, j_other)->Get(isolate);
   return that->Equals(context, other).ToChecked();
 }

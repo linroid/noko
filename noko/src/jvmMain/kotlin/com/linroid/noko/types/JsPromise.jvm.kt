@@ -11,13 +11,9 @@ import kotlin.coroutines.resumeWithException
 
 actual class JsPromise : JsObject {
 
-  private var resolverPointer: NativePointer = 0
-
   internal actual constructor(node: Node, pointer: NativePointer) : super(node, pointer)
 
-  actual constructor(node: Node) : super(node, NullNativePointer) {
-    nativeNew()
-  }
+  actual constructor(node: Node) : super(node, nativeNew())
 
   actual fun reject(error: String) {
     node.post {
@@ -67,10 +63,14 @@ actual class JsPromise : JsObject {
     }
   }
 
-  private external fun nativeNew()
   private external fun nativeReject(error: JsError)
   private external fun nativeResolve(value: Any?)
 
   private external fun nativeThen(callback: JsFunction)
   private external fun nativeCatch(callback: JsFunction)
+
+  companion object {
+    @JvmStatic
+    private external fun nativeNew(): NativePointer
+  }
 }

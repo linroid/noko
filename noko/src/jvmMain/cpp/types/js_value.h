@@ -9,6 +9,7 @@
 #include "double.h"
 #include "string.h"
 #include "boolean.h"
+#include "js_function.h"
 
 namespace JsValue {
 
@@ -20,13 +21,20 @@ jobject Of(JNIEnv *env, jobject node, jlong pointer);
 
 bool Is(JNIEnv *env, jobject obj);
 
-inline v8::Local<v8::Value> Value(v8::Local<v8::Context> context,
-                                  v8::Isolate *isolate,
-                                  JNIEnv *env,
-                                  jobject obj) {
+inline v8::Local<v8::Value> Value(
+    v8::Isolate *isolate,
+    JNIEnv *env,
+    jobject obj) {
   if (obj == nullptr) {
     return v8::Null(isolate);
   } else if (JsValue::Is(env, obj)) {
+    if (JsFunction::Is(env, obj)) {
+      auto pointer = JsValue::GetPointer(env, obj);
+      if (pointer == nullptr) {
+        return JsFunction::Init(env, obj);
+      }
+      return pointer->Get(isolate);
+    }
     return JsValue::GetPointer(env, obj)->Get(isolate);
   } else if (String::Is(env, obj)) {
     return String::Value(env, (jstring) obj);

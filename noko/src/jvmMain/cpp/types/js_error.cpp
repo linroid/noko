@@ -16,16 +16,17 @@ jobject Of(JNIEnv *env, jobject node, jlong pointer) {
   return env->NewObject(class_, init_method_id_, node, pointer);
 }
 
-void New(JNIEnv *env, jobject j_this, jstring j_message) {
+jlong New(JNIEnv *env, jclass clazz, jstring j_message) {
+  UNUSED(clazz);
   auto message_chars = env->GetStringChars(j_message, nullptr);
   const jint message_len = env->GetStringLength(j_message);
 
-  V8_SCOPE(env, j_this)
+  V8_SCOPE(env);
   auto message = V8_STRING(isolate, message_chars, message_len);
   auto value = v8::Exception::Error(message);
   auto result = new v8::Persistent<v8::Value>(runtime->isolate_, value);
   env->ReleaseStringChars(j_message, message_chars);
-  JsValue::SetPointer(env, j_this, result);
+  return (jlong) result;
 }
 
 jint OnLoad(JNIEnv *env) {
@@ -37,7 +38,7 @@ jint OnLoad(JNIEnv *env) {
   init_method_id_ = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;J)V");
 
   JNINativeMethod methods[] = {
-      {"nativeNew", "(Ljava/lang/String;)V", (void *) New},
+      {"nativeNew", "(Ljava/lang/String;)J", (void *) New},
   };
 
   int rc = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));

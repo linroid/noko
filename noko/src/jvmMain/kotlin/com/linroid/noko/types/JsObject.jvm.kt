@@ -2,16 +2,13 @@ package com.linroid.noko.types
 
 import com.linroid.noko.NativePointer
 import com.linroid.noko.Node
-import com.linroid.noko.NullNativePointer
 import com.linroid.noko.observable.PropertiesObserver
 
 actual open class JsObject : JsValue {
 
   internal actual constructor(node: Node, pointer: NativePointer) : super(node, pointer)
 
-  actual constructor(node: Node) : super(node, NullNativePointer) {
-    node.checkThread()
-    nativeNew()
+  actual constructor(node: Node) : super(node, nativeInit()) {
     addBinds()
   }
 
@@ -103,6 +100,10 @@ actual open class JsObject : JsValue {
   private external fun nativeHas(key: String): Boolean
   private external fun nativeSet(key: String, value: Any?)
   private external fun nativeDelete(key: String)
-  private external fun nativeNew()
   private external fun nativeWatch(properties: Array<out String>, observer: PropertiesObserver)
+
+  companion object {
+    @JvmStatic
+    private external fun nativeInit(): NativePointer
+  }
 }

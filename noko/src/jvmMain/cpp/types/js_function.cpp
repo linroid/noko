@@ -1,6 +1,5 @@
 #include "js_function.h"
 #include "js_value.h"
-#include "string.h"
 #include "js_error.h"
 #include "../util/java_callback.h"
 #include "../util/env_helper.h"
@@ -11,9 +10,14 @@ jclass class_;
 jclass object_class_;
 jmethodID init_method_id_;
 jmethodID call_method_id_;
+jfieldID name_field_id_;
 
 jobject Of(JNIEnv *env, jobject node, jlong pointer) {
   return env->NewObject(class_, init_method_id_, node, pointer);
+}
+
+bool Is(JNIEnv *env, jobject obj) {
+  return env->IsInstanceOf(obj, class_);
 }
 
 void StaticCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
@@ -24,16 +28,28 @@ void StaticCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
 }
 
 static void WeakCallback(const v8::WeakCallbackInfo<JavaCallback> &data) {
+  LOGI("WeakCallback");
   JavaCallback *callback = data.GetParameter();
   EnvHelper env(callback->runtime_->vm_);
   JsValue::SetPointer(*env, callback->that_, nullptr);
   delete callback;
 }
 
-void New(JNIEnv *env, jobject j_this, jstring jName) {
-  const uint16_t *name = env->GetStringChars(jName, nullptr);
-  const jint name_len = env->GetStringLength(jName);
-  V8_SCOPE(env, j_this)
+v8::Local<v8::Function> Init(JNIEnv *env, jobject j_this) {
+  auto j_name = (jstring) env->GetObjectField(j_this, name_field_id_);
+  const uint16_t *name = env->GetStringChars(j_name, nullptr);
+  const jint name_len = env->GetStringLength(j_name);
+
+  auto runtime = Runtime::Current();
+  if (runtime == nullptr) {
+    LOGE("GetRuntime runtime nullptr %s(%d)-<%s>", __FILE__, __LINE__, __FUNCTION__);
+    env->FatalError("GetRuntime returns nullptr");
+    abort();
+  }
+  auto isolate = runtime->isolate_;
+  v8::Locker locker(isolate);
+  v8::EscapableHandleScope handle_scope(isolate);
+
   auto callback = new JavaCallback(runtime, env, j_this, object_class_, call_method_id_);
   auto data = v8::External::New(isolate, callback);
   auto context = runtime->context_.Get(isolate);
@@ -42,11 +58,12 @@ void New(JNIEnv *env, jobject j_this, jstring jName) {
 
   auto result = new v8::Persistent<v8::Value>(isolate, func);
   result->SetWeak(callback, WeakCallback, v8::WeakCallbackType::kParameter);
-  env->ReleaseStringChars(jName, name);
+  env->ReleaseStringChars(j_name, name);
   JsValue::SetPointer(env, j_this, result);
+  return handle_scope.Escape(func);
 }
 
-jobject Call(JNIEnv *env, jobject j_this, jobject j_receiver, jobjectArray j_parameters) {
+JNICALL jobject Call(JNIEnv *env, jobject j_this, jobject j_receiver, jobjectArray j_parameters) {
   auto receiver = JsValue::GetPointer(env, j_receiver);
 
   int argc = env->GetArrayLength(j_parameters);
@@ -57,7 +74,7 @@ jobject Call(JNIEnv *env, jobject j_this, jobject j_receiver, jobjectArray j_par
     env->DeleteLocalRef(element);
   }
 
-  SETUP(env, j_this, v8::Function)
+  SETUP(env, j_this, v8::Function);
   auto *argv = new v8::Local<v8::Value>[argc];
   for (int i = 0; i < argc; ++i) {
     argv[i] = parameters[i]->Get(isolate);
@@ -79,13 +96,13 @@ jint OnLoad(JNIEnv *env) {
 
   JNINativeMethod methods[] = {
       {"nativeCall", "(Lcom/linroid/noko/types/JsValue;[Ljava/lang/Object;)Ljava/lang/Object;", (void *) Call},
-      {"nativeNew", "(Ljava/lang/String;)V", (void *) New},
   };
   class_ = (jclass) env->NewGlobalRef(clazz);
   init_method_id_ = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;J)V");
   call_method_id_ = env->GetMethodID(clazz, "onCall",
                                      "(Lcom/linroid/noko/types/JsValue;[Ljava/lang/Object;)Ljava/lang/Object;");
 
+  name_field_id_ = env->GetFieldID(clazz, "name", "Ljava/lang/String;");
   object_class_ = (jclass) env->NewGlobalRef(env->FindClass("java/lang/Object"));
   env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
   return JNI_OK;

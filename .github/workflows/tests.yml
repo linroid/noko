@@ -24,5 +24,12 @@ jobs:
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
+
     - name: ./gradlew :noko:desktopTest
       run: ./gradlew :noko:desktopTest
+
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2.3.1
+      with:
+        name: desktopTest-${{ matrix.os }}-reports.zip
+        path: ./noko/build/reports/tests/desktopTest

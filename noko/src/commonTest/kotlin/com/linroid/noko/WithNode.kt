@@ -23,7 +23,7 @@ abstract class WithNode {
     }, keepAlive = true, strictMode = true)
 
     node.start("-p", "process.pid")
-    withTimeout(3000) {
+    withTimeout(10_000) {
       node.awaitStarted()
     }
   }
@@ -35,7 +35,7 @@ abstract class WithNode {
         node.awaitStopped()
       }
       node.exit(0)
-      withTimeout(3000) {
+      withTimeout(10_000) {
         job.join()
       }
     }

@@ -72,10 +72,6 @@ actual open class JsValue actual constructor(
     return super.equals(other)
   }
 
-  actual fun sameReference(other: JsValue): Boolean {
-    return other.pointer == pointer
-  }
-
   actual override fun hashCode(): Int {
     return pointer.hashCode()
   }

@@ -26,8 +26,7 @@ expect open class JsValue internal constructor(node: Node, pointer: NativePointe
 
   fun dispose()
 
-  fun sameReference(other: JsValue): Boolean
-
   override fun equals(other: Any?): Boolean
+
   override fun hashCode(): Int
 }

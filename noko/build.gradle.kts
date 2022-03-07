@@ -179,6 +179,10 @@ kotlin {
     testRuns["test"].executionTask.configure {
       useJUnit()
       jvmArgs("-Djava.library.path=$cmakeDir:$hostPrebuiltLibDir")
+      reports {
+        junitXml.required.set(true)
+        html.required.set(true)
+      }
     }
   }
 

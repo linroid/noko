@@ -192,7 +192,6 @@ kotlin {
       dependencies {
         implementation(kotlin("stdlib"))
         implementation("com.squareup.okio:okio:3.0.0")
-        implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
         implementation("org.jetbrains.kotlinx:atomicfu:0.17.1")
       }
@@ -201,14 +200,13 @@ kotlin {
       dependencies {
         implementation("io.mockk:mockk-common:${mockkVersion}")
         implementation(kotlin("test"))
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
       }
     }
 
     val jvmMain by creating {
       dependsOn(commonMain)
       dependencies {
-        implementation("org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.3.2")
-        implementation("org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.3.2")
         implementation("org.jetbrains.kotlinx:atomicfu-jvm:0.17.1")
         implementation("com.squareup.okio:okio-jvm:3.0.0")
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:$coroutinesVersion")

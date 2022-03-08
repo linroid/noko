@@ -55,13 +55,9 @@ class Runtime {
 
   void Handle(uv_async_t *handle);
 
-  bool InitLoop();
+  bool KeepAlive();
 
   void TryLoop();
-
-  void RunLoop(node::Environment *env);
-
-  void CloseLoop();
 
   void Attach();
 

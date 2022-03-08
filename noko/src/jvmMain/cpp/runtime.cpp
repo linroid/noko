@@ -70,125 +70,89 @@ int Runtime::Start(std::vector<std::string> &args) {
   thread_id_ = std::this_thread::get_id();
 
   int exit_code = 0;
-  if (!InitLoop()) {
-    LOGE("Failed to call InitLoop()");
-    return -1;
-  }
 
-  std::shared_ptr<node::ArrayBufferAllocator> allocator = node::ArrayBufferAllocator::Create();
-  isolate_ = node::NewIsolate(allocator, event_loop_, platform.get());
+  std::vector<std::string> errors;
+  const std::vector<std::string> exec_args;
+
+  auto flags = static_cast<node::EnvironmentFlags::Flags>(
+      node::EnvironmentFlags::kOwnsEmbedded
+          | node::EnvironmentFlags::kOwnsProcessState
+          | node::EnvironmentFlags::kTrackUnmanagedFds);
+
+  std::unique_ptr<node::CommonEnvironmentSetup> setup
+      = node::CommonEnvironmentSetup::Create(platform.get(), &errors, args, exec_args, flags);
+
+  isolate_ = setup->isolate();
+  event_loop_ = setup->event_loop();
+  auto env = setup->env();
 
   if (isolate_ == nullptr) {
-    LOGE("Failed to call node::NewIsolate()");
-    return -2;
+    LOGE("Isolate was failed to create");
+    return 2;
+  }
+  if (keep_alive_ && !KeepAlive()) {
+    LOGE("Unable to setup keep alive handle");
+    return 3;
   }
 
-  {
-    v8::Locker locker(isolate_);
-    v8::Isolate::Scope isolate_scope(isolate_);
+  v8::Locker locker(isolate_);
+  v8::Isolate::Scope isolate_scope(isolate_);
+  v8::HandleScope handle_scope(isolate_);
+  auto context = setup->context();
+  v8::Context::Scope context_scope(context);
+  node::SetProcessExitHandler(env, [](node::Environment *environment, int code) {
+    LOGW("Node.js exited with code %d", code);
+    node::Stop(environment);
+  });
 
-    auto isolate_data = node::CreateIsolateData(isolate_, event_loop_, platform.get(),
-                                                allocator.get());
-    v8::HandleScope handle_scope(isolate_);
-    v8::Local<v8::Context> context = node::NewContext(isolate_);
-    if (context.IsEmpty()) {
-      LOGE("Failed to call node::NewContext()");
-      return -3;
-    }
+  context_.Reset(isolate_, setup->context());
+  global_.Reset(isolate_, context->Global());
 
-    v8::Context::Scope context_scope(context);
-    auto flags = static_cast<node::EnvironmentFlags::Flags>(node::EnvironmentFlags::kOwnsEmbedded
-        |
-            node::EnvironmentFlags::kOwnsProcessState
-        |
-            node::EnvironmentFlags::kTrackUnmanagedFds);
-    auto env = node::CreateEnvironment(isolate_data, context, args, args, flags);
-    node::SetProcessExitHandler(env, [](node::Environment *environment, int code) {
-      LOGW("Node.js exited with code %d", code);
-      node::Stop(environment);
-    });
+  Attach();
 
-    context_.Reset(isolate_, context);
-    global_.Reset(isolate_, context->Global());
+  isolate_->SetMicrotasksPolicy(v8::MicrotasksPolicy::kAuto);
+  auto load_env_result = node::LoadEnvironment(env, [&](const node::StartExecutionCallbackInfo &info) -> v8::MaybeLocal<v8::Value> {
+    require_.Reset(isolate_, info.native_require);
+    process_.Reset(isolate_, info.process_object);
+    OnStart();
+    return v8::Null(isolate_);
+  });
 
-    Attach();
-
-    isolate_->SetMicrotasksPolicy(v8::MicrotasksPolicy::kAuto);
-    node::LoadEnvironment(env, [&](const node::StartExecutionCallbackInfo &info) -> v8::MaybeLocal<v8::Value> {
-      require_.Reset(isolate_, info.native_require);
-      process_.Reset(isolate_, info.process_object);
-      OnStart();
-      return v8::Null(isolate_);
-    });
-
-    RunLoop(env);
-    Detach();
-    // node::EmitExit() returns the current exit code.
-    auto exit_code_maybe = node::EmitProcessExit(env);
-    if (exit_code_maybe.IsJust()) {
-      exit_code = exit_code_maybe.ToChecked();
-    }
-    // node::Stop() can be used to explicitly stop the event loop and keep
-    // further JavaScript from running. It can be called from any thread,
-    // and will act like worker.terminate() if called from another thread.
-    node::Stop(env);
-
-    node::FreeIsolateData(isolate_data);
-    node::FreeEnvironment(env);
-
-    context_.Reset();
-    global_.Reset();
-    running_ = false;
+  if (load_env_result.IsEmpty()) {
+    LOGE("Failed to call node::LoadEnvironment");
+    return 1;
   }
+  exit_code = node::SpinEventLoop(env).FromMaybe(1);
 
-  CloseLoop();
+  Detach();
+
+  context_.Reset();
+  global_.Reset();
+  // node::Stop() can be used to explicitly stop the event loop and keep
+  // further JavaScript from running. It can be called from any thread,
+  // and will act like worker.terminate() if called from another thread.
+  node::Stop(env);
+  running_ = false;
+
   return exit_code;
 }
 
-void Runtime::CloseLoop() {
-  // Unregister the Isolate with the platform and add a listener that is called
-  // when the Platform is done cleaning up any state it had associated with
-  // the Isolate.
-  bool platform_finished = false;
-  platform->AddIsolateFinishedCallback(isolate_, [](void *data) {
-    *static_cast<bool *>(data) = true;
-  }, &platform_finished);
-  platform->UnregisterIsolate(isolate_);
-  isolate_->Dispose();
-  // Wait until the platform has cleaned up all relevant resources.
-  while (!platform_finished) {
-    uv_run(event_loop_, UV_RUN_ONCE);
+bool Runtime::KeepAlive() {
+  keep_alive_handle_ = new uv_async_t();
+  auto error = uv_async_init(event_loop_, keep_alive_handle_, [](uv_async_t *handle) {
+    LOGD("Stop keeping alive");
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCDFAInspection"
+    uv_close((uv_handle_t *) handle, [](uv_handle_t *h) {
+      free(h);
+    });
+#pragma clang diagnostic pop
+  });
+  if (error != 0) {
+    LOGE("Failed to initialize keep alive handle: %s", uv_err_name(error));
+    return false;
   }
-  int close_code = uv_loop_close(event_loop_);
-  event_loop_ = nullptr;
-  // uv_loop_delete(event_loop_);
-  // assert(close_code == 0);
-}
-
-void Runtime::RunLoop(node::Environment *env) {
-  v8::SealHandleScope seal(isolate_);
-
-  int more;
-  do {
-    uv_run(event_loop_, UV_RUN_DEFAULT);
-
-    // V8 tasks on background threads may end up scheduling new tasks in the
-    // foreground, which in turn can keep the event loop going. For example,
-    // WebAssembly.compile() may do so.
-    platform->DrainTasks(isolate_);
-
-    // If there are new tasks, continue.
-    more = uv_loop_alive(event_loop_);
-    if (more) continue;
-    LOGW("no more task, try to exit");
-    // node::EmitBeforeExit() is used to emit the 'beforeExit' event on
-    // the `process` object.
-    node::EmitProcessBeforeExit(env);
-
-    // 'beforeExit' can also schedule new work that keeps the event loop
-    // running.
-    more = uv_loop_alive(event_loop_);
-  } while (more);
+  return true;
 }
 
 void Runtime::Attach() {
@@ -233,32 +197,6 @@ void Runtime::Exit(int code) {
   });
 }
 
-bool Runtime::InitLoop() {
-  event_loop_ = uv_loop_new();
-  int ret = uv_loop_init(event_loop_);
-  if (ret != 0) {
-    LOGE("Failed to initialize loop: %s", uv_err_name(ret));
-    return false;
-  }
-  if (keep_alive_) {
-    keep_alive_handle_ = new uv_async_t();
-    ret = uv_async_init(event_loop_, keep_alive_handle_, [](uv_async_t *handle) {
-      LOGD("Stop keeping alive");
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "OCDFAInspection"
-      uv_close((uv_handle_t *) handle, [](uv_handle_t *h) {
-        free(h);
-      });
-#pragma clang diagnostic pop
-    });
-    if (ret != 0) {
-      LOGE("Failed to initialize keep alive handle: %s", uv_err_name(ret));
-      return false;
-    }
-  }
-  return true;
-}
-
 jobject Runtime::ToJava(JNIEnv *env, v8::Local<v8::Value> value) const {
   if (value->IsNullOrUndefined()) {
     return nullptr;
@@ -287,22 +225,6 @@ jobject Runtime::ToJava(JNIEnv *env, v8::Local<v8::Value> value) const {
       return JsObject::Of(env, j_this_, (jlong) pointer);
     }
     return JsValue::Of(env, j_this_, (jlong) pointer);
-  }
-}
-
-void Runtime::TryLoop() {
-  if (!event_loop_) {
-    LOGE("TryLoop() but eventLoop is null");
-    return;
-  }
-  if (!callback_handle_) {
-    callback_handle_ = new uv_async_t();
-    callback_handle_->data = this;
-    uv_async_init(event_loop_, callback_handle_, [](uv_async_t *handle) {
-      auto *runtime = reinterpret_cast<Runtime *>(handle->data);
-      runtime->Handle(handle);
-    });
-    uv_async_send(callback_handle_);
   }
 }
 
@@ -356,6 +278,22 @@ bool Runtime::Post(const std::function<void()> &runnable) {
     callbacks_.push_back(runnable);
     this->TryLoop();
     return true;
+  }
+}
+
+void Runtime::TryLoop() {
+  if (!event_loop_) {
+    LOGE("TryLoop() but event_loop_ is null");
+    return;
+  }
+  if (!callback_handle_) {
+    callback_handle_ = new uv_async_t();
+    callback_handle_->data = this;
+    uv_async_init(event_loop_, callback_handle_, [](uv_async_t *handle) {
+      auto *runtime = reinterpret_cast<Runtime *>(handle->data);
+      runtime->Handle(handle);
+    });
+    uv_async_send(callback_handle_);
   }
 }
 
@@ -545,4 +483,3 @@ Runtime *Runtime::Get(JNIEnv *env, jobject obj) {
   jlong pointer = env->GetLongField(obj, pointer_field_id_);
   return reinterpret_cast<Runtime *>(pointer);
 }
-

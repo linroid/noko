@@ -5,8 +5,6 @@ import com.linroid.noko.Node
 import com.linroid.noko.NullNativePointer
 import java.lang.reflect.InvocationTargetException
 
-typealias Callable = (receiver: JsValue, parameters: Array<out Any?>) -> JsValue?
-
 actual open class JsFunction : JsObject {
 
   private val callable: Callable?
@@ -21,7 +19,7 @@ actual open class JsFunction : JsObject {
    * and a global reference will be created at that time to prevent this object from being recycled by jvm GC,
    * the global reference will be deleted when the v8 object gets cleaned
    */
-  constructor(node: Node, name: String, callable: Callable? = null) : super(node, NullNativePointer) {
+  actual constructor(node: Node, name: String, callable: Callable?) : super(node, NullNativePointer) {
     this.callable = callable
     this.name = name
   }

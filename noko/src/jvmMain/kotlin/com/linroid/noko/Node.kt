@@ -1,6 +1,7 @@
 package com.linroid.noko
 
 import com.linroid.noko.fs.FileSystem
+import com.linroid.noko.io.StandardIO
 import com.linroid.noko.types.*
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.locks.SynchronizedObject
@@ -13,14 +14,12 @@ import kotlin.coroutines.resume
  * Create a new Node.js instance
  *
  * @param cwd The current work directory for node
- * @param output The standard output interface
  * @param fs
  * @param keepAlive If all the js code is executed completely, should we keep the node running
  * @param strictMode If true to do thread checking when doing operation on js objects
  */
 actual class Node actual constructor(
   private val cwd: String?,
-  private val output: StdOutput,
   private val fs: FileSystem,
   keepAlive: Boolean,
   private val strictMode: Boolean,
@@ -37,6 +36,7 @@ actual class Node actual constructor(
 
   actual var global: JsObject? = null
   actual var state: State = State.Initialized
+  actual var stdio: StandardIO = StandardIO(this)
 
   internal actual val cleaner: (Long) -> Unit = { ref: Long ->
     check(ref != 0L) { "The reference has been already cleared" }
@@ -67,9 +67,9 @@ actual class Node actual constructor(
   private fun startInternal(execArgs: Array<String>) {
     try {
       val exitCode = nativeStart(execArgs)
-      eventOnStop(exitCode)
+      onStop(exitCode)
     } catch (error: JsException) {
-      eventOnError(error)
+      onError(error)
     } catch (error: Exception) {
       throw error
     }
@@ -142,23 +142,13 @@ actual class Node actual constructor(
   }
 
   @Suppress("unused")
-  private fun attach(global: JsObject) {
+  private fun onAttach(global: JsObject) {
     this.global = global
     check(running.compareAndSet(false, update = true))
     check(isRunning()) { "Node is not in running state" }
-    attachStdOutput(global)
-    eventOnAttach(global)
+    fs.link(this)
+    // attachStdOutput(global)
     val setupCode = StringBuilder()
-    if (output.supportsColor) {
-      setupCode.append(
-        """
-process.stderr.isTTY = true;
-process.stderr.isRaw = true;
-process.stdout.isTTY = true;
-process.stdout.isRaw = true;
-"""
-      )
-    }
     val setEnv: (key: String, value: String) -> Unit = { key, value ->
       setupCode.append("process.env['$key'] = '${value}';\n")
     }
@@ -170,9 +160,7 @@ process.stdout.isRaw = true;
       setEnv("PWD", cwd.toString())
       setupCode.append("process.chdir('${cwd}');\n")
     }
-    if (output.supportsColor) {
-      setEnv("COLORTERM", "truecolor")
-    }
+
     environmentVariables.entries.forEach {
       setEnv(it.key, it.value)
     }
@@ -184,16 +172,52 @@ process.stdout.isRaw = true;
       try {
         eval(setupCode.toString())
       } catch (error: JsException) {
-        eventOnError(error)
+        onError(error)
         return
       }
     }
-    eventOnStart(global)
+    state = State.Attached
+    listeners.forEach {
+      it.onAttach(this, global)
+    }
   }
 
   @Suppress("unused")
-  private fun detach(global: JsObject) {
-    eventOnDetach(global)
+  private fun onStart(global: JsObject) {
+    state = State.Started
+    stdio.bind(global)
+    listeners.forEach {
+      it.onStart(this, global)
+    }
+  }
+
+  @Suppress("unused")
+  private fun onDetach(global: JsObject) {
+    state = State.Detached
+    listeners.forEach {
+      it.onDetach(this, global)
+    }
+  }
+
+  private fun onStop(code: Int) {
+    running.value = false
+    state = State.Stopped
+    listeners.forEach {
+      it.onStop(code)
+    }
+    dispose()
+  }
+
+  private fun onError(error: JsException) {
+    state = State.Stopped
+    listeners.forEach {
+      it.onError(error)
+    }
+    dispose()
+  }
+
+  private fun dispose() {
+    stdio.close()
   }
 
   internal actual fun checkThread() {
@@ -201,67 +225,13 @@ process.stdout.isRaw = true;
       check(isInEventLoop()) {
         "Only the original thread running the event loop for Node.js " +
             "can touch it's values, " +
-            "otherwise you should call them inside node.post{ ... }"
+            "otherwise you should call them inside node.post { ... }"
       }
     }
   }
 
   actual fun isInEventLoop(): Boolean {
     return currentThread() === thread
-  }
-
-  private fun attachStdOutput(global: JsObject) {
-    val process: JsObject = global.get("process")!!
-    val stdout: JsObject = process.get("stdout")!!
-    stdout.set("write", object : JsFunction(this@Node, "write") {
-      override fun onCall(receiver: JsValue, parameters: Array<out Any?>): Any? {
-        output.stdout(parameters[0].toString())
-        return null
-      }
-    })
-    val stderr: JsObject = process.get("stderr")!!
-    stderr.set("write", object : JsFunction(this@Node, "write") {
-      override fun onCall(receiver: JsValue, parameters: Array<out Any?>): Any? {
-        output.stderr(parameters[0].toString())
-        return null
-      }
-    })
-  }
-
-  private fun eventOnAttach(global: JsObject) {
-    fs.link(this)
-    listeners.forEach {
-      it.onAttach(this, global)
-    }
-    state = State.Attached
-  }
-
-  private fun eventOnStart(global: JsObject) {
-    listeners.forEach {
-      it.onStart(this, global)
-    }
-    state = State.Started
-  }
-
-  private fun eventOnDetach(global: JsObject) {
-    listeners.forEach {
-      it.onDetach(this, global)
-    }
-    state = State.Detached
-  }
-
-  private fun eventOnStop(code: Int) {
-    running.value = false
-    listeners.forEach {
-      it.onStop(code)
-    }
-    state = State.Stopped
-  }
-
-  private fun eventOnError(error: JsException) {
-    listeners.forEach {
-      it.onError(error)
-    }
   }
 
   internal actual fun chroot(dir: Path) {

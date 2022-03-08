@@ -20,8 +20,9 @@ int init_node();
 class Runtime {
 
  private:
-  static jmethodID attach_method_id_;
-  static jmethodID detach_method_id_;
+  static jmethodID on_attach_method_id_;
+  static jmethodID on_start_method_id_;
+  static jmethodID on_detach_method_id_;
 
   static jfieldID shared_undefined_field_id_;
   static jfieldID pointer_field_id_;

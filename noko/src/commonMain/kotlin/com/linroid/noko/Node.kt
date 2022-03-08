@@ -2,6 +2,7 @@ package com.linroid.noko
 
 import com.linroid.noko.fs.FileSystem
 import com.linroid.noko.fs.RealFileSystem
+import com.linroid.noko.io.StandardIO
 import com.linroid.noko.types.JsError
 import com.linroid.noko.types.JsObject
 import com.linroid.noko.types.JsValue
@@ -14,14 +15,12 @@ import kotlin.coroutines.resumeWithException
  * Create a new Node.js instance
  *
  * @param cwd The current work directory for node
- * @param output The standard output interface
  * @param fs The file system for Node.js
  * @param keepAlive true if event loop should keep running after the main script is executed completely,
  * @param strictMode true to do thread checking when doing operation on js objects
  */
 expect class Node(
   cwd: String? = null,
-  output: StdOutput,
   fs: FileSystem = RealFileSystem(),
   keepAlive: Boolean = false,
   strictMode: Boolean = true,
@@ -34,6 +33,8 @@ expect class Node(
   var state: State
 
   var global: JsObject?
+
+  var stdio: StandardIO
 
   /**
    * Start node instance with arguments
@@ -80,7 +81,6 @@ expect class Node(
 
   fun throwError(message: String): JsError
 
-  @Deprecated("Not working yet")
   @Throws(JsException::class)
   fun require(path: String): JsValue
 

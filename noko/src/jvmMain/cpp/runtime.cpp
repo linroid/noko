@@ -77,13 +77,13 @@ void Runtime::Attach() {
 
   env->SetObjectField(j_this_, shared_undefined_field_id_, shared_undefined_);
 
-  env->CallVoidMethod(j_this_, attach_method_id_, j_global_);
+  env->CallVoidMethod(j_this_, on_attach_method_id_, j_global_);
 }
 
 void Runtime::Detach() const {
   current_runtime_ = nullptr;
   EnvHelper env(vm_);
-  env->CallVoidMethod(j_this_, detach_method_id_, j_this_);
+  env->CallVoidMethod(j_this_, on_detach_method_id_, j_this_);
 }
 
 int Runtime::Start(std::vector<std::string> &args) {
@@ -138,6 +138,8 @@ int Runtime::Start(std::vector<std::string> &args) {
                           [&](const node::StartExecutionCallbackInfo &info) -> v8::MaybeLocal<v8::Value> {
                             require_.Reset(isolate_, info.native_require);
                             process_.Reset(isolate_, info.process_object);
+                            EnvHelper _env(vm_);
+                            _env->CallVoidMethod(j_this_, on_start_method_id_, j_global_);
                             return v8::Null(isolate_);
                           });
 
@@ -453,10 +455,14 @@ jobject Runtime::Require(const uint16_t *path, int path_len) {
   auto global = global_.Get(isolate_);
   v8::TryCatch try_catch(isolate_);
 
-  auto require = global->Get(context, V8_UTF_STRING(isolate_, "require"))
-      .ToLocalChecked()->ToObject(context)
-      .ToLocalChecked();
-  assert(require->IsFunction());
+  auto maybe = global->Get(context, V8_UTF_STRING(isolate_, "require"))
+      .ToLocalChecked()->ToObject(context);
+  v8::Local<v8::Function> require;
+  if (maybe.IsEmpty()) {
+    require = require_.Get(isolate_);
+  } else {
+    require = maybe.ToLocalChecked().As<v8::Function>();
+  }
 
   auto result = require->CallAsFunction(context, global, 1, argv);
 
@@ -510,8 +516,9 @@ int init_node() {
 //     v8::V8::ShutdownPlatform();
 // }
 
-jmethodID Runtime::attach_method_id_;
-jmethodID Runtime::detach_method_id_;
+jmethodID Runtime::on_attach_method_id_;
+jmethodID Runtime::on_start_method_id_;
+jmethodID Runtime::on_detach_method_id_;
 jfieldID Runtime::shared_undefined_field_id_;
 jfieldID Runtime::pointer_field_id_;
 
@@ -525,8 +532,9 @@ jint Runtime::OnLoad(JNIEnv *env) {
                                                "Lcom/linroid/noko/types/JsUndefined;");
   pointer_field_id_ = env->GetFieldID(clazz, "pointer", "J");
 
-  attach_method_id_ = env->GetMethodID(clazz, "attach", "(Lcom/linroid/noko/types/JsObject;)V");
-  detach_method_id_ = env->GetMethodID(clazz, "detach", "(Lcom/linroid/noko/types/JsObject;)V");
+  on_attach_method_id_ = env->GetMethodID(clazz, "onAttach", "(Lcom/linroid/noko/types/JsObject;)V");
+  on_start_method_id_ = env->GetMethodID(clazz, "onStart", "(Lcom/linroid/noko/types/JsObject;)V");
+  on_detach_method_id_ = env->GetMethodID(clazz, "onDetach", "(Lcom/linroid/noko/types/JsObject;)V");
   return JNI_OK;
 }
 

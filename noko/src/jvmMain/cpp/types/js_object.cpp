@@ -170,10 +170,51 @@ void Watch(JNIEnv *env, jobject j_this, jobjectArray j_keys, jobject j_observer)
     auto weak_reference = new v8::Persistent<v8::Value>(isolate, v8_observer);
     weak_reference->SetWeak(observer, ObserverWeakCallback, v8::WeakCallbackType::kParameter);
 
-    UNUSED(holder->Set(context, 2, v8_observer));
+    holder->Set(context, 2, v8_observer).Check();
 
     // Now replace the origin value as our getter and setter
-    UNUSED(that->DefineProperty(context, v8_key, descriptor));
+    that->DefineProperty(context, v8_key, descriptor).Check();
+  }
+}
+
+jboolean DefineProperty(
+    JNIEnv *env,
+    jobject j_this,
+    jstring j_key,
+    jboolean writeable,
+    jboolean enumerable,
+    jboolean configurable,
+    jobject value,
+    jobject getter,
+    jobject setter
+) {
+  const uint16_t *key = env->GetStringChars(j_key, nullptr);
+  const jint key_len = env->GetStringLength(j_key);
+  SETUP(env, j_this, v8::Object);
+  auto v8_key = V8_STRING(isolate, key, key_len);
+  env->ReleaseStringChars(j_key, key);
+
+  v8::TryCatch try_catch(isolate);
+  if (getter != nullptr || setter != nullptr) {
+    v8::PropertyDescriptor descriptor(JsValue::Value(isolate, env, getter), JsValue::Value(isolate, env, setter));
+    descriptor.set_enumerable(enumerable);
+    descriptor.set_configurable(configurable);
+    auto result = that->DefineProperty(context, v8_key, descriptor);
+    if (try_catch.HasCaught()) {
+      runtime->Throw(env, try_catch.Exception());
+      return false;
+    }
+    return result.ToChecked();
+  } else {
+    v8::PropertyDescriptor descriptor(JsValue::Value(isolate, env, value), writeable);
+    descriptor.set_enumerable(enumerable);
+    descriptor.set_configurable(configurable);
+    auto result = that->DefineProperty(context, v8_key, descriptor);
+    if (try_catch.HasCaught()) {
+      runtime->Throw(env, try_catch.Exception());
+      return false;
+    }
+    return result.ToChecked();
   }
 }
 
@@ -191,6 +232,8 @@ jint OnLoad(JNIEnv *env) {
       {"nativeDelete", "(Ljava/lang/String;)V", (void *) (Delete)},
       {"nativeKeys", "()[Ljava/lang/String;", (void *) (Keys)},
       {"nativeWatch", "([Ljava/lang/String;Lcom/linroid/noko/observable/PropertiesObserver;)V", (void *) (Watch)},
+      {"nativeDefineProperty", "(Ljava/lang/String;ZZZLjava/lang/Object;Lcom/linroid/noko/types/JsFunction;Lcom/linroid/noko/types/JsFunction;)Z",
+       (void *) (DefineProperty)},
   };
   class_ = (jclass) env->NewGlobalRef(clazz);
   init_method_id_ = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/Node;J)V");

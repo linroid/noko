@@ -9,6 +9,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import com.linroid.noko.Node
+import com.linroid.noko.types.PropertyDescriptor
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.consumeAsFlow
 import okio.Closeable
@@ -67,10 +68,10 @@ class StandardIO(private val node: Node) : Closeable {
     // if (output.supportsColor) {
     //   setEnv("COLORTERM", "truecolor")
     // }
-    check(readable is JsObject)
-    readable.set("_read", JsFunction(node, "_read"))
-    process.set("stdin", readable)
-    val push: JsFunction = readable.get("push")!!
+    check(stdin is JsObject)
+    stdin.set("_read", JsFunction(node, "_read"))
+    process.defineProperty("stdin", PropertyDescriptor(value = stdin))
+    val push: JsFunction = stdin.get("push")!!
     scope.launch {
       inputChannel.consumeAsFlow().collect {
         push.call(stdin, it)

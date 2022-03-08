@@ -257,7 +257,6 @@ actual class Node actual constructor(
   }
 
   @Throws(JsException::class)
-  @Deprecated("Not working")
   actual fun require(path: String): JsValue {
     return nativeRequire(path)
   }

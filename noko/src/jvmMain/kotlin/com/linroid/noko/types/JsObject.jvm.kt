@@ -95,12 +95,34 @@ actual open class JsObject : JsValue {
     nativeWatch(properties, observer)
   }
 
+  actual fun defineProperty(key: String, descriptor: PropertyDescriptor): Boolean {
+    return nativeDefineProperty(
+      key,
+      descriptor.writeable,
+      descriptor.enumerable,
+      descriptor.configurable,
+      descriptor.value,
+      descriptor.getter,
+      descriptor.setter,
+    )
+  }
+
+
   private external fun nativeGet(key: String): Any?
   private external fun nativeKeys(): Array<String>
   private external fun nativeHas(key: String): Boolean
   private external fun nativeSet(key: String, value: Any?)
   private external fun nativeDelete(key: String)
   private external fun nativeWatch(properties: Array<out String>, observer: PropertiesObserver)
+  private external fun nativeDefineProperty(
+    key: String,
+    writeable: Boolean,
+    enumerable: Boolean,
+    configurable: Boolean,
+    value: Any?,
+    getter: JsFunction?,
+    setter: JsFunction?
+  ): Boolean
 
   companion object {
     @JvmStatic

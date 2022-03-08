@@ -66,26 +66,6 @@ Runtime *Runtime::Current() {
   return current_runtime_;
 }
 
-void Runtime::Attach() {
-  RUNTIME_V8_SCOPE();
-  running_ = true;
-  current_runtime_ = this;
-  EnvHelper env(vm_);
-  auto undefined_value = new v8::Persistent<v8::Value>(isolate_, v8::Undefined(isolate_));
-  this->shared_undefined_ = env->NewGlobalRef(JsUndefined::Of(*env, j_this_, (jlong) undefined_value));
-  this->j_global_ = env->NewGlobalRef(JsObject::Of(*env, j_this_, (jlong) &global_));
-
-  env->SetObjectField(j_this_, shared_undefined_field_id_, shared_undefined_);
-
-  env->CallVoidMethod(j_this_, on_attach_method_id_, j_global_);
-}
-
-void Runtime::Detach() const {
-  current_runtime_ = nullptr;
-  EnvHelper env(vm_);
-  env->CallVoidMethod(j_this_, on_detach_method_id_, j_this_);
-}
-
 int Runtime::Start(std::vector<std::string> &args) {
   thread_id_ = std::this_thread::get_id();
 
@@ -134,14 +114,12 @@ int Runtime::Start(std::vector<std::string> &args) {
     Attach();
 
     isolate_->SetMicrotasksPolicy(v8::MicrotasksPolicy::kAuto);
-    node::LoadEnvironment(env,
-                          [&](const node::StartExecutionCallbackInfo &info) -> v8::MaybeLocal<v8::Value> {
-                            require_.Reset(isolate_, info.native_require);
-                            process_.Reset(isolate_, info.process_object);
-                            EnvHelper _env(vm_);
-                            _env->CallVoidMethod(j_this_, on_start_method_id_, j_global_);
-                            return v8::Null(isolate_);
-                          });
+    node::LoadEnvironment(env, [&](const node::StartExecutionCallbackInfo &info) -> v8::MaybeLocal<v8::Value> {
+      require_.Reset(isolate_, info.native_require);
+      process_.Reset(isolate_, info.process_object);
+      OnStart();
+      return v8::Null(isolate_);
+    });
 
     RunLoop(env);
     Detach();
@@ -211,6 +189,31 @@ void Runtime::RunLoop(node::Environment *env) {
     // running.
     more = uv_loop_alive(event_loop_);
   } while (more);
+}
+
+void Runtime::Attach() {
+  RUNTIME_V8_SCOPE();
+  running_ = true;
+  current_runtime_ = this;
+  EnvHelper env(vm_);
+  auto undefined_value = new v8::Persistent<v8::Value>(isolate_, v8::Undefined(isolate_));
+  this->shared_undefined_ = env->NewGlobalRef(JsUndefined::Of(*env, j_this_, (jlong) undefined_value));
+  this->j_global_ = env->NewGlobalRef(JsObject::Of(*env, j_this_, (jlong) &global_));
+
+  env->SetObjectField(j_this_, shared_undefined_field_id_, shared_undefined_);
+  env->CallVoidMethod(j_this_, on_attach_method_id_, j_global_);
+}
+
+void Runtime::OnStart() {
+  RUNTIME_V8_SCOPE();
+  EnvHelper env(vm_);
+  env->CallVoidMethod(j_this_, on_start_method_id_, j_global_);
+}
+
+void Runtime::Detach() const {
+  current_runtime_ = nullptr;
+  EnvHelper env(vm_);
+  env->CallVoidMethod(j_this_, on_detach_method_id_, j_this_);
 }
 
 void Runtime::Exit(int code) {
@@ -542,3 +545,4 @@ Runtime *Runtime::Get(JNIEnv *env, jobject obj) {
   jlong pointer = env->GetLongField(obj, pointer_field_id_);
   return reinterpret_cast<Runtime *>(pointer);
 }
+

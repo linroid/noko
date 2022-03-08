@@ -65,6 +65,8 @@ class Runtime {
 
   void Attach();
 
+  void OnStart();
+
   void Detach() const;
 
  public:

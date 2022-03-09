@@ -2,6 +2,9 @@
 #include "../runtime.h"
 #include "js_value.h"
 #include "js_error.h"
+#include "js_promise.h"
+#include "js_array.h"
+#include "js_object.h"
 namespace JsValue {
 
 jfieldID pointer_field_id_;
@@ -17,8 +20,38 @@ void SetPointer(JNIEnv *env, jobject obj, v8::Persistent<v8::Value> *value) {
   env->SetLongField(obj, pointer_field_id_, (jlong) value);
 }
 
-jobject Of(JNIEnv *env, jobject node, jlong pointer) {
-  return env->NewObject(class_, init_method_id_, node, pointer);
+jobject Of(JNIEnv *env, v8::Local<v8::Value> value) {
+  auto runtime = Runtime::Current();
+  auto node = runtime->j_this_;
+  auto isolate = runtime->isolate_;
+  if (value->IsNullOrUndefined()) {
+    return nullptr;
+  } else if (value->IsBoolean()) {
+    return Boolean::Of(value);
+  } else if (value->IsString()) {
+    return String::Of(env, value);
+  } else if (value->IsInt32()) {
+    return Integer::Of(env, value);
+  } else if (value->IsBigInt()) {
+    return Long::Of(env, value);
+  } else if (value->IsNumber()) {
+    return Double::Of(env, value);
+  } else {
+    auto pointer = new v8::Persistent<v8::Value>(isolate, value);
+    if (value->IsObject()) {
+      if (value->IsFunction()) {
+        return JsFunction::Of(env, node, (jlong) pointer);
+      } else if (value->IsPromise()) {
+        return JsPromise::Of(env, node, (jlong) pointer);
+      } else if (value->IsNativeError()) {
+        return JsError::Of(env, node, (jlong) pointer);
+      } else if (value->IsArray()) {
+        return JsArray::Of(env, node, (jlong) pointer);
+      }
+      return JsObject::Of(env, node, (jlong) pointer);
+    }
+    return env->NewObject(class_, init_method_id_, node, (jlong) pointer);
+  }
 }
 
 bool Is(JNIEnv *env, jobject obj) {

@@ -50,7 +50,7 @@ jobject Get(JNIEnv *env, jobject j_this, jint j_index) {
     runtime->Throw(env, try_catch.Exception());
     return nullptr;
   }
-  return runtime->ToJava(env, value);
+  return JsValue::Of(env, value);
 }
 
 jboolean Add(JNIEnv *env, jobject j_this, jobject j_element) {
@@ -101,7 +101,7 @@ jobject JNICALL RemoveAt(JNIEnv *env, jobject j_this, jint index) {
   if (value.IsEmpty()) {
     return nullptr;
   }
-  return runtime->ToJava(env, value.ToLocalChecked());
+  return JsValue::Of(env, value.ToLocalChecked());
 }
 
 void JNICALL AddAt(JNIEnv *env, jobject j_this, jint index, jobject j_value) {
@@ -148,7 +148,7 @@ jobject JNICALL SetAt(JNIEnv *env, jobject j_this, jint index, jobject j_value) 
   if (result.IsEmpty()) {
     return nullptr;
   }
-  return runtime->ToJava(env, result.ToLocalChecked());
+  return JsValue::Of(env, result.ToLocalChecked());
 }
 
 jint OnLoad(JNIEnv *env) {

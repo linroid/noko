@@ -63,8 +63,12 @@ v8::Local<v8::Function> Init(JNIEnv *env, jobject j_this) {
   return handle_scope.Escape(func);
 }
 
-JNICALL jobject Call(JNIEnv *env, jobject j_this, jobject j_receiver, jobjectArray j_parameters) {
-
+JNICALL jobject Call(
+    JNIEnv *env,
+    jobject j_this,
+    jobject j_receiver,
+    jobjectArray j_parameters
+) {
   int argc = env->GetArrayLength(j_parameters);
   v8::Persistent<v8::Value> *parameters[argc];
   for (int i = 0; i < argc; ++i) {
@@ -85,7 +89,7 @@ JNICALL jobject Call(JNIEnv *env, jobject j_this, jobject j_receiver, jobjectArr
     runtime->Throw(env, try_catch.Exception());
     return nullptr;
   }
-  return runtime->ToJava(env, result.ToLocalChecked());
+  return JsValue::Of(env, result.ToLocalChecked());
 }
 
 jint OnLoad(JNIEnv *env) {

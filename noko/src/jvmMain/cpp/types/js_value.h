@@ -17,7 +17,7 @@ v8::Persistent<v8::Value> *GetPointer(JNIEnv *env, jobject obj);
 
 void SetPointer(JNIEnv *env, jobject obj, v8::Persistent<v8::Value> *value);
 
-jobject Of(JNIEnv *env, jobject node, jlong pointer);
+jobject Of(JNIEnv *env, v8::Local<v8::Value> value);
 
 bool Is(JNIEnv *env, jobject obj);
 

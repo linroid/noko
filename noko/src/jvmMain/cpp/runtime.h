@@ -35,7 +35,6 @@ class Runtime {
   bool keep_alive_ = false;
   bool strict_ = false;
 
-  jobject j_this_ = nullptr;
   jobject j_global_ = nullptr;
   jobject shared_undefined_ = nullptr;
 
@@ -70,6 +69,7 @@ class Runtime {
 
   v8::Isolate *isolate_ = nullptr;
   v8::Persistent<v8::Context> context_;
+  jobject j_this_ = nullptr;
 
   Runtime(JNIEnv *env, jobject j_this, bool keep_alive, bool strict);
 
@@ -82,8 +82,6 @@ class Runtime {
   bool Await(const std::function<void()> &runnable);
 
   bool Post(const std::function<void()> &runnable);
-
-  jobject ToJava(JNIEnv *env, v8::Local<v8::Value> value) const;
 
   void MountFile(const char *src, const char *dst, int mode);
 

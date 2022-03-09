@@ -197,37 +197,6 @@ void Runtime::Exit(int code) {
   });
 }
 
-jobject Runtime::ToJava(JNIEnv *env, v8::Local<v8::Value> value) const {
-  if (value->IsNullOrUndefined()) {
-    return nullptr;
-  } else if (value->IsBoolean()) {
-    return Boolean::Of(value);
-  } else if (value->IsString()) {
-    return String::Of(env, value);
-  } else if (value->IsInt32()) {
-    return Integer::Of(env, value);
-  } else if (value->IsBigInt()) {
-    return Long::Of(env, value);
-  } else if (value->IsNumber()) {
-    return Double::Of(env, value);
-  } else {
-    auto pointer = new v8::Persistent<v8::Value>(isolate_, value);
-    if (value->IsObject()) {
-      if (value->IsFunction()) {
-        return JsFunction::Of(env, j_this_, (jlong) pointer);
-      } else if (value->IsPromise()) {
-        return JsPromise::Of(env, j_this_, (jlong) pointer);
-      } else if (value->IsNativeError()) {
-        return JsError::Of(env, j_this_, (jlong) pointer);
-      } else if (value->IsArray()) {
-        return JsArray::Of(env, j_this_, (jlong) pointer);
-      }
-      return JsObject::Of(env, j_this_, (jlong) pointer);
-    }
-    return JsValue::Of(env, j_this_, (jlong) pointer);
-  }
-}
-
 bool Runtime::Await(const std::function<void()> &runnable) {
   assert(isolate_ != nullptr);
   if (std::this_thread::get_id() == thread_id_) {
@@ -366,7 +335,7 @@ jobject Runtime::Eval(const uint16_t *code, int code_len, const uint16_t *source
     Throw(*env, try_catch.Exception());
     return nullptr;
   }
-  return ToJava(*env, result.ToLocalChecked());
+  return JsValue::Of(*env, result.ToLocalChecked());
 }
 
 jobject Runtime::ParseJson(const uint16_t *json, int json_len) {
@@ -379,14 +348,14 @@ jobject Runtime::ParseJson(const uint16_t *json, int json_len) {
     Throw(*env, try_catch.Exception());
     return nullptr;
   }
-  return ToJava(*env, result.ToLocalChecked());
+  return JsValue::Of(*env, result.ToLocalChecked());
 }
 
 jobject Runtime::ThrowError(const uint16_t *message, int message_len) const {
   auto error = v8::Exception::Error(V8_STRING(isolate_, message, message_len));
   isolate_->ThrowException(error);
   EnvHelper env(vm_);
-  return ToJava(*env, error);
+  return JsValue::Of(*env, error);
 }
 
 jobject Runtime::Require(const uint16_t *path, int path_len) {
@@ -412,7 +381,7 @@ jobject Runtime::Require(const uint16_t *path, int path_len) {
     Throw(*env, try_catch.Exception());
     return nullptr;
   }
-  return ToJava(*env, result.ToLocalChecked());
+  return JsValue::Of(*env, result.ToLocalChecked());
 }
 
 int init_node() {

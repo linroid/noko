@@ -19,11 +19,11 @@ void JavaCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
   auto parameters = env->NewObjectArray(info.Length(), class_, nullptr);
   for (int i = 0; i < info.Length(); ++i) {
     v8::Local<v8::Value> element = info[i];
-    auto obj = runtime_->ToJava(*env, element);
+    auto obj = JsValue::Of(*env, element);
     env->SetObjectArrayElement(parameters, i, obj);
   }
   auto caller = (v8::Local<v8::Value>) info.This();
-  auto j_caller = runtime_->ToJava(*env, caller);
+  auto j_caller = JsValue::Of(*env, caller);
   auto j_result = env->CallObjectMethod(that_, method_id_, j_caller, parameters);
   env->DeleteLocalRef(j_caller);
   env->DeleteLocalRef(parameters);

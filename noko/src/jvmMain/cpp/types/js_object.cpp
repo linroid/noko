@@ -39,7 +39,7 @@ JNICALL jobject Get(JNIEnv *env, jobject j_this, jstring j_key) {
   SETUP(env, j_this, v8::Object);
   auto value = that->Get(context, V8_STRING(isolate, key, key_len)).ToLocalChecked();
   env->ReleaseStringChars(j_key, key);
-  return runtime->ToJava(env, value);
+  return JsValue::Of(env, value);
 }
 
 jboolean Has(JNIEnv *env, jobject j_this, jstring j_key) {
@@ -114,7 +114,7 @@ static void SetterCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
   auto observer = reinterpret_cast<PropertiesObserver *>(v8_observer->Value());
   EnvHelper env(observer->runtime_->vm_);
   jstring j_key = env->NewString(*unicode_string, unicode_string.length());
-  jobject j_value = observer->runtime_->ToJava(*env, new_value);
+  jobject j_value = JsValue::Of(*env, new_value);
   observer->onPropertyChanged(*env, j_key, j_value);
 }
 

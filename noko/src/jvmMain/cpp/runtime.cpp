@@ -140,7 +140,6 @@ int Runtime::Start(std::vector<std::string> &args) {
 bool Runtime::KeepAlive() {
   keep_alive_handle_ = new uv_async_t();
   auto error = uv_async_init(event_loop_, keep_alive_handle_, [](uv_async_t *handle) {
-    LOGD("Stop keeping alive");
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCDFAInspection"
     uv_close((uv_handle_t *) handle, [](uv_handle_t *h) {
@@ -181,17 +180,21 @@ void Runtime::Detach() const {
 }
 
 void Runtime::Exit(int code) {
-  LOGW("exit(%d)", code);
+  if (code != 0) {
+    LOGW("exit(%d)", code);
+  }
   if (keep_alive_) {
     uv_async_send(keep_alive_handle_);
   }
-  Post([&] {
+  Post([&, code] {
     v8::HandleScope handle_scope(isolate_);
     auto process = process_.Get(isolate_);
     auto context = context_.Get(isolate_);
     v8::Local<v8::Value> v8Code = v8::Number::New(isolate_, code);
     auto exit_func = process->Get(context, V8_UTF_STRING(isolate_, "exit"));
-    LOGI("Calling process.exit(%d)", code);
+    if (code != 0) {
+      LOGW("Calling process.exit(%d)", code);
+    }
     UNUSED(v8::Local<v8::Function>::Cast(exit_func.ToLocalChecked())
                ->Call(context, process, 1, &v8Code));
   });

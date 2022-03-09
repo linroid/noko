@@ -23,13 +23,10 @@ abstract class WithNode {
 
   @AfterTest
   open fun tearDown() {
-    runBlocking {
-      val job = launch {
-        node.awaitStopped()
-      }
+    runBlocking(Dispatchers.IO) {
       node.exit(0)
       withTimeout(10_000) {
-        job.join()
+        node.awaitStopped()
       }
     }
   }

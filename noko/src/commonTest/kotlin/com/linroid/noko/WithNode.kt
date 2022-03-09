@@ -1,9 +1,6 @@
 package com.linroid.noko
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.*
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 
@@ -37,7 +34,9 @@ abstract class WithNode {
     }
   }
 
-  protected fun <T> joinNode(action: () -> T) = runBlocking {
-    node.await(action)
+  protected fun <T> joinNode(action: suspend () -> T) = runBlocking {
+    withContext(node.coroutineDispatcher) {
+      action()
+    }
   }
 }

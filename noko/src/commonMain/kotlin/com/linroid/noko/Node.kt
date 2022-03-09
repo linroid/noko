@@ -6,6 +6,7 @@ import com.linroid.noko.io.StandardIO
 import com.linroid.noko.types.JsError
 import com.linroid.noko.types.JsObject
 import com.linroid.noko.types.JsValue
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.suspendCancellableCoroutine
 import okio.Path
 import kotlin.coroutines.resume
@@ -35,6 +36,8 @@ expect class Node(
   var global: JsObject?
 
   var stdio: StandardIO
+
+  val coroutineDispatcher : CoroutineDispatcher
 
   /**
    * Start node instance with arguments

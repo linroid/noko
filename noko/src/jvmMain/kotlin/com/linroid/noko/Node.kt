@@ -5,9 +5,11 @@ import com.linroid.noko.io.StandardIO
 import com.linroid.noko.types.*
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.locks.SynchronizedObject
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.suspendCancellableCoroutine
 import okio.Path
+import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
 
 /**
@@ -37,6 +39,11 @@ actual class Node actual constructor(
   actual var global: JsObject? = null
   actual var state: State = State.Initialized
   actual var stdio: StandardIO = StandardIO(this)
+  actual val coroutineDispatcher : CoroutineDispatcher = object : CoroutineDispatcher() {
+    override fun dispatch(context: CoroutineContext, block: Runnable) {
+      post { block.run() }
+    }
+  }
 
   internal actual val cleaner: (Long) -> Unit = { ref: Long ->
     check(ref != 0L) { "The reference has been already cleared" }

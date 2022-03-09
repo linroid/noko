@@ -69,23 +69,20 @@ JNICALL jobject Call(
     jobject j_receiver,
     jobjectArray j_parameters
 ) {
+  SETUP(env, j_this, v8::Function);
   int argc = env->GetArrayLength(j_parameters);
   v8::Persistent<v8::Value> *parameters[argc];
+  auto *argv = new v8::Local<v8::Value>[argc];
+  v8::TryCatch try_catch(isolate);
   for (int i = 0; i < argc; ++i) {
     auto element = env->GetObjectArrayElement(j_parameters, i);
     parameters[i] = JsValue::GetPointer(env, element);
+    argv[i] = JsValue::Value(env, element);
     env->DeleteLocalRef(element);
   }
-
-  SETUP(env, j_this, v8::Function);
   auto receiver = JsValue::GetPointer(env, j_receiver)->Get(isolate);
-  auto *argv = new v8::Local<v8::Value>[argc];
-  for (int i = 0; i < argc; ++i) {
-    argv[i] = parameters[i]->Get(isolate);
-  }
-  v8::TryCatch try_catch(isolate);
   auto result = that->Call(context, receiver, argc, argv);
-  if (result.IsEmpty()) {
+  if (result.IsEmpty() || try_catch.HasCaught()) {
     runtime->Throw(env, try_catch.Exception());
     return nullptr;
   }

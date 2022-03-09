@@ -37,9 +37,8 @@ class Runtime {
 
   jobject j_global_ = nullptr;
   jobject shared_undefined_ = nullptr;
-
-  v8::Persistent<v8::Object> global_;
-  v8::Persistent<v8::Function> require_;
+  JavaVM *vm_ = nullptr;
+  jobject j_this_ = nullptr;
 
   bool running_ = false;
   std::thread::id thread_id_;
@@ -50,7 +49,11 @@ class Runtime {
   uv_async_t *keep_alive_handle_ = nullptr;
   uv_async_t *callback_handle_ = nullptr;
 
+  v8::Isolate *isolate_ = nullptr;
+  v8::Persistent<v8::Context> context_;
   v8::Persistent<v8::Object> process_;
+  v8::Persistent<v8::Object> global_;
+  v8::Persistent<v8::Function> require_;
 
   void Handle(uv_async_t *handle);
 
@@ -65,15 +68,22 @@ class Runtime {
   void Detach() const;
 
  public:
-  JavaVM *vm_ = nullptr;
-
-  v8::Isolate *isolate_ = nullptr;
-  v8::Persistent<v8::Context> context_;
-  jobject j_this_ = nullptr;
 
   Runtime(JNIEnv *env, jobject j_this, bool keep_alive, bool strict);
 
   ~Runtime();
+
+  v8::Isolate *Isolate() { return isolate_; }
+
+  v8::Local<v8::Context> Context() {
+    return context_.Get(isolate_);
+  }
+
+  jobject JThis() { return j_this_; }
+
+  jobject JGlobal() { return j_global_; }
+
+  JavaVM *Jvm() { return vm_; }
 
   int Start(std::vector<std::string> &args);
 

@@ -52,7 +52,7 @@ JNICALL jboolean Post(JNIEnv *env, jobject j_this, jobject jRunnable) {
   message->runtime = Runtime::Get(env, j_this);
   message->runnable = env->NewGlobalRef(jRunnable);
   auto success = message->runtime->Post([message] {
-    EnvHelper _env(message->runtime->vm_);
+    EnvHelper _env(message->runtime->Jvm());
     _env->CallVoidMethod(message->runnable, run_method_id_);
     _env->DeleteGlobalRef(message->runnable);
     delete message;
@@ -164,8 +164,8 @@ JNICALL void ClearReference(JNIEnv *env, jobject j_this, jlong j_reference) {
 
   bool submitted = runtime->Post([reference, runtime] {
     if (runtime->IsRunning()) {
-      v8::Locker locker(runtime->isolate_);
-      v8::HandleScope handle_scope(runtime->isolate_);
+      v8::Locker locker(runtime->Isolate());
+      v8::HandleScope handle_scope(runtime->Isolate());
       reference->Reset();
     }
     delete reference;

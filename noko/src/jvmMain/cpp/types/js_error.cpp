@@ -24,7 +24,7 @@ jlong New(JNIEnv *env, jclass clazz, jstring j_message) {
   V8_SCOPE(env);
   auto message = V8_STRING(isolate, message_chars, message_len);
   auto value = v8::Exception::Error(message);
-  auto result = new v8::Persistent<v8::Value>(runtime->isolate_, value);
+  auto result = new v8::Persistent<v8::Value>(runtime->Isolate(), value);
   env->ReleaseStringChars(j_message, message_chars);
   return (jlong) result;
 }

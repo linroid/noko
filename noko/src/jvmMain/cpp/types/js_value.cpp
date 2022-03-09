@@ -16,14 +16,44 @@ v8::Persistent<v8::Value> *GetPointer(JNIEnv *env, jobject obj) {
   return reinterpret_cast<v8::Persistent<v8::Value> *>(env->GetLongField(obj, pointer_field_id_));
 }
 
+v8::Local<v8::Value> Value(JNIEnv *env, jobject obj) {
+  auto isolate = Runtime::Current()->Isolate();
+  if (obj == nullptr) {
+    return v8::Null(isolate);
+  } else if (JsValue::Is(env, obj)) {
+    if (JsFunction::Is(env, obj)) {
+      auto pointer = JsValue::GetPointer(env, obj);
+      if (pointer == nullptr) {
+        return JsFunction::Init(env, obj);
+      }
+      return pointer->Get(isolate);
+    }
+    return JsValue::GetPointer(env, obj)->Get(isolate);
+  } else if (String::Is(env, obj)) {
+    return String::Value(env, (jstring) obj);
+  } else if (Boolean::Is(env, obj)) {
+    return Boolean::Value(env, obj) ? v8::True(isolate) : v8::False(isolate);
+  } else if (Integer::Is(env, obj)) {
+    return v8::Int32::New(isolate, Integer::Value(env, obj));
+  } else if (Long::Is(env, obj)) {
+    return v8::BigInt::New(isolate, Long::Value(env, obj));
+  } else if (Double::Is(env, obj)) {
+    return v8::Number::New(isolate, Double::Value(env, obj));
+  } else {
+    auto class_name = JniHelper::GetClassName(env, obj);
+    LOGE("Not supported type: %s", class_name.c_str());
+    abort();
+  }
+}
+
 void SetPointer(JNIEnv *env, jobject obj, v8::Persistent<v8::Value> *value) {
   env->SetLongField(obj, pointer_field_id_, (jlong) value);
 }
 
 jobject Of(JNIEnv *env, v8::Local<v8::Value> value) {
   auto runtime = Runtime::Current();
-  auto node = runtime->j_this_;
-  auto isolate = runtime->isolate_;
+  auto node = runtime->JThis();
+  auto isolate = runtime->Isolate();
   if (value->IsNullOrUndefined()) {
     return nullptr;
   } else if (value->IsBoolean()) {
@@ -119,7 +149,7 @@ void Dispose(JNIEnv *env, jobject j_this) {
 
 jboolean Equals(JNIEnv *env, jobject j_this, jobject j_other) {
   SETUP(env, j_this, v8::Value);
-  auto other = GetPointer(env, j_other)->Get(isolate);
+  auto other = Value(env, j_other);
   return that->Equals(context, other).ToChecked();
 }
 

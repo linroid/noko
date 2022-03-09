@@ -29,7 +29,7 @@ JNICALL void Set(JNIEnv *env, jobject j_this, jstring j_key, jobject j_value) {
 
   auto key = V8_STRING(isolate, key_chars, key_len);
   env->ReleaseStringChars(j_key, key_chars);
-  auto value = JsValue::Value(isolate, env, j_value);
+  auto value = JsValue::Value(env, j_value);
   that->Set(context, key, value).Check();
 }
 
@@ -112,7 +112,7 @@ static void SetterCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
   v8::String::Value unicode_string(isolate, key);
 
   auto observer = reinterpret_cast<PropertiesObserver *>(v8_observer->Value());
-  EnvHelper env(observer->runtime_->vm_);
+  EnvHelper env(observer->runtime_->Jvm());
   jstring j_key = env->NewString(*unicode_string, unicode_string.length());
   jobject j_value = JsValue::Of(*env, new_value);
   observer->onPropertyChanged(*env, j_key, j_value);
@@ -196,7 +196,7 @@ jboolean DefineProperty(
 
   v8::TryCatch try_catch(isolate);
   if (getter != nullptr || setter != nullptr) {
-    v8::PropertyDescriptor descriptor(JsValue::Value(isolate, env, getter), JsValue::Value(isolate, env, setter));
+    v8::PropertyDescriptor descriptor(JsValue::Value(env, getter), JsValue::Value(env, setter));
     descriptor.set_enumerable(enumerable);
     descriptor.set_configurable(configurable);
     auto result = that->DefineProperty(context, v8_key, descriptor);
@@ -206,7 +206,7 @@ jboolean DefineProperty(
     }
     return result.ToChecked();
   } else {
-    v8::PropertyDescriptor descriptor(JsValue::Value(isolate, env, value), writeable);
+    v8::PropertyDescriptor descriptor(JsValue::Value(env, value), writeable);
     descriptor.set_enumerable(enumerable);
     descriptor.set_configurable(configurable);
     auto result = that->DefineProperty(context, v8_key, descriptor);

@@ -14,7 +14,7 @@ jobject Of(JNIEnv *env, jobject node, jlong pointer) {
 JNICALL jlong New(JNIEnv *env, jclass clazz) {
   V8_SCOPE(env);
   UNUSED(clazz);
-  auto context = runtime->context_.Get(isolate);
+  auto context = runtime->Context();
   auto resolver = v8::Promise::Resolver::New(context).ToLocalChecked();
   return (jlong) new v8::Persistent<v8::Value>(isolate, resolver);
 }
@@ -22,9 +22,9 @@ JNICALL jlong New(JNIEnv *env, jclass clazz) {
 void Reject(JNIEnv *env, jobject j_this, jobject j_error) {
   SETUP(env, j_this, v8::Promise::Resolver);
 
-  auto value = JsValue::GetPointer(env, j_error);
-  v8::TryCatch try_catch(runtime->isolate_);
-  that->Reject(context, value->Get(isolate)).Check();
+  auto value = JsValue::Value(env, j_error);
+  v8::TryCatch try_catch(runtime->Isolate());
+  that->Reject(context, value).Check();
   if (try_catch.HasCaught()) {
     runtime->Throw(env, try_catch.Exception());
     return;
@@ -33,8 +33,8 @@ void Reject(JNIEnv *env, jobject j_this, jobject j_error) {
 
 void Resolve(JNIEnv *env, jobject j_this, jobject j_value) {
   SETUP(env, j_this, v8::Promise::Resolver);
-  auto value = JsValue::Value(isolate, env, j_value);
-  v8::TryCatch try_catch(runtime->isolate_);
+  auto value = JsValue::Value(env, j_value);
+  v8::TryCatch try_catch(runtime->Isolate());
   that->Resolve(context, value).Check();
   if (try_catch.HasCaught()) {
     runtime->Throw(env, try_catch.Exception());
@@ -45,8 +45,8 @@ void Resolve(JNIEnv *env, jobject j_this, jobject j_value) {
 
 void Then(JNIEnv *env, jobject j_this, jobject j_callback) {
   SETUP(env, j_this, v8::Promise);
-  auto callback = JsValue::Value(isolate, env, j_callback).As<v8::Function>();
-  v8::TryCatch try_catch(runtime->isolate_);
+  auto callback = JsValue::Value(env, j_callback).As<v8::Function>();
+  v8::TryCatch try_catch(runtime->Isolate());
   auto ret = that->Then(context, callback);
   if (ret.IsEmpty()) {
     runtime->Throw(env, try_catch.Exception());
@@ -56,8 +56,8 @@ void Then(JNIEnv *env, jobject j_this, jobject j_callback) {
 
 void Catch(JNIEnv *env, jobject j_this, jobject j_callback) {
   SETUP(env, j_this, v8::Promise);
-  auto callback = JsValue::Value(isolate, env, j_callback).As<v8::Function>();
-  v8::TryCatch try_catch(runtime->isolate_);
+  auto callback = JsValue::Value(env, j_callback).As<v8::Function>();
+  v8::TryCatch try_catch(runtime->Isolate());
   auto ret = that->Catch(context, callback);
   if (ret.IsEmpty()) {
     runtime->Throw(env, try_catch.Exception());

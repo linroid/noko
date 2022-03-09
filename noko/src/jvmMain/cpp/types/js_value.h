@@ -21,37 +21,7 @@ jobject Of(JNIEnv *env, v8::Local<v8::Value> value);
 
 bool Is(JNIEnv *env, jobject obj);
 
-inline v8::Local<v8::Value> Value(
-    v8::Isolate *isolate,
-    JNIEnv *env,
-    jobject obj) {
-  if (obj == nullptr) {
-    return v8::Null(isolate);
-  } else if (JsValue::Is(env, obj)) {
-    if (JsFunction::Is(env, obj)) {
-      auto pointer = JsValue::GetPointer(env, obj);
-      if (pointer == nullptr) {
-        return JsFunction::Init(env, obj);
-      }
-      return pointer->Get(isolate);
-    }
-    return JsValue::GetPointer(env, obj)->Get(isolate);
-  } else if (String::Is(env, obj)) {
-    return String::Value(env, (jstring) obj);
-  } else if (Boolean::Is(env, obj)) {
-    return Boolean::Value(env, obj) ? v8::True(isolate) : v8::False(isolate);
-  } else if (Integer::Is(env, obj)) {
-    return v8::Int32::New(isolate, Integer::Value(env, obj));
-  } else if (Long::Is(env, obj)) {
-    return v8::BigInt::New(isolate, Long::Value(env, obj));
-  } else if (Double::Is(env, obj)) {
-    return v8::Number::New(isolate, Double::Value(env, obj));
-  } else {
-    auto class_name = JniHelper::GetClassName(env, obj);
-    LOGE("Not supported type: %s", class_name.c_str());
-    abort();
-  }
-}
+v8::Local<v8::Value> Value(JNIEnv *env, jobject obj);
 
 jint OnLoad(JNIEnv *env);
 

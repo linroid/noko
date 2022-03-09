@@ -30,7 +30,7 @@ void StaticCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
 static void WeakCallback(const v8::WeakCallbackInfo<JavaCallback> &data) {
   LOGI("WeakCallback");
   JavaCallback *callback = data.GetParameter();
-  EnvHelper env(callback->runtime_->vm_);
+  EnvHelper env(callback->runtime_->Jvm());
   JsValue::SetPointer(*env, callback->that_, nullptr);
   delete callback;
 }
@@ -46,13 +46,13 @@ v8::Local<v8::Function> Init(JNIEnv *env, jobject j_this) {
     env->FatalError("GetRuntime returns nullptr");
     abort();
   }
-  auto isolate = runtime->isolate_;
+  auto isolate = runtime->Isolate();
   v8::Locker locker(isolate);
   v8::EscapableHandleScope handle_scope(isolate);
 
   auto callback = new JavaCallback(runtime, env, j_this, object_class_, call_method_id_);
   auto data = v8::External::New(isolate, callback);
-  auto context = runtime->context_.Get(isolate);
+  auto context = runtime->Context();
   auto func = v8::FunctionTemplate::New(isolate, StaticCallback, data)->GetFunction(context).ToLocalChecked();
   func->SetName(V8_STRING(isolate, name, name_len));
 

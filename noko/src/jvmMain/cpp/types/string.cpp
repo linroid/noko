@@ -7,7 +7,7 @@ namespace String {
 jclass class_;
 
 jobject Of(JNIEnv *env, v8::Local<v8::Value> &value) {
-  auto isolate = Runtime::Current()->isolate_;
+  auto isolate = Runtime::Current()->Isolate();
   v8::String::Value unicode_string(isolate, value);
   return env->NewString(*unicode_string, unicode_string.length());
 }
@@ -15,7 +15,7 @@ jobject Of(JNIEnv *env, v8::Local<v8::Value> &value) {
 v8::Local<v8::String> Value(JNIEnv *env, jstring value) {
   const uint16_t *content = env->GetStringChars(value, nullptr);
   const jint length = env->GetStringLength(value);
-  auto isolate = Runtime::Current()->isolate_;
+  auto isolate = Runtime::Current()->Isolate();
   v8::EscapableHandleScope handle_scope(isolate);
   auto result = v8::String::NewFromTwoByte(isolate, content, v8::NewStringType::kNormal, length);
   env->ReleaseStringChars(value, content);

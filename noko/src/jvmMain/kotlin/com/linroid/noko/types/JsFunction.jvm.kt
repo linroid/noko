@@ -38,12 +38,9 @@ actual open class JsFunction : JsObject {
   }
 
   actual fun call(receiver: JsValue, vararg parameters: Any?): Any? {
-    node.checkThread()
     check(node.pointer != 0L) { "node has already been disposed" }
     return nativeCall(receiver, parameters)
   }
 
   private external fun nativeCall(receiver: JsValue, parameters: Array<out Any?>): Any?
-
-  private external fun nativeInit(name: String)
 }

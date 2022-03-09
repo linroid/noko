@@ -30,7 +30,7 @@ jboolean AddAll(JNIEnv *env, jobject j_this, jobjectArray j_elements) {
   auto index = that->Length();
   for (int i = 0; i < size; ++i) {
     auto j_element = env->GetObjectArrayElement(j_elements, i);
-    v8::Local<v8::Value> element = JsValue::Value(isolate, env, j_element);
+    v8::Local<v8::Value> element = JsValue::Value(env, j_element);
     if (!that->Set(context, index + i, element).ToChecked()) {
       return false;
     }
@@ -55,7 +55,7 @@ jobject Get(JNIEnv *env, jobject j_this, jint j_index) {
 
 jboolean Add(JNIEnv *env, jobject j_this, jobject j_element) {
   SETUP(env, j_this, v8::Array);
-  auto element = JsValue::Value(isolate, env, j_element);
+  auto element = JsValue::Value(env, j_element);
   v8::TryCatch try_catch(isolate);
   auto success = that->Set(context, that->Length(), element).ToChecked();
   if (try_catch.HasCaught()) {
@@ -106,7 +106,7 @@ jobject JNICALL RemoveAt(JNIEnv *env, jobject j_this, jint index) {
 
 void JNICALL AddAt(JNIEnv *env, jobject j_this, jint index, jobject j_value) {
   SETUP(env, j_this, v8::Array);
-  auto value = JsValue::Value(isolate, env, j_value);
+  auto value = JsValue::Value(env, j_value);
   v8::TryCatch try_catch(isolate);
   auto splice_func = that->Get(context, V8_UTF_STRING(isolate, "splice"));
   if (splice_func.IsEmpty()) {
@@ -129,7 +129,7 @@ void JNICALL AddAt(JNIEnv *env, jobject j_this, jint index, jobject j_value) {
 
 jobject JNICALL SetAt(JNIEnv *env, jobject j_this, jint index, jobject j_value) {
   SETUP(env, j_this, v8::Array);
-  auto value = JsValue::Value(isolate, env, j_value);
+  auto value = JsValue::Value(env, j_value);
   v8::TryCatch try_catch(isolate);
   auto splice_func = that->Get(context, V8_UTF_STRING(isolate, "splice"));
   if (splice_func.IsEmpty()) {

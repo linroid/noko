@@ -15,7 +15,7 @@ JavaCallback::JavaCallback(
 }
 
 void JavaCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
-  EnvHelper env(runtime_->vm_);
+  EnvHelper env(runtime_->Jvm());
   auto parameters = env->NewObjectArray(info.Length(), class_, nullptr);
   for (int i = 0; i < info.Length(); ++i) {
     v8::Local<v8::Value> element = info[i];
@@ -33,21 +33,19 @@ void JavaCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
     info.GetReturnValue().Set(v8::Undefined(info.GetIsolate()));
     env->Throw(env->ExceptionOccurred());
     if (env.HasAttached()) {
-      runtime_->vm_->DetachCurrentThread();
+      runtime_->Jvm()->DetachCurrentThread();
     }
     return;
   }
 
   if (j_result != nullptr) {
-    auto result = JsValue::GetPointer(*env, j_result);
-    if (result != nullptr) {
-      info.GetReturnValue().Set(result->Get(runtime_->isolate_));
-    }
+    auto result = JsValue::Value(*env, j_result);
+    info.GetReturnValue().Set(result);
   }
 }
 
 JavaCallback::~JavaCallback() {
   LOGD("~JavaCallback()");
-  EnvHelper env(runtime_->vm_);
+  EnvHelper env(runtime_->Jvm());
   env->DeleteGlobalRef(that_);
 }

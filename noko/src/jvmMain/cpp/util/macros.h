@@ -8,16 +8,17 @@
 #define V8_SCOPE(env) \
   auto runtime = Runtime::Current(); \
   if (runtime == nullptr) { \
-    LOGE("GetRuntime runtime nullptr %s(%d)-<%s>", __FILE__, __LINE__, __FUNCTION__); \
-    env->FatalError("GetRuntime returns nullptr"); \
+    LOGE("No runtime in current thread, %s(%d)-<%s>", __FILE__, __LINE__, __FUNCTION__); \
+    env->FatalError("No runtime in current thread."); \
   } \
-  auto isolate = runtime->isolate_; \
+  runtime->CheckThread();                    \
+  auto isolate = runtime->Isolate(); \
   v8::Locker locker(isolate); \
   v8::HandleScope handle_scope(isolate) \
 
 #define SETUP(env, j_this, type) \
   V8_SCOPE(env); \
-  auto context = runtime->context_.Get(isolate); \
+  auto context = runtime->Context(); \
   auto reference = reinterpret_cast<v8::Persistent<type> *>(JsValue::GetPointer(env, j_this)); \
   auto that = reference->Get(isolate)
 

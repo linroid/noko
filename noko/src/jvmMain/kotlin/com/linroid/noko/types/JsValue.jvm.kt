@@ -27,7 +27,6 @@ actual open class JsValue actual constructor(
         node.await { nativeToString() }
       }
     }
-    node.checkThread()
     return nativeToString()
   }
 

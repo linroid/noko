@@ -53,7 +53,6 @@ actual open class JsObject : JsValue {
 
   @Suppress("UNCHECKED_CAST")
   fun <T : Any> get(key: String, clazz: Class<T>): T? {
-    node.checkThread()
     val value = nativeGet(key) ?: return null
     if (clazz.isInstance(value)) {
       return value as T

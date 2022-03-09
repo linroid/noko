@@ -217,8 +217,6 @@ kotlin {
       dependsOn(commonTest)
       dependencies {
         implementation(kotlin("test"))
-        implementation("io.mockk:mockk:${mockkVersion}")
-        implementation("io.mockk:mockk-agent-jvm:${mockkVersion}")
       }
     }
 
@@ -230,6 +228,7 @@ kotlin {
       dependsOn(jvmTest)
       dependencies {
         implementation("io.mockk:mockk:${mockkVersion}")
+        implementation("io.mockk:mockk-agent-jvm:${mockkVersion}")
       }
     }
 
@@ -243,6 +242,13 @@ kotlin {
       dependsOn(jvmTest)
       dependencies {
         implementation("junit:junit:4.13.2")
+      }
+    }
+    val androidAndroidTest by getting {
+      dependsOn(jvmTest)
+      dependencies {
+        implementation("androidx.test:runner:1.4.0")
+        implementation("io.mockk:mockk-android:${mockkVersion}")
       }
     }
   }

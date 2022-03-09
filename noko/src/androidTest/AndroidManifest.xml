@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.linroid.noko.test">
+
+    <application android:name="com.linroid.noko.TestApplication" />
+</manifest>

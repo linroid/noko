@@ -24,6 +24,7 @@
 }
 
 static jmethodID run_method_id_;
+std::unique_ptr<node::MultiIsolatePlatform> platform_;
 
 JNICALL jint Start(JNIEnv *env, jobject j_this, jobjectArray j_args) {
   auto runtime = Runtime::Get(env, j_this);
@@ -85,7 +86,12 @@ JNICALL void Chroot(JNIEnv *env, jobject j_this, jstring j_path) {
 }
 
 JNICALL jlong New(JNIEnv *env, jobject j_this, jboolean keep_alive, jboolean strict) {
-  auto *runtime = new Runtime(env, j_this, keep_alive, strict);
+  if (!platform_) {
+    env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
+                  "Unable to create Node instance, have you called Node.setup(...)?");
+    return 0;
+  }
+  auto *runtime = new Runtime(env, j_this, platform_.get(), keep_alive, strict);
   return reinterpret_cast<jlong>(runtime);
 }
 
@@ -94,14 +100,45 @@ JNICALL void Exit(JNIEnv *env, jobject j_this, jint code) {
   runtime->Exit(code);
 }
 
-JNICALL void Setup(__unused JNIEnv *env, __unused jclass j_this, jobject connectivity_manager) {
+JNICALL void Setup(__unused JNIEnv *env, __unused jclass clazz, jint thread_pool_size, jobject connectivity_manager) {
 #if defined(__ANDROID__)
   ares_library_init_android(connectivity_manager);
   LOGI("ares_library_android_initialized: %d", ares_library_android_initialized());
 #endif
-  // int max = 5;
-  // size_t num = 0;
-  // ares_get_server_list_from_env(max, &num);
+
+  // Create a v8::Platform instance. `
+  // MultiIsolatePlatform::Create()` is a way
+  // to create a v8::Platform instance that Node.js can use when creating
+  // Worker threads. When no `MultiIsolatePlatform` instance is present,
+  // Worker threads are disabled.
+  platform_ = node::MultiIsolatePlatform::Create(thread_pool_size);
+  v8::V8::InitializePlatform(platform_.get());
+  v8::V8::Initialize();
+
+  char cmd[128];
+  strcpy(cmd, "node --trace-exit --trace-sigint --trace-sync-io --trace-warnings --title=node");
+  int argc = 0;
+  char *argv[128];
+  char *p2 = strtok(cmd, " ");
+  while (p2 && argc < 128 - 1) {
+    argv[argc++] = p2;
+    p2 = strtok(nullptr, " ");
+  }
+  argv[argc] = nullptr;
+
+  std::vector<std::string> args = std::vector<std::string>(argv, argv + argc);
+  std::vector<std::string> exec_args;
+  std::vector<std::string> errors;
+  // Parse Node.js CLI options, and print any errors that have occurred while
+  // trying to parse them.
+  int exit_code = node::InitializeNodeWithArgs(&args, &exec_args, &errors);
+  if (exit_code != 0) {
+    LOGE("Failed to call node::InitializeNodeWithArgs()");
+    for (const std::string &error : errors) {
+      LOGE("%s: %s\n", args[0].c_str(), error.c_str());
+    }
+    abort();
+  }
 }
 
 JNICALL jobject Eval(JNIEnv *env, jobject j_this, jstring j_code, jstring j_source, jint line) {
@@ -136,7 +173,6 @@ JNICALL jobject ThrowError(JNIEnv *env, jobject j_this, jstring j_message) {
   return result;
 }
 
-// TODO: Not working, illegal context
 JNICALL jobject Require(JNIEnv *env, jobject j_this, jstring j_path) {
   jint pathLen = env->GetStringLength(j_path);
   auto path = env->GetStringChars(j_path, nullptr);
@@ -148,7 +184,7 @@ JNICALL jobject Require(JNIEnv *env, jobject j_this, jstring j_path) {
 
 JNICALL void ClearReference(JNIEnv *env, jobject j_this, jlong j_reference) {
   auto runtime = Runtime::Get(env, j_this);
-  auto reference = reinterpret_cast<v8::Persistent <v8::Value> *>(j_reference);
+  auto reference = reinterpret_cast<v8::Persistent<v8::Value> *>(j_reference);
 
   LOGV("clear reference: reference=%p, runtime=%p", reference, runtime);
   if (runtime == nullptr) {
@@ -176,10 +212,8 @@ JNICALL void ClearReference(JNIEnv *env, jobject j_this, jlong j_reference) {
   }
 }
 
-static JNINativeMethod nodeMethods[] = {
-#if defined(__ANDROID__)
-    {"nativeSetup", "(Landroid/net/ConnectivityManager;)V", (void *) Setup},
-#endif
+static JNINativeMethod methods[] = {
+    {"nativeSetup", "(ILjava/lang/Object;)V", (void *) Setup},
     {"nativeNew", "(ZZ)J", (void *) New},
     {"nativeExit", "(I)V", (void *) Exit},
     {"nativeStart", "([Ljava/lang/String;)I", (void *) Start},
@@ -208,17 +242,17 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
     return JNI_ERR;
   }
 
-  int rc = env->RegisterNatives(clazz, nodeMethods, sizeof(nodeMethods) / sizeof(JNINativeMethod));
+  int rc = env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(JNINativeMethod));
   if (rc != JNI_OK) {
     return rc;
   }
 
   jclass runnableClass = env->FindClass("java/lang/Runnable");
   run_method_id_ = env->GetMethodID(runnableClass, "run", "()V");
+  LOAD_JNI_CLASS(JsObject)
 
   LOAD_JNI_CLASS(Runtime)
   LOAD_JNI_CLASS(JsValue)
-  LOAD_JNI_CLASS(JsObject)
   LOAD_JNI_CLASS(Integer)
   LOAD_JNI_CLASS(Boolean)
   LOAD_JNI_CLASS(Double)
@@ -231,4 +265,9 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
   LOAD_JNI_CLASS(JsPromise)
 
   return JNI_VERSION_1_6;
+}
+
+JNIEXPORT void JNI_OnUnload(JavaVM *vm, void *reserved) {
+  v8::V8::Dispose();
+  v8::V8::ShutdownPlatform();
 }

@@ -39,9 +39,13 @@ actual class Node actual constructor(
   actual var global: JsObject? = null
   actual var state: State = State.Initialized
   actual var stdio: StandardIO = StandardIO(this)
-  actual val coroutineDispatcher : CoroutineDispatcher = object : CoroutineDispatcher() {
+  actual val coroutineDispatcher: CoroutineDispatcher = object : CoroutineDispatcher() {
     override fun dispatch(context: CoroutineContext, block: Runnable) {
       post { block.run() }
+    }
+
+    override fun isDispatchNeeded(context: CoroutineContext): Boolean {
+      return !isInEventLoop()
     }
   }
 
@@ -230,9 +234,7 @@ actual class Node actual constructor(
   internal actual fun checkThread() {
     if (strictMode) {
       check(isInEventLoop()) {
-        "Only the original thread running the event loop for Node.js " +
-            "can touch it's values, " +
-            "otherwise you should call them inside node.post { ... }"
+        "Only the original thread running the event loop for Node.js " + "can touch it's values, " + "otherwise you should call them inside node.post { ... }"
       }
     }
   }
@@ -280,11 +282,12 @@ actual class Node actual constructor(
   private external fun nativeRequire(path: String): JsObject
   private external fun nativeClearReference(ref: Long)
 
-  companion object {
+  actual companion object {
     private val counter = atomic(0)
     private val customVersions = HashMap<String, String>()
     private val customEnvs = HashMap<String, String>()
     private const val EXEC_PATH = "node"
+    private var inited = false
 
     init {
       Platform.loadNativeLibraries()
@@ -297,5 +300,17 @@ actual class Node actual constructor(
     fun addVersion(name: String, version: String) {
       customVersions[name] = version
     }
+
+    actual fun setup(
+      thread_pool_size: Int,
+      connectivityManager: Any?,
+    ) {
+      check(!inited) { "Node.setup() has already been called" }
+      inited = true
+      nativeSetup(thread_pool_size, connectivityManager)
+    }
+
+    @JvmStatic
+    private external fun nativeSetup(workerCount: Int, arg: Any?)
   }
 }

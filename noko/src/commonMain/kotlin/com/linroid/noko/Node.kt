@@ -37,7 +37,7 @@ expect class Node(
 
   var stdio: StandardIO
 
-  val coroutineDispatcher : CoroutineDispatcher
+  val coroutineDispatcher: CoroutineDispatcher
 
   /**
    * Start node instance with arguments
@@ -90,6 +90,20 @@ expect class Node(
   internal fun chroot(dir: Path)
 
   internal fun mountFile(dst: Path, src: Path, mode: FileSystem.Mode)
+
+  companion object {
+
+    /**
+     * Setup the environments for Node.js
+     *
+     * @param thread_pool_size Specify how many threads in the pool to supply Worker, 0 to disable Worker
+     * @param connectivityManager (Android-only) The ConnectivityManager for `ares` to obtain DNS servers
+     */
+    fun setup(
+      thread_pool_size: Int = 0,
+      connectivityManager: Any? = null,
+    )
+  }
 }
 
 enum class State {

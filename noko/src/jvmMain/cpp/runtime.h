@@ -15,8 +15,6 @@
   auto context = context_.Get(isolate_);    \
   v8::Context::Scope context_scope(context) \
 
-int init_node();
-
 class Runtime {
 
  private:
@@ -48,6 +46,7 @@ class Runtime {
   uv_loop_t *event_loop_ = nullptr;
   uv_async_t *keep_alive_handle_ = nullptr;
   uv_async_t *callback_handle_ = nullptr;
+  node::MultiIsolatePlatform *platform_;
 
   v8::Isolate *isolate_ = nullptr;
   v8::Persistent<v8::Context> context_;
@@ -69,7 +68,13 @@ class Runtime {
 
  public:
 
-  Runtime(JNIEnv *env, jobject j_this, bool keep_alive, bool strict);
+  Runtime(
+      JNIEnv *env,
+      jobject j_this,
+      node::MultiIsolatePlatform *platform,
+      bool keep_alive,
+      bool strict
+  );
 
   ~Runtime();
 

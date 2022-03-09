@@ -6,7 +6,7 @@ import kotlin.test.*
 class JsArrayTest : WithNode() {
 
   @Test
-  fun `size and get`(): Unit = joinNode {
+  fun sizeAndGet(): Unit = joinNode {
     //language=JSON
     val array = node.parseJson("[1, 1.1, \"string\", {\"name\": \"foo\"}, [1, 2, 3, 4]]")
     assertIs<JsArray>(array)
@@ -19,7 +19,7 @@ class JsArrayTest : WithNode() {
   }
 
   @Test
-  fun `add and get`(): Unit = joinNode {
+  fun add(): Unit = joinNode {
     val obj = JsObject(node)
     val array = JsArray(node, arrayListOf(0, 1, obj))
     array.add(3)

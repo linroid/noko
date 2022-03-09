@@ -36,4 +36,10 @@ abstract class WithNode {
       action()
     }
   }
+
+  companion object {
+    init {
+      Node.setup(0)
+    }
+  }
 }

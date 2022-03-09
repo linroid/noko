@@ -21,17 +21,16 @@ int Runtime::instance_count_ = 0;
 std::mutex Runtime::shared_mutex_;
 int Runtime::sequence_ = 0;
 
-bool node_initialized = false;
-std::unique_ptr<node::MultiIsolatePlatform> platform;
-
 thread_local Runtime *current_runtime_;
 
 Runtime::Runtime(
     JNIEnv *env,
     jobject j_this,
+    node::MultiIsolatePlatform *platform,
     bool keep_alive,
     bool strict
-) : keep_alive_(keep_alive),
+) : platform_(platform),
+    keep_alive_(keep_alive),
     strict_(strict),
     j_this_(env->NewGlobalRef(j_this)) {
 
@@ -40,9 +39,6 @@ Runtime::Runtime(
   ++instance_count_;
   ++sequence_;
   id_ = sequence_;
-  if (!node_initialized) {
-    init_node();
-  }
 }
 
 Runtime::~Runtime() {
@@ -80,7 +76,7 @@ int Runtime::Start(std::vector<std::string> &args) {
           | node::EnvironmentFlags::kTrackUnmanagedFds);
 
   std::unique_ptr<node::CommonEnvironmentSetup> setup
-      = node::CommonEnvironmentSetup::Create(platform.get(), &errors, args, exec_args, flags);
+      = node::CommonEnvironmentSetup::Create(platform_, &errors, args, exec_args, flags);
 
   isolate_ = setup->isolate();
   event_loop_ = setup->event_loop();
@@ -387,48 +383,6 @@ jobject Runtime::Require(const uint16_t *path, int path_len) {
   return JsValue::Of(*env, result.ToLocalChecked());
 }
 
-int init_node() {
-  // Make argv memory adjacent
-  char cmd[128];
-  strcpy(cmd, "node --trace-exit --trace-sigint --trace-sync-io --trace-warnings --title=node");
-  int argc = 0;
-  char *argv[128];
-  char *p2 = strtok(cmd, " ");
-  while (p2 && argc < 128 - 1) {
-    argv[argc++] = p2;
-    p2 = strtok(nullptr, " ");
-  }
-  argv[argc] = nullptr;
-
-  std::vector<std::string> args = std::vector<std::string>(argv, argv + argc);
-  std::vector<std::string> exec_args;
-  std::vector<std::string> errors;
-  // Parse Node.js CLI options, and print any errors that have occurred while
-  // trying to parse them.
-  int exit_code = node::InitializeNodeWithArgs(&args, &exec_args, &errors);
-  for (const std::string &error : errors)
-    LOGE("%s: %s\n", args[0].c_str(), error.c_str());
-  if (exit_code == 0) {
-    node_initialized = true;
-  }
-
-  // Create a v8::Platform instance. `MultiIsolatePlatform::Create()` is a way
-  // to create a v8::Platform instance that Node.js can use when creating
-  // Worker threads. When no `MultiIsolatePlatform` instance is present,
-  // Worker threads are disabled.
-  platform = node::MultiIsolatePlatform::Create(4);
-  v8::V8::InitializePlatform(platform.get());
-  v8::V8::Initialize();
-
-  return exit_code;
-}
-
-// void shutdownNode() {
-//     node_initialized = false;
-//     v8::V8::Dispose();
-//     v8::V8::ShutdownPlatform();
-// }
-
 jmethodID Runtime::on_attach_method_id_;
 jmethodID Runtime::on_start_method_id_;
 jmethodID Runtime::on_detach_method_id_;
@@ -448,6 +402,7 @@ jint Runtime::OnLoad(JNIEnv *env) {
   on_attach_method_id_ = env->GetMethodID(clazz, "onAttach", "(Lcom/linroid/noko/types/JsObject;)V");
   on_start_method_id_ = env->GetMethodID(clazz, "onStart", "(Lcom/linroid/noko/types/JsObject;)V");
   on_detach_method_id_ = env->GetMethodID(clazz, "onDetach", "(Lcom/linroid/noko/types/JsObject;)V");
+
   return JNI_OK;
 }
 

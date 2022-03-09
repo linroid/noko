@@ -96,11 +96,11 @@ expect class Node(
     /**
      * Setup the environments for Node.js
      *
-     * @param thread_pool_size Specify how many threads in the pool to supply Worker, 0 to disable Worker
+     * @param thread_pool_size Specify how many threads in the pool to supply Worker, must > 0
      * @param connectivityManager (Android-only) The ConnectivityManager for `ares` to obtain DNS servers
      */
     fun setup(
-      thread_pool_size: Int = 0,
+      thread_pool_size: Int = 4,
       connectivityManager: Any? = null,
     )
   }

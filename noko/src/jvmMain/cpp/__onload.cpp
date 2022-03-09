@@ -111,7 +111,7 @@ JNICALL void Setup(__unused JNIEnv *env, __unused jclass clazz, jint thread_pool
   // to create a v8::Platform instance that Node.js can use when creating
   // Worker threads. When no `MultiIsolatePlatform` instance is present,
   // Worker threads are disabled.
-  platform_ = node::MultiIsolatePlatform::Create(thread_pool_size);
+  platform_ = node::MultiIsolatePlatform::Create(thread_pool_size, node::GetTracingController());
   v8::V8::InitializePlatform(platform_.get());
   v8::V8::Initialize();
 

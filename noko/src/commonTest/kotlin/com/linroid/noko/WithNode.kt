@@ -3,6 +3,7 @@ package com.linroid.noko
 import kotlinx.coroutines.*
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
+import com.linroid.noko.types.JsObject
 
 abstract class WithNode {
 
@@ -10,22 +11,28 @@ abstract class WithNode {
   private var scope = CoroutineScope(Dispatchers.IO)
 
   @BeforeTest
-  open fun setUp(): Unit = runBlocking {
-    node = Node(null, keepAlive = true, strictMode = true)
+  open fun setUp() {
+    scope = CoroutineScope(Dispatchers.IO)
+    node = Node(null, keepAlive = true)
     scope.launch {
       node.stdio.output().collect { println(it) }
     }
+    scope.launch {
+      node.stdio.error().collect { System.err.println(it) }
+    }
     node.start("-p", "process.pid")
-    withTimeout(10_000) {
-      node.awaitStarted()
+    runBlocking {
+      withTimeout(3_000) {
+        node.awaitStarted()
+      }
     }
   }
 
   @AfterTest
   open fun tearDown() {
-    runBlocking(Dispatchers.IO) {
-      node.exit(0)
-      withTimeout(10_000) {
+    runBlocking {
+      node.exit(1)
+      withTimeout(3_000) {
         node.awaitStopped()
       }
     }

@@ -96,8 +96,10 @@ int Runtime::Start(std::vector<std::string> &args) {
   v8::HandleScope handle_scope(isolate_);
   auto context = setup->context();
   v8::Context::Scope context_scope(context);
-  node::SetProcessExitHandler(env, [](node::Environment *environment, int code) {
-    LOGW("Node.js exited with code %d", code);
+  node::SetProcessExitHandler(env, [&](node::Environment *environment, int code) {
+    if (code != 0) {
+      LOGE("Exit node with code %d", code);
+    }
     node::Stop(environment);
   });
 
@@ -115,7 +117,7 @@ int Runtime::Start(std::vector<std::string> &args) {
   });
 
   if (load_env_result.IsEmpty()) {
-    LOGE("Failed to call node::LoadEnvironment");
+    LOGE("Failed to call node::LoadEnvironment()");
     return 1;
   }
   exit_code = node::SpinEventLoop(env).FromMaybe(1);
@@ -170,9 +172,9 @@ void Runtime::OnStart() {
 }
 
 void Runtime::Detach() const {
-  current_runtime_ = nullptr;
   EnvHelper env(vm_);
   env->CallVoidMethod(j_this_, on_detach_method_id_, j_this_);
+  current_runtime_ = nullptr;
 }
 
 void Runtime::Exit(int code) {
@@ -186,13 +188,17 @@ void Runtime::Exit(int code) {
     v8::HandleScope handle_scope(isolate_);
     auto process = process_.Get(isolate_);
     auto context = context_.Get(isolate_);
-    v8::Local<v8::Value> v8Code = v8::Number::New(isolate_, code);
-    auto exit_func = process->Get(context, V8_UTF_STRING(isolate_, "exit"));
+    v8::TryCatch try_catch(isolate_);
+    v8::Local<v8::Value> exit_code = v8::Number::New(isolate_, code);
+    auto exit_func = process->Get(context, V8_UTF_STRING(isolate_, "exit")).ToLocalChecked();
     if (code != 0) {
       LOGW("Calling process.exit(%d)", code);
     }
-    UNUSED(v8::Local<v8::Function>::Cast(exit_func.ToLocalChecked())
-               ->Call(context, process, 1, &v8Code));
+    UNUSED(exit_func.As<v8::Function>()
+               ->Call(context, process, 1, &exit_code));
+    if (try_catch.HasCaught()) {
+      LOGE("Call process.exit(%d) failed", code);
+    }
   });
 }
 

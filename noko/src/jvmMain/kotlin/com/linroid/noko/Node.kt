@@ -306,6 +306,7 @@ actual class Node actual constructor(
       connectivityManager: Any?,
     ) {
       check(!inited) { "Node.setup() has already been called" }
+      require(thread_pool_size > 0) {"`thread_pool_size` must > 0" }
       inited = true
       nativeSetup(thread_pool_size, connectivityManager)
     }

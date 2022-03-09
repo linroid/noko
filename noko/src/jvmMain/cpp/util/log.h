@@ -18,8 +18,8 @@
 #define LOGV(...) printf(__VA_ARGS__); printf("\n")
 #define LOGD(...) printf(__VA_ARGS__); printf("\n")
 #define LOGI(...) printf(__VA_ARGS__); printf("\n")
-#define LOGW(...) printf(__VA_ARGS__); printf("\n")
-#define LOGE(...) printf(__VA_ARGS__); printf("\n")
+#define LOGW(...) fprintf(stderr, __VA_ARGS__); fprintf(stderr, "\n")
+#define LOGE(...) fprintf(stderr, __VA_ARGS__); fprintf(stderr, "\n")
 #endif
 
 #endif //NOKO_JS_LOG_H

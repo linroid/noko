@@ -60,7 +60,6 @@ class JsObjectTest : WithNode() {
 
   @Test
   fun watchProperties(): Unit = joinNode {
-    println("watchProperties")
     val observer = mockk<PropertiesObserver>(relaxed = true)
     obj.watch(observer, "name", "age")
 

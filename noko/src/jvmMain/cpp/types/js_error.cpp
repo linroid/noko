@@ -9,7 +9,8 @@ jclass exception_class_;
 jmethodID exception_init_method_id_;
 
 jthrowable ToException(JNIEnv *env, jobject j_error) {
-  return (jthrowable) env->NewObject(exception_class_, exception_init_method_id_, j_error);
+  auto runtime = Runtime::Current();
+  return (jthrowable) env->NewObject(exception_class_, exception_init_method_id_, runtime->JThis(), j_error);
 }
 
 jobject Of(JNIEnv *env, jobject node, jlong pointer) {

@@ -116,7 +116,7 @@ JNICALL void Setup(__unused JNIEnv *env, __unused jclass clazz, jint thread_pool
   v8::V8::Initialize();
 
   char cmd[128];
-  strcpy(cmd, "node --trace-exit --trace-sigint --trace-sync-io --trace-warnings --title=node");
+  strcpy(cmd, "node --trace-uncaught --trace-exit --trace-sigint --trace-sync-io --trace-warnings --title=node");
   int argc = 0;
   char *argv[128];
   char *p2 = strtok(cmd, " ");

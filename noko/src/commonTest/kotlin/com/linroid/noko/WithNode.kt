@@ -3,9 +3,8 @@ package com.linroid.noko
 import kotlinx.coroutines.*
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
-import com.linroid.noko.types.JsObject
 
-abstract class WithNode {
+abstract class WithNode : SetupNode() {
 
   protected lateinit var node: Node
   private var scope = CoroutineScope(Dispatchers.IO)
@@ -41,12 +40,6 @@ abstract class WithNode {
   protected fun <T> joinNode(action: suspend () -> T) = runBlocking {
     withContext(node.coroutineDispatcher) {
       action()
-    }
-  }
-
-  companion object {
-    init {
-      Node.setup(4)
     }
   }
 }

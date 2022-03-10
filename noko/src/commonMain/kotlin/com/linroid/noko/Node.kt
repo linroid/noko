@@ -14,11 +14,11 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 /**
- * Create a new Node.js instance
+ * Create a new Node instance
  *
- * @param cwd The current work directory for node
- * @param fs The file system for Node.js
- * @param keepAlive true if event loop should keep running after the main script is executed completely,
+ * @param cwd the current working directory for Node instance
+ * @param fs the file system for Node
+ * @param keepAlive if all the js code is executed completely, should we keep the Node's event loop running
  */
 expect class Node(
   cwd: String? = null,

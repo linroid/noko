@@ -13,13 +13,6 @@ import okio.Path
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
 
-/**
- * Create a new Node.js instance
- *
- * @param cwd The current work directory for node
- * @param fs
- * @param keepAlive If all the js code is executed completely, should we keep the node running
- */
 actual class Node actual constructor(
   private val cwd: String?,
   private val fs: FileSystem,
@@ -60,6 +53,10 @@ actual class Node actual constructor(
    * The thread that running node
    */
   private var thread: Thread? = null
+
+  init {
+    require(cwd == null || cwd.isNotEmpty()) { "cwd must be null or non empty string" }
+  }
 
   /**
    * Start node instance with arguments

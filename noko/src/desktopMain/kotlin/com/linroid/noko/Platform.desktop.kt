@@ -6,9 +6,10 @@ import java.io.File
 actual object Platform {
 
   actual val fileSystem = FileSystem.SYSTEM
+  private val isDebuggerConnected: Boolean = System.getProperty("java.vm.info", "").contains("sharing")
 
   actual fun isDebuggerConnected(): Boolean {
-    return false
+    return isDebuggerConnected
   }
 
   actual fun loadNativeLibraries() {

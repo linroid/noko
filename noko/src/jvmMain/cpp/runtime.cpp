@@ -97,6 +97,10 @@ int Runtime::Start(std::vector<std::string> &args) {
     if (code != 0) {
       LOGE("Exit node with code %d", code);
     }
+    if (keep_alive_) {
+      uv_async_send(keep_alive_handle_);
+    }
+    exit_code = code;
     node::Stop(environment);
   });
 
@@ -117,7 +121,7 @@ int Runtime::Start(std::vector<std::string> &args) {
     LOGE("Failed to call node::LoadEnvironment()");
     return 1;
   }
-  exit_code = node::SpinEventLoop(env).FromMaybe(1);
+  exit_code = node::SpinEventLoop(env).FromMaybe(exit_code);
 
   Detach();
 
@@ -177,9 +181,6 @@ void Runtime::Detach() const {
 void Runtime::Exit(int code) {
   if (code != 0) {
     LOGW("exit(%d)", code);
-  }
-  if (keep_alive_) {
-    uv_async_send(keep_alive_handle_);
   }
   Post([&, code] {
     v8::HandleScope handle_scope(isolate_);

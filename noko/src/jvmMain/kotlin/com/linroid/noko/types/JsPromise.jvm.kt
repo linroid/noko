@@ -16,15 +16,15 @@ actual class JsPromise : JsObject {
   actual constructor(node: Node) : super(node, nativeNew())
 
   actual fun reject(error: String) {
-    node.post {
+    node.post({
       nativeReject(JsError(node, error))
-    }
+    }, false)
   }
 
   actual fun resolve(value: Any?) {
-    node.post {
+    node.post({
       nativeResolve(value)
-    }
+    }, false)
   }
 
   actual fun then(callback: (Any?) -> Unit): JsPromise {
@@ -51,13 +51,13 @@ actual class JsPromise : JsObject {
 
   actual suspend fun await(): Any? {
     return suspendCancellableCoroutine { continuation ->
-      if (!node.post {
+      if (!node.post({
           then {
             continuation.resume(it)
           }.catch {
             continuation.resumeWithException(JsException(it))
           }
-        }) {
+        }, false)) {
         continuation.cancel()
       }
     }

@@ -48,16 +48,16 @@ struct PostMessage {
   Runtime *runtime;
 };
 
-JNICALL jboolean Post(JNIEnv *env, jobject j_this, jobject jRunnable) {
+JNICALL jboolean Post(JNIEnv *env, jobject j_this, jobject runnable, jboolean force) {
   auto *message = new PostMessage();
   message->runtime = Runtime::Get(env, j_this);
-  message->runnable = env->NewGlobalRef(jRunnable);
+  message->runnable = env->NewGlobalRef(runnable);
   auto success = message->runtime->Post([message] {
     EnvHelper _env(message->runtime->Jvm());
     _env->CallVoidMethod(message->runnable, run_method_id_);
     _env->DeleteGlobalRef(message->runnable);
     delete message;
-  });
+  }, force);
   if (!success) {
     env->DeleteGlobalRef(message->runnable);
     delete message;
@@ -219,7 +219,7 @@ static JNINativeMethod methods[] = {
     {"nativeStart", "([Ljava/lang/String;)I", (void *) Start},
     {"nativeMountFile", "(Ljava/lang/String;Ljava/lang/String;I)V", (void *) MountFile},
     {"nativeChroot", "(Ljava/lang/String;)V", (void *) Chroot},
-    {"nativePost", "(Ljava/lang/Runnable;)Z", (void *) Post},
+    {"nativePost", "(Ljava/lang/Runnable;Z)Z", (void *) Post},
     {"nativeEval", "(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/Object;",
      (void *) Eval},
     {"nativeParseJson", "(Ljava/lang/String;)Lcom/linroid/noko/types/JsValue;", (void *) ParseJson},

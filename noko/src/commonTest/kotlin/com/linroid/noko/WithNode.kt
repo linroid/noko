@@ -46,7 +46,7 @@ abstract class WithNode {
 
   companion object {
     init {
-      Node.setup(0)
+      Node.setup(4)
     }
   }
 }

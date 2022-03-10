@@ -63,10 +63,21 @@ class NodeTest : WithNode() {
   @Test
   fun stdin_read(): Unit = joinNode {
     node.stdio.write("test")
-    withContext(Dispatchers.IO) {
-      yield()
+    val result = coroutineScope {
+      suspendCoroutine<Any> { cont ->
+        launch {
+          while (true) {
+            val result = node.eval("process.stdin.read(4)")
+            if (result != null) {
+              cont.resume(result)
+              break
+            }
+            yield()
+          }
+        }
+      }
     }
-    assertEquals("test", node.eval("process.stdin.read(4)").toString())
+    assertEquals("test", result.toString())
   }
 
   @Test

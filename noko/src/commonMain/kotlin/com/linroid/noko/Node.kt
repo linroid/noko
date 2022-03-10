@@ -7,6 +7,7 @@ import com.linroid.noko.types.JsError
 import com.linroid.noko.types.JsObject
 import com.linroid.noko.types.JsValue
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.suspendCancellableCoroutine
 import okio.Path
 import kotlin.coroutines.resume
@@ -58,15 +59,18 @@ expect class Node(
 
   fun addVersion(key: String, value: String)
 
-  suspend fun <T> await(action: () -> T): T
-
   /**
    * Instructs the VM to halt execution as quickly as possible
    * @param code The exit code
    */
   fun exit(code: Int)
 
-  fun post(action: () -> Unit): Boolean
+  /**
+   * Post action to the event loop
+   *
+   * @param force true to post even if the current thread is in the event loop
+   */
+  fun post(action: Runnable, force: Boolean = false): Boolean
 
   internal fun checkThread()
 

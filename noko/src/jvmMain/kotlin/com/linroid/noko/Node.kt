@@ -6,6 +6,7 @@ import com.linroid.noko.types.*
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.suspendCancellableCoroutine
 import okio.Path
@@ -41,7 +42,7 @@ actual class Node actual constructor(
   actual var stdio: StandardIO = StandardIO(this)
   actual val coroutineDispatcher: CoroutineDispatcher = object : CoroutineDispatcher() {
     override fun dispatch(context: CoroutineContext, block: Runnable) {
-      post { block.run() }
+      post(block, true)
     }
 
     override fun isDispatchNeeded(context: CoroutineContext): Boolean {
@@ -118,21 +119,6 @@ actual class Node actual constructor(
     versions[key] = value
   }
 
-  actual suspend fun <T> await(action: () -> T): T {
-    return suspendCancellableCoroutine { continuation ->
-      val success = post {
-        try {
-          continuation.resume(action())
-        } catch (error: Exception) {
-          continuation.cancel(error)
-        }
-      }
-      if (!success) {
-        continuation.cancel()
-      }
-    }
-  }
-
   /**
    * Instructs the VM to halt execution as quickly as possible
    * @param code The exit code
@@ -143,13 +129,13 @@ actual class Node actual constructor(
     running.value = false
   }
 
-  actual fun post(action: () -> Unit): Boolean {
+  actual fun post(action: Runnable, force: Boolean): Boolean {
     check(isRunning()) { "Node is not in running state" }
-    if (isInEventLoop()) {
-      action()
+    if (!force && isInEventLoop()) {
+      action.run()
       return true
     }
-    return nativePost(Runnable(action))
+    return nativePost(action, force)
   }
 
   @Suppress("unused")
@@ -273,7 +259,7 @@ actual class Node actual constructor(
   private external fun nativeNew(keepAlive: Boolean, strict: Boolean): Long
   private external fun nativeExit(exitCode: Int)
   private external fun nativeStart(args: Array<out String>): Int
-  private external fun nativePost(action: Runnable): Boolean
+  private external fun nativePost(action: Runnable, force: Boolean): Boolean
   private external fun nativeMountFile(src: String, dst: String, mode: Int)
   private external fun nativeChroot(path: String)
   private external fun nativeEval(code: String, source: String, line: Int): Any?
@@ -306,7 +292,7 @@ actual class Node actual constructor(
       connectivityManager: Any?,
     ) {
       check(!inited) { "Node.setup() has already been called" }
-      require(thread_pool_size > 0) {"`thread_pool_size` must > 0" }
+      require(thread_pool_size > 0) { "`thread_pool_size` must > 0" }
       inited = true
       nativeSetup(thread_pool_size, connectivityManager)
     }

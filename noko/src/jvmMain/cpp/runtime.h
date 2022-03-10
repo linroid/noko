@@ -96,7 +96,7 @@ class Runtime {
 
   bool Await(const std::function<void()> &runnable);
 
-  bool Post(const std::function<void()> &runnable);
+  bool Post(const std::function<void()> &runnable, bool force = false);
 
   void MountFile(const char *src, const char *dst, int mode);
 

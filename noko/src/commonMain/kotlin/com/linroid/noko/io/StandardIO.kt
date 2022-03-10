@@ -74,9 +74,9 @@ class StandardIO(private val node: Node) : Closeable {
     val push: JsFunction = stdin.get("push")!!
     scope.launch {
       inputChannel.consumeAsFlow().collect {
-        node.post {
+        node.post({
           push.call(stdin, it)
-        }
+        }, false)
       }
     }
   }

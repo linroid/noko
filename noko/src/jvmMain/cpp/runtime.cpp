@@ -237,7 +237,7 @@ bool Runtime::Await(const std::function<void()> &runnable) {
   }
 }
 
-bool Runtime::Post(const std::function<void()> &runnable) {
+bool Runtime::Post(const std::function<void()> &runnable, bool force) {
   if (!running_) {
     return false;
   }
@@ -245,7 +245,7 @@ bool Runtime::Post(const std::function<void()> &runnable) {
   if (!running_) {
     return false;
   }
-  if (std::this_thread::get_id() == thread_id_) {
+  if (!force && std::this_thread::get_id() == thread_id_) {
     runnable();
     return true;
   } else {

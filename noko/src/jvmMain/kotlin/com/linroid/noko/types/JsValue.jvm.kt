@@ -23,8 +23,8 @@ actual open class JsValue actual constructor(
 
   actual override fun toString(): String {
     if (Platform.isDebuggerConnected() && !node.isInEventLoop()) {
-      return runBlocking {
-        node.await { nativeToString() }
+      return runBlocking(node.coroutineDispatcher) {
+        nativeToString()
       }
     }
     return nativeToString()

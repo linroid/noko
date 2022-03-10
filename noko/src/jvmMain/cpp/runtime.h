@@ -18,27 +18,13 @@
 class Runtime {
 
  private:
-  static jmethodID on_attach_method_id_;
-  static jmethodID on_start_method_id_;
-  static jmethodID on_detach_method_id_;
-
-  static jfieldID shared_undefined_field_id_;
-  static jfieldID pointer_field_id_;
-
-  static std::mutex shared_mutex_;
-  static jint instance_count_;
-  static jint sequence_;
-
-  int id_ = -1;
-  bool keep_alive_ = false;
-  bool strict_ = false;
-
   jobject j_global_ = nullptr;
   jobject shared_undefined_ = nullptr;
   JavaVM *vm_ = nullptr;
   jobject j_this_ = nullptr;
 
   bool running_ = false;
+  bool keep_alive_ = false;
   std::thread::id thread_id_;
   std::mutex async_mutex_;
   std::vector<std::function<void()>> callbacks_;
@@ -72,8 +58,7 @@ class Runtime {
       JNIEnv *env,
       jobject j_this,
       node::MultiIsolatePlatform *platform,
-      bool keep_alive,
-      bool strict
+      bool keep_alive
   );
 
   ~Runtime();
@@ -85,8 +70,6 @@ class Runtime {
   }
 
   jobject JThis() { return j_this_; }
-
-  jobject JGlobal() { return j_global_; }
 
   JavaVM *Jvm() { return vm_; }
 

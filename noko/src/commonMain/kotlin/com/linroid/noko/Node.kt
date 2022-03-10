@@ -19,13 +19,11 @@ import kotlin.coroutines.resumeWithException
  * @param cwd The current work directory for node
  * @param fs The file system for Node.js
  * @param keepAlive true if event loop should keep running after the main script is executed completely,
- * @param strictMode true to do thread checking when doing operation on js objects
  */
 expect class Node(
   cwd: String? = null,
   fs: FileSystem = RealFileSystem(),
   keepAlive: Boolean = false,
-  strictMode: Boolean = true,
 ) {
 
   internal var pointer: NativePointer
@@ -72,8 +70,9 @@ expect class Node(
    */
   fun post(action: Runnable, force: Boolean = false): Boolean
 
-  internal fun checkThread()
-
+  /**
+   * Check whether the current thread is the event loop
+   */
   fun isInEventLoop(): Boolean
 
   @Throws(JsException::class)

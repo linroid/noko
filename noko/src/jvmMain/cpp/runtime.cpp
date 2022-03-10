@@ -17,9 +17,13 @@
 #include "types/integer.h"
 #include "types/long.h"
 
-int Runtime::instance_count_ = 0;
-std::mutex Runtime::shared_mutex_;
-int Runtime::sequence_ = 0;
+std::mutex shared_mutex_;
+
+jmethodID on_attach_method_id_;
+jmethodID on_start_method_id_;
+jmethodID on_detach_method_id_;
+jfieldID shared_undefined_field_id_;
+jfieldID pointer_field_id_;
 
 thread_local Runtime *current_runtime_;
 
@@ -27,18 +31,12 @@ Runtime::Runtime(
     JNIEnv *env,
     jobject j_this,
     node::MultiIsolatePlatform *platform,
-    bool keep_alive,
-    bool strict
+    bool keep_alive
 ) : platform_(platform),
     keep_alive_(keep_alive),
-    strict_(strict),
     j_this_(env->NewGlobalRef(j_this)) {
 
   env->GetJavaVM(&vm_);
-  std::lock_guard<std::mutex> lock(shared_mutex_);
-  ++instance_count_;
-  ++sequence_;
-  id_ = sequence_;
 }
 
 Runtime::~Runtime() {
@@ -55,7 +53,6 @@ Runtime::~Runtime() {
 
   isolate_ = nullptr;
   running_ = false;
-  --instance_count_;
 }
 
 Runtime *Runtime::Current() {
@@ -65,7 +62,7 @@ Runtime *Runtime::Current() {
 int Runtime::Start(std::vector<std::string> &args) {
   thread_id_ = std::this_thread::get_id();
 
-  int exit_code = 0;
+  int exit_code;
 
   std::vector<std::string> errors;
   const std::vector<std::string> exec_args;
@@ -207,10 +204,6 @@ bool Runtime::Await(const std::function<void()> &runnable) {
   if (std::this_thread::get_id() == thread_id_) {
     runnable();
     return true;
-  } else if (strict_) {
-    EnvHelper env(vm_);
-    env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), "Illegal thread access");
-    return true;
   } else {
     std::condition_variable cv;
     bool signaled = false;
@@ -311,12 +304,12 @@ void Runtime::Throw(JNIEnv *env, v8::Local<v8::Value> exception) {
 
 void Runtime::CheckThread() {
   if (std::this_thread::get_id() != thread_id_) {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wformat"
-    LOGE("Only the original thread can access Node.js: current=%ld, threadId=%ld",
-         std::this_thread::get_id(), thread_id_);
-#pragma clang diagnostic pop
-    std::abort();
+    EnvHelper env(vm_);
+    env->ThrowNew(
+        env->FindClass("java/lang/IllegalStateException"),
+        "Only the original thread running the event loop for Node.js can touch it's values, "
+        "you should wrap your actions inside the node.post { ... } block"
+    );
   }
 }
 
@@ -388,12 +381,6 @@ jobject Runtime::Require(const uint16_t *path, int path_len) {
   }
   return JsValue::Of(*env, result.ToLocalChecked());
 }
-
-jmethodID Runtime::on_attach_method_id_;
-jmethodID Runtime::on_start_method_id_;
-jmethodID Runtime::on_detach_method_id_;
-jfieldID Runtime::shared_undefined_field_id_;
-jfieldID Runtime::pointer_field_id_;
 
 jint Runtime::OnLoad(JNIEnv *env) {
   jclass clazz = env->FindClass("com/linroid/noko/Node");

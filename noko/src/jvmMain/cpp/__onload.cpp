@@ -85,13 +85,13 @@ JNICALL void Chroot(JNIEnv *env, jobject j_this, jstring j_path) {
   env->ReleaseStringUTFChars(j_path, path);
 }
 
-JNICALL jlong New(JNIEnv *env, jobject j_this, jboolean keep_alive, jboolean strict) {
+JNICALL jlong New(JNIEnv *env, jobject j_this, jboolean keep_alive) {
   if (!platform_) {
     env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
                   "Unable to create Node instance, have you called Node.setup(...)?");
     return 0;
   }
-  auto *runtime = new Runtime(env, j_this, platform_.get(), keep_alive, strict);
+  auto *runtime = new Runtime(env, j_this, platform_.get(), keep_alive);
   return reinterpret_cast<jlong>(runtime);
 }
 
@@ -214,7 +214,7 @@ JNICALL void ClearReference(JNIEnv *env, jobject j_this, jlong j_reference) {
 
 static JNINativeMethod methods[] = {
     {"nativeSetup", "(ILjava/lang/Object;)V", (void *) Setup},
-    {"nativeNew", "(ZZ)J", (void *) New},
+    {"nativeNew", "(Z)J", (void *) New},
     {"nativeExit", "(I)V", (void *) Exit},
     {"nativeStart", "([Ljava/lang/String;)I", (void *) Start},
     {"nativeMountFile", "(Ljava/lang/String;Ljava/lang/String;I)V", (void *) MountFile},

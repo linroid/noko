@@ -19,16 +19,14 @@ import kotlin.coroutines.resume
  * @param cwd The current work directory for node
  * @param fs
  * @param keepAlive If all the js code is executed completely, should we keep the node running
- * @param strictMode If true to do thread checking when doing operation on js objects
  */
 actual class Node actual constructor(
   private val cwd: String?,
   private val fs: FileSystem,
   keepAlive: Boolean,
-  private val strictMode: Boolean,
 ) {
 
-  internal actual var pointer: Long = nativeNew(keepAlive, strictMode)
+  internal actual var pointer: Long = nativeNew(keepAlive)
   private val listeners = HashSet<LifecycleListener>()
 
   private var running = atomic(false)
@@ -217,14 +215,6 @@ actual class Node actual constructor(
     stdio.close()
   }
 
-  internal actual fun checkThread() {
-    if (strictMode) {
-      check(isInEventLoop()) {
-        "Only the original thread running the event loop for Node.js " + "can touch it's values, " + "otherwise you should call them inside node.post { ... }"
-      }
-    }
-  }
-
   actual fun isInEventLoop(): Boolean {
     return currentThread() === thread
   }
@@ -256,7 +246,7 @@ actual class Node actual constructor(
     return nativeRequire(path)
   }
 
-  private external fun nativeNew(keepAlive: Boolean, strict: Boolean): Long
+  private external fun nativeNew(keepAlive: Boolean): Long
   private external fun nativeExit(exitCode: Int)
   private external fun nativeStart(args: Array<out String>): Int
   private external fun nativePost(action: Runnable, force: Boolean): Boolean

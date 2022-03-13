@@ -195,11 +195,6 @@ void Runtime::Exit(int code) {
     LOGW("exit(%d)", code);
   }
   Post([&, code] {
-    if (keep_alive_) {
-      uv_close((uv_handle_t *) keep_alive_handle_, [](uv_handle_t *h) {
-        free(h);
-      });
-    }
     v8::HandleScope handle_scope(isolate_);
     auto process = process_.Get(isolate_);
     auto context = context_.Get(isolate_);

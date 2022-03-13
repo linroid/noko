@@ -1,7 +1,7 @@
 import com.android.build.gradle.LibraryExtension
-import com.android.build.gradle.tasks.ExternalNativeBuildTask
 import de.undercouch.gradle.tasks.download.Download
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import com.android.build.gradle.tasks.ExternalNativeBuildJsonTask
 
 plugins {
   kotlin("multiplatform") version "1.6.10"
@@ -77,94 +77,113 @@ java {
 
 val nodeVersion = project.property("libnode.version")
 val downloadsDir = File(buildDir, "downloads")
+val prebuiltRoot = file("src/jvmMain/cpp/prebuilt")
+
+enum class Os {
+  Android, Linux, Windows, MacOS;
+
+  fun lowercase(): String {
+    return toString().toLowerCase()
+  }
+}
+
+enum class Arch {
+  X86, X64, Arm, Arm64;
+
+  fun lowercase(): String {
+    return toString().toLowerCase()
+  }
+}
+
 val osName = System.getProperty("os.name")!!
-val targetOs = when {
-  osName == "Mac OS X" -> "macos"
-  osName.startsWith("Win") -> "windows"
-  osName.startsWith("Linux") -> "linux"
+val hostOs = when {
+  osName == "Mac OS X" -> Os.MacOS
+  osName.startsWith("Win") -> Os.Windows
+  osName.startsWith("Linux") -> Os.Linux
   else -> error("Unsupported OS: $osName")
 }
 
-val targetArch = when (val osArch = System.getProperty("os.arch")) {
-  "x86_64", "amd64" -> "x86_64"
-  "aarch64" -> "arm64"
+val hostArch = when (val osArch = System.getProperty("os.arch")) {
+  "x86_64", "amd64" -> Arch.X64
+  "aarch64" -> Arch.Arm64
   else -> error("Unsupported arch: $osArch")
 }
 
-val prebuiltDir = file("src/jvmMain/cpp/prebuilt")
-val hostPrebuiltDir = File(prebuiltDir, "$targetOs/$targetArch")
+val hostCmakeDir = File(buildDir, "cmake/${hostOs.lowercase()}/${hostArch.lowercase()}")
+val hostPrebuiltDir = File(prebuiltRoot, "${hostOs.lowercase()}/${hostArch.lowercase()}")
 val hostPrebuiltLibDir = File(hostPrebuiltDir, "lib")
-val cmakeDir = File(buildDir, "$targetOs/cmake")
-cmakeDir.mkdirs()
 
 tasks {
-  val downloadAndroidPrebuilt by registering(Download::class) {
-    src("https://github.com/linroid/libnode/releases/download/$nodeVersion/libnode-$nodeVersion-android.zip")
-    dest(File(downloadsDir, "libnode.android.zip"))
-  }
-
-  val targetAndroidPrebuiltDir = file("src/jvmMain/cpp/prebuilt/android")
-  val prepareAndroidPrebuilt by registering(Copy::class) {
-    dependsOn(downloadAndroidPrebuilt)
-    from(zipTree(File(downloadsDir, "libnode.android.zip")))
-    into(targetAndroidPrebuiltDir)
-  }
-
-  val downloadHostPrebuilt by registering(Download::class) {
-    src("https://github.com/linroid/libnode/releases/download/$nodeVersion/libnode-$nodeVersion-$targetOs-$targetArch.zip")
-    dest(File(downloadsDir, "libnode.$targetOs.zip"))
-  }
-
-  val prepareHostPrebuilt by registering(Copy::class) {
-    dependsOn(downloadHostPrebuilt)
-    from(zipTree(File(downloadsDir, "libnode.$targetOs.zip")))
-    into(hostPrebuiltDir)
-  }
-
-  val hostCmakeConfigure by registering(Exec::class) {
-    workingDir(cmakeDir)
-    commandLine("cmake", file("src/jvmMain/cpp/"))
-  }
-
-  val hostCmakeBuild by registering(Exec::class) {
-    if (!hostPrebuiltDir.exists()) {
-      dependsOn(prepareHostPrebuilt)
+  named("clean").configure {
+    doLast {
+      delete(prebuiltRoot)
     }
-    dependsOn(hostCmakeConfigure)
-    workingDir(cmakeDir)
+  }
+  afterEvaluate {
+    val prebuiltTasks = Arch.values().map { arch ->
+      createPrebuiltTask(Os.Android, arch)
+    }
+    withType<ExternalNativeBuildJsonTask> {
+      prebuiltTasks.forEach { dependsOn(it) }
+      this.property("abi")
+    }
+  }
+
+  withType<Test> {
+    testLogging {
+      outputs.upToDateWhen { false }
+      showStandardStreams = true
+    }
+  }
+}
+
+fun createPrebuiltTask(os: Os, arch: Arch): TaskProvider<Copy> {
+  val filename = "libnode-$nodeVersion-${os.lowercase()}-${arch.lowercase()}.zip"
+  val localFile = File(downloadsDir, filename)
+  val prebuiltDir = File(prebuiltRoot, "${os.lowercase()}/${arch.lowercase()}")
+
+  val downloadTask = tasks.register("prebuiltDownload${os}${arch}", Download::class) {
+    src("https://github.com/linroid/libnode/releases/download/$nodeVersion/$filename")
+    onlyIf { !dest.exists() }
+    onlyIfModified(true)
+    dest(localFile)
+  }
+  val unzipTask = tasks.register("prebuiltUnzip${os}${arch}", Copy::class) {
+    dependsOn(downloadTask)
+    from(zipTree(localFile))
+    onlyIf { !destinationDir.exists() || destinationDir.listFiles().isEmpty() }
+    into(prebuiltDir)
+  }
+  return unzipTask
+}
+
+val hostCmakeTask by lazy {
+  val cmakeConfigureTask = tasks.register("configureCMake${hostOs}${hostArch}", Exec::class) {
+    workingDir(hostCmakeDir)
+    commandLine(
+      "cmake", file("src/jvmMain/cpp"),
+      "-DTARGET_OS=${hostOs.lowercase()}",
+      "-DTARGET_ARCH=${hostArch.lowercase()}",
+    )
+  }.get()
+
+  cmakeConfigureTask.dependsOn(createPrebuiltTask(hostOs, hostArch))
+  tasks.register("buildCMake${hostOs}${hostArch}", Exec::class) {
+    hostCmakeDir.mkdirs()
+    dependsOn(cmakeConfigureTask)
+    workingDir(hostCmakeDir)
     commandLine("make")
     doLast {
-      val libNoko = cmakeDir.listFiles()!!.find { it.name.startsWith("libnoko") }
+      val libNoko = hostCmakeDir.listFiles()!!.find { it.name.startsWith("libnoko") }
       checkNotNull(libNoko) { "Couldn't find file: libnoko" }
       val libNode = hostPrebuiltLibDir.listFiles()!!.find {
         it.name.startsWith("libnode")
       }
       checkNotNull(libNode) { "Couldn't find file: libnode" }
-      project.tasks.withType(Jar::class).forEach {
-        it.from(libNoko)
+      tasks.withType(Jar::class).forEach {
         it.from(libNode)
+        it.from(libNoko)
       }
-    }
-  }
-
-  named("clean").configure {
-    doLast {
-      delete(prebuiltDir)
-    }
-  }
-
-  afterEvaluate {
-    getByName("compileKotlinDesktop").dependsOn(hostCmakeBuild)
-    if (!targetAndroidPrebuiltDir.exists()) {
-      tasks.withType(ExternalNativeBuildTask::class).forEach {
-        it.dependsOn(prepareAndroidPrebuilt)
-      }
-    }
-  }
-  withType<Test> {
-    testLogging {
-      outputs.upToDateWhen { false }
-      showStandardStreams = true
     }
   }
 }
@@ -175,10 +194,11 @@ kotlin {
   jvm("desktop") {
     compilations.all {
       kotlinOptions.jvmTarget = "11"
+      compileKotlinTask.dependsOn(hostCmakeTask)
     }
     testRuns["test"].executionTask.configure {
       useJUnit()
-      jvmArgs("-Djava.library.path=$cmakeDir:$hostPrebuiltLibDir")
+      jvmArgs("-Djava.library.path=$hostCmakeDir:$hostPrebuiltLibDir")
       reports {
         junitXml.required.set(true)
         html.required.set(true)

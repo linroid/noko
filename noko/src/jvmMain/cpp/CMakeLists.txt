@@ -3,24 +3,23 @@ project(libnoko)
 set(CMAKE_CXX_STANDARD 11)
 if (ANDROID)
     set(TARGET_OS android)
-    set(TARGET_ARCH ${ANDROID_ABI})
-    set(LIBNODE_NAME libnode.so)
-elseif (CMAKE_SYSTEM_NAME STREQUAL Linux)
-    set(TARGET_OS linux)
-    set(TARGET_ARCH ${CMAKE_HOST_SYSTEM_PROCESSOR})
-elseif (CMAKE_SYSTEM_NAME STREQUAL Darwin)
-    set(TARGET_OS macos)
-    set(TARGET_ARCH ${CMAKE_HOST_SYSTEM_PROCESSOR})
-    set(LIBNODE_NAME libnode.93.dylib)
-elseif (CMAKE_SYSTEM_NAME STREQUAL Windows)
-    set(TARGET_OS windows)
-    set(TARGET_ARCH ${CMAKE_HOST_SYSTEM_PROCESSOR})
-else ()
-    message(FATAL_ERROR "Not supported: system=${CMAKE_SYSTEM_NAME}, processor=${CMAKE_HOST_SYSTEM_PROCESSOR}")
+    if (ANDROID_ABI STREQUAL arm64-v8a)
+        set(TARGET_ARCH arm64)
+    elseif (ANDROID_ABI STREQUAL armeabi-v7a)
+        set(TARGET_ARCH arm)
+    elseif (ANDROID_ABI STREQUAL x86_64)
+        set(TARGET_ARCH x64)
+    elseif (ANDROID_ABI STREQUAL x86)
+        set(TARGET_ARCH x86)
+    else ()
+        message(FATAL_ERROR "Unexpected ANDROID_ABI: ${ANDROID_ABI}")
+    endif ()
 endif ()
 
 set(LIBNODE_DIR ${PROJECT_SOURCE_DIR}/prebuilt/${TARGET_OS}/${TARGET_ARCH})
-message(LIBNODE_DIR: ${LIBNODE_DIR})
+message(STATUS LIBNODE_DIR: ${LIBNODE_DIR})
+message(STATUS TARGET_ARCH: ${TARGET_ARCH})
+message(STATUS TARGET_OS: ${TARGET_OS})
 
 set(SOURCES
         __onload.cpp
@@ -43,18 +42,20 @@ set(SOURCES
         types/js_promise.cpp)
 
 add_library(noko SHARED ${SOURCES})
-
 include_directories(${LIBNODE_DIR}/include/node/)
-
-add_library(libnode SHARED IMPORTED)
-set_target_properties(libnode PROPERTIES IMPORTED_LOCATION ${LIBNODE_DIR}/lib/${LIBNODE_NAME})
-
 if (ANDROID)
+    add_library(node SHARED IMPORTED)
+    set_target_properties(node PROPERTIES IMPORTED_LOCATION ${LIBNODE_DIR}/lib/libnode.so)
+
     find_library(log-lib log)
-    target_link_libraries(noko libnode ${log-lib})
+    target_link_libraries(noko node ${log-lib})
 else ()
+    find_library(node-lib
+            NAMES node node.93
+            HINTS ${LIBNODE_DIR}/lib
+            )
     find_package(JNI REQUIRED)
     include_directories(${JNI_INCLUDE_DIRS})
-    target_link_libraries(noko libnode)
+    target_link_libraries(noko ${node-lib})
 endif ()
 

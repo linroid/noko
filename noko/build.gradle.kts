@@ -4,10 +4,10 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import com.android.build.gradle.tasks.ExternalNativeBuildJsonTask
 
 plugins {
-  kotlin("multiplatform") version "1.6.10"
+  kotlin("multiplatform")
   kotlin("plugin.serialization") version "1.6.10"
+  id("de.undercouch.download")
   id("com.android.library")
-  id("de.undercouch.download") version "5.0.1"
   // id("kotlinx-atomicfu")
 }
 
@@ -236,6 +236,7 @@ kotlin {
     val jvmTest by creating {
       dependsOn(commonTest)
       dependencies {
+        implementation("junit:junit:4.13.2")
         implementation(kotlin("test"))
       }
     }
@@ -267,7 +268,12 @@ kotlin {
     val androidAndroidTest by getting {
       dependsOn(jvmTest)
       dependencies {
+        implementation("junit:junit:4.13.2")
+        implementation("androidx.test:core:1.4.0")
         implementation("androidx.test:runner:1.4.0")
+        implementation("androidx.test:rules:1.4.0")
+        implementation("androidx.test.ext:junit:1.1.3")
+        implementation("androidx.test.ext:truth:1.4.0")
         implementation("io.mockk:mockk-android:${mockkVersion}")
       }
     }
@@ -307,5 +313,5 @@ fun configureSourceSets() {
 }
 
 afterEvaluate {
-  configureSourceSets()
+  // configureSourceSets()
 }

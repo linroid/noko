@@ -6,7 +6,7 @@ import kotlin.test.*
 class JsArrayTest : WithNode() {
 
   @Test
-  fun sizeAndGet(): Unit = joinNode {
+  fun sizeAndGet(): Unit = runTest {
     //language=JSON
     val array = node.parseJson("[1, 1.1, \"string\", {\"name\": \"foo\"}, [1, 2, 3, 4]]")
     assertIs<JsArray>(array)
@@ -19,7 +19,7 @@ class JsArrayTest : WithNode() {
   }
 
   @Test
-  fun add(): Unit = joinNode {
+  fun add(): Unit = runTest {
     val obj = JsObject(node)
     val array = JsArray(node, arrayListOf(0, 1, obj))
     array.add(3)
@@ -27,7 +27,7 @@ class JsArrayTest : WithNode() {
   }
 
   @Test
-  fun clear(): Unit = joinNode {
+  fun clear(): Unit = runTest {
     val array = JsArray(node, arrayListOf(0, 1, 3))
     assertEquals(3, array.size)
     assertTrue { array.isNotEmpty() }
@@ -41,7 +41,7 @@ class JsArrayTest : WithNode() {
   }
 
   @Test
-  fun removeAt(): Unit = joinNode {
+  fun removeAt(): Unit = runTest {
     val array = JsArray(node, arrayListOf(0, 1, 2))
     val result = array.removeAt(1)
     assertIs<Int>(result)
@@ -52,7 +52,7 @@ class JsArrayTest : WithNode() {
   }
 
   @Test
-  fun addAt(): Unit = joinNode {
+  fun addAt(): Unit = runTest {
     val array = JsArray(node, arrayListOf(0, 2, 3))
     array.add(1, 1)
     assertEquals(4, array.size)
@@ -60,7 +60,7 @@ class JsArrayTest : WithNode() {
   }
 
   @Test
-  fun replaceAt(): Unit = joinNode {
+  fun replaceAt(): Unit = runTest {
     val array = JsArray(node, arrayListOf(0, 2, 3))
     array[1] = 1
     array[2] = 2
@@ -69,7 +69,7 @@ class JsArrayTest : WithNode() {
   }
 
   @Test
-  fun indexOf(): Unit = joinNode {
+  fun indexOf(): Unit = runTest {
     val array = JsArray(node, arrayListOf(0, 2, 3))
     assertEquals(0, array.indexOf(0))
     assertEquals(1, array.indexOf(2))

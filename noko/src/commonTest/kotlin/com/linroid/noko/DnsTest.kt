@@ -9,7 +9,7 @@ import com.linroid.noko.types.JsValue
 class DnsTest : WithNode() {
 
   @Test
-  fun getServers(): Unit = joinNode {
+  fun getServers(): Unit = runTest {
     val result = node.eval("new (require('dns').promises.Resolver)().getServers()")
     assertIs<JsValue>(result)
     val json = result.toJson()!!

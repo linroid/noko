@@ -13,7 +13,7 @@ import kotlin.test.*
 class NodeTest : WithNode() {
 
   @Test
-  fun parseJson_object(): Unit = joinNode {
+  fun parseJson_object(): Unit = runTest {
     val person = node.parseJson(
       """
       {
@@ -30,7 +30,7 @@ class NodeTest : WithNode() {
   }
 
   @Test
-  fun parseJson_array() = joinNode {
+  fun parseJson_array() = runTest {
     val numbers = node.parseJson(
       """
       [0, 1, 2, 3, 4]
@@ -43,7 +43,7 @@ class NodeTest : WithNode() {
   }
 
   @Test
-  fun eval(): Unit = joinNode {
+  fun eval(): Unit = runTest {
     assertIs<JsObject>(node.eval("process.versions"))
     assertNull(node.eval("console.log('Hello')"))
     val value = Random.nextInt()
@@ -52,7 +52,7 @@ class NodeTest : WithNode() {
   }
 
   @Test
-  fun versions(): Unit = joinNode {
+  fun versions(): Unit = runTest {
     val global = node.global!!
     val versions = global.get<JsObject>("process")!!.get<JsObject>("versions")
     val json = versions!!.toJson()
@@ -61,7 +61,7 @@ class NodeTest : WithNode() {
   }
 
   @Test
-  fun stdin_read(): Unit = joinNode {
+  fun stdin_read(): Unit = runTest {
     node.stdio.write("test")
     val result = coroutineScope {
       suspendCoroutine<Any> { cont ->
@@ -81,7 +81,7 @@ class NodeTest : WithNode() {
   }
 
   @Test
-  fun stdin_on(): Unit = joinNode {
+  fun stdin_on(): Unit = runTest {
     node.stdio.write("test")
     withTimeout(3000) {
       val result = suspendCoroutine<Any?> { cont ->

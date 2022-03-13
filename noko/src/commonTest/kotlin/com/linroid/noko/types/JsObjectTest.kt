@@ -13,13 +13,13 @@ class JsObjectTest : WithNode() {
   @BeforeTest
   override fun setUp() {
     super.setUp()
-    joinNode {
+    runTest {
       obj = JsObject(node)
     }
   }
 
   @Test
-  fun setterAndGetter(): Unit = joinNode {
+  fun setterAndGetter(): Unit = runTest {
     obj.set("intValue", 1)
     val intValue = obj.get<Int>("intValue")
     assertEquals(1, intValue)
@@ -43,7 +43,7 @@ class JsObjectTest : WithNode() {
   }
 
   @Test
-  fun deleteAndHas(): Unit = joinNode {
+  fun deleteAndHas(): Unit = runTest {
     obj.set("foo", 1)
     assertTrue(obj.has("foo"))
     assertTrue(!obj.has("bar"))
@@ -52,14 +52,14 @@ class JsObjectTest : WithNode() {
   }
 
   @Test
-  fun keys(): Unit = joinNode {
+  fun keys(): Unit = runTest {
     obj.set("foo", 1)
     obj.set("bar", 1)
     assertContentEquals(arrayOf("foo", "bar"), obj.keys())
   }
 
   @Test
-  fun watchProperties(): Unit = joinNode {
+  fun watchProperties(): Unit = runTest {
     val observer = mockk<PropertiesObserver>(relaxed = true)
     obj.watch(observer, "name", "age")
 

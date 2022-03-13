@@ -37,7 +37,7 @@ abstract class WithNode : SetupNode() {
     }
   }
 
-  protected fun <T> joinNode(action: suspend () -> T) = runBlocking {
+  protected fun <T> runTest(action: suspend () -> T) = runBlocking {
     withContext(node.coroutineDispatcher) {
       action()
     }

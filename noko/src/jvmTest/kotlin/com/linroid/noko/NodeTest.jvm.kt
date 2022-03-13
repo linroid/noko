@@ -1,13 +1,11 @@
 package com.linroid.noko
 
 import org.junit.Test
-import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
-class JvmNodeTest : WithNode() {
+class JvmNodeTest : SetupNode() {
   @Test
-  fun sharedValue() {
-    assertNotNull(node.sharedUndefined)
+  fun sharedValue() = runNodeTest {
+    assertNotNull(sharedUndefined)
   }
 }

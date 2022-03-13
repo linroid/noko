@@ -10,11 +10,11 @@ import kotlin.coroutines.suspendCoroutine
 import kotlin.random.Random
 import kotlin.test.*
 
-class NodeTest : WithNode() {
+class NodeTest : SetupNode() {
 
   @Test
-  fun parseJson_object(): Unit = runTest {
-    val person = node.parseJson(
+  fun parseJson_object() = runNodeTest {
+    val person = parseJson(
       """
       {
         "name": "Foo",
@@ -30,8 +30,8 @@ class NodeTest : WithNode() {
   }
 
   @Test
-  fun parseJson_array() = runTest {
-    val numbers = node.parseJson(
+  fun parseJson_array() = runNodeTest {
+    val numbers = parseJson(
       """
       [0, 1, 2, 3, 4]
     """.trimIndent()
@@ -43,17 +43,17 @@ class NodeTest : WithNode() {
   }
 
   @Test
-  fun eval(): Unit = runTest {
-    assertIs<JsObject>(node.eval("process.versions"))
-    assertNull(node.eval("console.log('Hello')"))
+  fun eval() = runNodeTest {
+    assertIs<JsObject>(eval("process.versions"))
+    assertNull(eval("console.log('Hello')"))
     val value = Random.nextInt()
-    node.eval("global.testValue=$value;")
-    assertEquals(value, node.global!!.get("testValue"))
+    eval("global.testValue=$value;")
+    assertEquals(value, global!!.get("testValue"))
   }
 
   @Test
-  fun versions(): Unit = runTest {
-    val global = node.global!!
+  fun versions() = runNodeTest {
+    val global = global!!
     val versions = global.get<JsObject>("process")!!.get<JsObject>("versions")
     val json = versions!!.toJson()
     assertNotNull(json)
@@ -61,13 +61,13 @@ class NodeTest : WithNode() {
   }
 
   @Test
-  fun stdin_read(): Unit = runTest {
-    node.stdio.write("test")
+  fun stdin_read() = runNodeTest {
+    stdio.write("test")
     val result = coroutineScope {
       suspendCoroutine<Any> { cont ->
         launch {
           while (true) {
-            val result = node.eval("process.stdin.read(4)")
+            val result = eval("process.stdin.read(4)")
             if (result != null) {
               cont.resume(result)
               break
@@ -81,12 +81,12 @@ class NodeTest : WithNode() {
   }
 
   @Test
-  fun stdin_on(): Unit = runTest {
-    node.stdio.write("test")
+  fun stdin_on() = runNodeTest {
+    stdio.write("test")
     withTimeout(3000) {
       val result = suspendCoroutine<Any?> { cont ->
-        val stdin = node.global!!.get<JsObject>("process")!!.get<JsObject>("stdin")!!
-        val callback = object : JsFunction(node, "print") {
+        val stdin = global!!.get<JsObject>("process")!!.get<JsObject>("stdin")!!
+        val callback = object : JsFunction(this@runNodeTest, "print") {
           override fun onCall(receiver: JsValue, parameters: Array<out Any?>): Any? {
             cont.resume(parameters[0])
             return null

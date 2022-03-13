@@ -1,14 +1,15 @@
 package com.linroid.noko.types
 
-import com.linroid.noko.WithNode
+import com.linroid.noko.SetupNode
+import com.linroid.noko.runNodeTest
 import kotlin.test.*
 
-class JsArrayTest : WithNode() {
+class JsArrayTest : SetupNode() {
 
   @Test
-  fun sizeAndGet(): Unit = runTest {
+  fun sizeAndGet() = runNodeTest {
     //language=JSON
-    val array = node.parseJson("[1, 1.1, \"string\", {\"name\": \"foo\"}, [1, 2, 3, 4]]")
+    val array = parseJson("[1, 1.1, \"string\", {\"name\": \"foo\"}, [1, 2, 3, 4]]")
     assertIs<JsArray>(array)
     assertEquals(array.size, 5)
     assertEquals(array[0], 1)
@@ -19,16 +20,16 @@ class JsArrayTest : WithNode() {
   }
 
   @Test
-  fun add(): Unit = runTest {
-    val obj = JsObject(node)
-    val array = JsArray(node, arrayListOf(0, 1, obj))
+  fun add() = runNodeTest {
+    val obj = JsObject(this)
+    val array = JsArray(this, arrayListOf(0, 1, obj))
     array.add(3)
     assertContentEquals(arrayListOf(0, 1, obj, 3), array)
   }
 
   @Test
-  fun clear(): Unit = runTest {
-    val array = JsArray(node, arrayListOf(0, 1, 3))
+  fun clear() = runNodeTest {
+    val array = JsArray(this, arrayListOf(0, 1, 3))
     assertEquals(3, array.size)
     assertTrue { array.isNotEmpty() }
     array.clear()
@@ -41,8 +42,8 @@ class JsArrayTest : WithNode() {
   }
 
   @Test
-  fun removeAt(): Unit = runTest {
-    val array = JsArray(node, arrayListOf(0, 1, 2))
+  fun removeAt() = runNodeTest {
+    val array = JsArray(this, arrayListOf(0, 1, 2))
     val result = array.removeAt(1)
     assertIs<Int>(result)
     assertEquals(1, result)
@@ -52,16 +53,16 @@ class JsArrayTest : WithNode() {
   }
 
   @Test
-  fun addAt(): Unit = runTest {
-    val array = JsArray(node, arrayListOf(0, 2, 3))
+  fun addAt() = runNodeTest {
+    val array = JsArray(this, arrayListOf(0, 2, 3))
     array.add(1, 1)
     assertEquals(4, array.size)
     assertContentEquals(arrayListOf(0, 1, 2, 3), array)
   }
 
   @Test
-  fun replaceAt(): Unit = runTest {
-    val array = JsArray(node, arrayListOf(0, 2, 3))
+  fun replaceAt() = runNodeTest {
+    val array = JsArray(this, arrayListOf(0, 2, 3))
     array[1] = 1
     array[2] = 2
     assertEquals(3, array.size)
@@ -69,8 +70,8 @@ class JsArrayTest : WithNode() {
   }
 
   @Test
-  fun indexOf(): Unit = runTest {
-    val array = JsArray(node, arrayListOf(0, 2, 3))
+  fun indexOf() = runNodeTest {
+    val array = JsArray(this, arrayListOf(0, 2, 3))
     assertEquals(0, array.indexOf(0))
     assertEquals(1, array.indexOf(2))
     assertEquals(2, array.indexOf(3))

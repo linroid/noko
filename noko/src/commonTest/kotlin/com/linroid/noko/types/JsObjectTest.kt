@@ -1,25 +1,18 @@
 package com.linroid.noko.types
 
-import com.linroid.noko.WithNode
+import com.linroid.noko.SetupNode
 import com.linroid.noko.observable.PropertiesObserver
+import com.linroid.noko.runNodeTest
 import io.mockk.mockk
 import io.mockk.verify
 import kotlin.test.*
 
-class JsObjectTest : WithNode() {
-
-  private lateinit var obj: JsObject
-
-  @BeforeTest
-  override fun setUp() {
-    super.setUp()
-    runTest {
-      obj = JsObject(node)
-    }
-  }
+class JsObjectTest : SetupNode() {
 
   @Test
-  fun setterAndGetter(): Unit = runTest {
+  fun setterAndGetter() = runNodeTest {
+    val obj = JsObject(this)
+
     obj.set("intValue", 1)
     val intValue = obj.get<Int>("intValue")
     assertEquals(1, intValue)
@@ -43,7 +36,9 @@ class JsObjectTest : WithNode() {
   }
 
   @Test
-  fun deleteAndHas(): Unit = runTest {
+  fun deleteAndHas() = runNodeTest {
+    val obj = JsObject(this)
+
     obj.set("foo", 1)
     assertTrue(obj.has("foo"))
     assertTrue(!obj.has("bar"))
@@ -52,14 +47,18 @@ class JsObjectTest : WithNode() {
   }
 
   @Test
-  fun keys(): Unit = runTest {
+  fun keys() = runNodeTest {
+    val obj = JsObject(this)
+
     obj.set("foo", 1)
     obj.set("bar", 1)
     assertContentEquals(arrayOf("foo", "bar"), obj.keys())
   }
 
   @Test
-  fun watchProperties(): Unit = runTest {
+  fun watchProperties() = runNodeTest {
+    val obj = JsObject(this)
+
     val observer = mockk<PropertiesObserver>(relaxed = true)
     obj.watch(observer, "name", "age")
 

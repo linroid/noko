@@ -6,11 +6,11 @@ import kotlin.test.Test
 import kotlin.test.assertIs
 import com.linroid.noko.types.JsValue
 
-class DnsTest : WithNode() {
+class DnsTest : SetupNode() {
 
   @Test
-  fun getServers(): Unit = runTest {
-    val result = node.eval("new (require('dns').promises.Resolver)().getServers()")
+  fun getServers() = runNodeTest {
+    val result = eval("new (require('dns').promises.Resolver)().getServers()")
     assertIs<JsValue>(result)
     val json = result.toJson()!!
     val servers = Json.parseToJsonElement(json)

@@ -4,9 +4,13 @@
 namespace JniHelper {
 
 std::string GetClassName(JNIEnv *env, jobject obj) {
-  LOGI("GetClassName");
-  auto clazz = env->GetObjectClass(obj);
-  jmethodID get_name_id = env->GetMethodID(clazz, "getName", "()Ljava/lang/String;");
+  auto obj_clazz = env->GetObjectClass(obj);
+
+  jmethodID mid = env->GetMethodID(obj_clazz, "getClass", "()Ljava/lang/Class;");
+  jobject clazz = env->CallObjectMethod(obj, mid);
+  auto class_clazz = env->GetObjectClass(clazz);
+
+  jmethodID get_name_id = env->GetMethodID(class_clazz, "getName", "()Ljava/lang/String;");
   auto name = (jstring) env->CallObjectMethod(clazz, get_name_id);
   return GetString(env, name);
 }

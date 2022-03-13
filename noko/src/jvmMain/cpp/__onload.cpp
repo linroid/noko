@@ -44,22 +44,22 @@ JNICALL jint Start(JNIEnv *env, jobject j_this, jobjectArray j_args) {
 }
 
 struct PostMessage {
-  jobject runnable;
-  Runtime *runtime;
+  jobject action;
 };
 
-JNICALL jboolean Post(JNIEnv *env, jobject j_this, jobject runnable, jboolean force) {
+JNICALL jboolean Post(JNIEnv *env, jobject j_this, jobject action, jboolean force) {
   auto *message = new PostMessage();
-  message->runtime = Runtime::Get(env, j_this);
-  message->runnable = env->NewGlobalRef(runnable);
-  auto success = message->runtime->Post([message] {
-    EnvHelper _env(message->runtime->Jvm());
-    _env->CallVoidMethod(message->runnable, run_method_id_);
-    _env->DeleteGlobalRef(message->runnable);
+  auto runtime = Runtime::Get(env, j_this);
+  message->action = env->NewGlobalRef(action);
+  auto success = runtime->Post([message] {
+    auto runtime = Runtime::Current();
+    EnvHelper _env(runtime->Jvm());
+    _env->CallVoidMethod(message->action, run_method_id_);
+    _env->DeleteGlobalRef(message->action);
     delete message;
   }, force);
   if (!success) {
-    env->DeleteGlobalRef(message->runnable);
+    env->DeleteGlobalRef(message->action);
     delete message;
   }
   return 1;
@@ -100,7 +100,8 @@ JNICALL void Exit(JNIEnv *env, jobject j_this, jint code) {
   runtime->Exit(code);
 }
 
-JNICALL void Setup(__unused JNIEnv *env, __unused jclass clazz, jint thread_pool_size, jobject connectivity_manager) {
+JNICALL void Setup(__unused JNIEnv *env, __unused jclass clazz, jint thread_pool_size,
+                   jobject connectivity_manager) {
 #if defined(__ANDROID__)
   ares_library_init_android(connectivity_manager);
   LOGI("ares_library_android_initialized: %d", ares_library_android_initialized());
@@ -134,7 +135,7 @@ JNICALL void Setup(__unused JNIEnv *env, __unused jclass clazz, jint thread_pool
   int exit_code = node::InitializeNodeWithArgs(&args, &exec_args, &errors);
   if (exit_code != 0) {
     LOGE("Failed to call node::InitializeNodeWithArgs()");
-    for (const std::string &error : errors) {
+    for (const std::string &error: errors) {
       LOGE("%s: %s\n", args[0].c_str(), error.c_str());
     }
     abort();
@@ -247,8 +248,8 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
     return rc;
   }
 
-  jclass runnableClass = env->FindClass("java/lang/Runnable");
-  run_method_id_ = env->GetMethodID(runnableClass, "run", "()V");
+  jclass runnable_class = env->FindClass("java/lang/Runnable");
+  run_method_id_ = env->GetMethodID(runnable_class, "run", "()V");
   LOAD_JNI_CLASS(JsObject)
 
   LOAD_JNI_CLASS(Runtime)

@@ -57,7 +57,12 @@ Runtime::~Runtime() {
 }
 
 Runtime *Runtime::Current() {
-  return current_runtime_;
+  auto runtime = current_runtime_;
+  if (runtime == nullptr) {
+    LOGE("No runtime found");
+    abort();
+  }
+  return runtime;
 }
 
 void ErrorMessageCallback(v8::Local<v8::Message> message, v8::Local<v8::Value> data) {
@@ -245,10 +250,12 @@ bool Runtime::Await(const std::function<void()> &runnable) {
 
 bool Runtime::Post(const std::function<void()> &runnable, bool force) {
   if (!running_) {
+    LOGW("Node is not running, ignore the post request");
     return false;
   }
   std::lock_guard<std::mutex> lock(async_mutex_);
   if (!running_) {
+    LOGW("Node is not running after lock, ignore the post request");
     return false;
   }
   if (!force && std::this_thread::get_id() == thread_id_) {
@@ -273,9 +280,8 @@ bool Runtime::TryLoop() {
       runtime->Handle(handle);
     });
     uv_async_send(callback_handle_);
-    return true;
   }
-  return false;
+  return true;
 }
 
 void Runtime::Handle(uv_async_t *handle) {

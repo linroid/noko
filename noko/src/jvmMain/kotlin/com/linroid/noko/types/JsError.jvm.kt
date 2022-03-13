@@ -7,7 +7,7 @@ import com.linroid.noko.annotation.ForNative
 actual class JsError : JsObject {
 
   @ForNative
-  private constructor (node: Node, ptr: Long) : super(node, ptr)
+  private constructor (node: Node, pointer: Long) : super(node, pointer)
 
   actual constructor(node: Node, message: String) : this(node, nativeNew(message))
 

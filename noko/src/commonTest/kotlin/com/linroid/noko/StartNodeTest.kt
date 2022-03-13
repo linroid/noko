@@ -9,7 +9,7 @@ import kotlin.test.assertEquals
 class StartNodeTest : SetupNode() {
 
   @Test
-  fun lifecycesl_normal() {
+  fun lifecycles_normal() {
     val node = Node(keepAlive = true)
     val listener: LifecycleListener = mockk(relaxed = true)
     node.addListener(listener)
@@ -32,7 +32,7 @@ class StartNodeTest : SetupNode() {
     node.post({
       node.eval("setTimeout(() => { throw \"test\"}, 1);")
     }, false)
-    // verify(timeout = 1000) { listener.onError(any()) }
+    verify(timeout = 1000) { listener.onError(any()) }
     verify(timeout = 1000) { listener.onDetach(node, any()) }
     verify(timeout = 1000) { listener.onStop(1) }
   }

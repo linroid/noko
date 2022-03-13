@@ -1,12 +1,17 @@
 package com.linroid.noko
 
 import okio.FileSystem
-import java.io.File
 
 actual object Platform {
 
   actual val fileSystem = FileSystem.SYSTEM
-  private val isDebuggerConnected: Boolean = System.getProperty("java.vm.info", "").contains("sharing")
+  private val isDebuggerConnected: Boolean = try {
+    // System.getProperty("java.vm.info", "").contains("sharing")
+    Class.forName("org.junit.Test")
+    true
+  } catch (e: ClassNotFoundException) {
+    false
+  }
 
   actual fun isDebuggerConnected(): Boolean {
     return isDebuggerConnected

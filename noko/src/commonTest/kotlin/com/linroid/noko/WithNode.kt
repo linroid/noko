@@ -30,7 +30,7 @@ abstract class WithNode : SetupNode() {
   @AfterTest
   open fun tearDown() {
     runBlocking {
-      node.exit(1)
+      node.exit(0)
       withTimeout(3_000) {
         node.awaitStopped()
       }

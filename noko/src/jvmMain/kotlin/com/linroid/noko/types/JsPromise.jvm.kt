@@ -55,7 +55,7 @@ actual class JsPromise : JsObject {
           then {
             continuation.resume(it)
           }.catch {
-            continuation.resumeWithException(JsException(it))
+            continuation.resumeWithException(JsException(it.toString()))
           }
         }, false)) {
         continuation.cancel()

@@ -22,6 +22,7 @@ std::mutex shared_mutex_;
 jmethodID on_attach_method_id_;
 jmethodID on_start_method_id_;
 jmethodID on_detach_method_id_;
+jmethodID on_error_method_id_;
 jfieldID shared_undefined_field_id_;
 jfieldID pointer_field_id_;
 
@@ -59,10 +60,15 @@ Runtime *Runtime::Current() {
   return current_runtime_;
 }
 
+void ErrorMessageCallback(v8::Local<v8::Message> message, v8::Local<v8::Value> data) {
+  auto runtime = Runtime::Current();
+  runtime->OnError(message, data);
+}
+
 int Runtime::Start(std::vector<std::string> &args) {
   thread_id_ = std::this_thread::get_id();
 
-  int exit_code;
+  int exit_code = 0;
 
   std::vector<std::string> errors;
   const std::vector<std::string> exec_args;
@@ -93,13 +99,18 @@ int Runtime::Start(std::vector<std::string> &args) {
   v8::HandleScope handle_scope(isolate_);
   auto context = setup->context();
   v8::Context::Scope context_scope(context);
-  node::SetProcessExitHandler(env, [&](node::Environment *environment, int code) {
+
+  node::SetProcessExitHandler(env, [&exit_code, this](node::Environment *environment, int code) {
     if (code != 0) {
       LOGE("Exit node with code %d", code);
     }
+
     if (keep_alive_) {
-      uv_async_send(keep_alive_handle_);
+      uv_close((uv_handle_t *) keep_alive_handle_, [](uv_handle_t *h) {
+        free(h);
+      });
     }
+
     exit_code = code;
     node::Stop(environment);
   });
@@ -107,9 +118,14 @@ int Runtime::Start(std::vector<std::string> &args) {
   context_.Reset(isolate_, setup->context());
   global_.Reset(isolate_, context->Global());
 
+  isolate_->AddMessageListenerWithErrorLevel(
+      ErrorMessageCallback,
+      v8::Isolate::MessageErrorLevel::kMessageError
+      );
+  isolate_->SetCaptureStackTraceForUncaughtExceptions(true, 20);
+
   Attach();
 
-  isolate_->SetMicrotasksPolicy(v8::MicrotasksPolicy::kAuto);
   auto load_env_result = node::LoadEnvironment(env, [&](const node::StartExecutionCallbackInfo &info) -> v8::MaybeLocal<v8::Value> {
     require_.Reset(isolate_, info.native_require);
     process_.Reset(isolate_, info.process_object);
@@ -127,27 +143,19 @@ int Runtime::Start(std::vector<std::string> &args) {
 
   context_.Reset();
   global_.Reset();
-  // node::Stop() can be used to explicitly stop the event loop and keep
-  // further JavaScript from running. It can be called from any thread,
-  // and will act like worker.terminate() if called from another thread.
-  node::Stop(env);
+
   running_ = false;
+  current_runtime_ = nullptr;
 
   return exit_code;
 }
 
 bool Runtime::KeepAlive() {
   keep_alive_handle_ = new uv_async_t();
-  auto error = uv_async_init(event_loop_, keep_alive_handle_, [](uv_async_t *handle) {
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "OCDFAInspection"
-    uv_close((uv_handle_t *) handle, [](uv_handle_t *h) {
-      free(h);
-    });
-#pragma clang diagnostic pop
-  });
+  auto error = uv_async_init(event_loop_, keep_alive_handle_, [](uv_async_t *handle) {});
   if (error != 0) {
     LOGE("Failed to initialize keep alive handle: %s", uv_err_name(error));
+    keep_alive_ = false;
     return false;
   }
   return true;
@@ -174,8 +182,7 @@ void Runtime::OnStart() {
 
 void Runtime::Detach() const {
   EnvHelper env(vm_);
-  env->CallVoidMethod(j_this_, on_detach_method_id_, j_this_);
-  current_runtime_ = nullptr;
+  env->CallVoidMethod(j_this_, on_detach_method_id_, j_global_);
 }
 
 void Runtime::Exit(int code) {
@@ -183,6 +190,11 @@ void Runtime::Exit(int code) {
     LOGW("exit(%d)", code);
   }
   Post([&, code] {
+    if (keep_alive_) {
+      uv_close((uv_handle_t *) keep_alive_handle_, [](uv_handle_t *h) {
+        free(h);
+      });
+    }
     v8::HandleScope handle_scope(isolate_);
     auto process = process_.Get(isolate_);
     auto context = context_.Get(isolate_);
@@ -244,15 +256,14 @@ bool Runtime::Post(const std::function<void()> &runnable, bool force) {
     return true;
   } else {
     callbacks_.push_back(runnable);
-    this->TryLoop();
-    return true;
+    return this->TryLoop();
   }
 }
 
-void Runtime::TryLoop() {
+bool Runtime::TryLoop() {
   if (!event_loop_) {
     LOGE("TryLoop() but event_loop_ is null");
-    return;
+    return false;
   }
   if (!callback_handle_) {
     callback_handle_ = new uv_async_t();
@@ -262,7 +273,9 @@ void Runtime::TryLoop() {
       runtime->Handle(handle);
     });
     uv_async_send(callback_handle_);
+    return true;
   }
+  return false;
 }
 
 void Runtime::Handle(uv_async_t *handle) {
@@ -298,9 +311,12 @@ void Runtime::Chroot(const char *path) {
 
 void Runtime::Throw(JNIEnv *env, v8::Local<v8::Value> exception) {
   RUNTIME_V8_SCOPE();
-  auto reference = new v8::Persistent<v8::Value>(isolate_, exception);
-  auto j_exception = JsError::ToException(env, JsError::Of(env, j_this_, (jlong) reference));
-  env->Throw((jthrowable) j_exception);
+  //  auto reference = new v8::Persistent<v8::Value>(isolate_, exception);
+  //  auto j_exception = JsError::ToException(env, JsError::Of(env, j_this_, (jlong) reference));
+  //  env->Throw((jthrowable) j_exception);
+//  auto message = String::Of(env, exception);
+  v8::String::Utf8Value utf_string(isolate_, exception);
+  env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), *utf_string);
 }
 
 void Runtime::CheckThread() {
@@ -357,6 +373,17 @@ jobject Runtime::ThrowError(const uint16_t *message, int message_len) const {
   return JsValue::Of(*env, error);
 }
 
+void Runtime::OnError(v8::Local<v8::Message> message, v8::Local<v8::Value> data) {
+  char buffer[1024];
+  //  auto string = message->GetStackTrace()->;
+  node::DecodeWrite(message->GetIsolate(), buffer, sizeof(buffer), message->Get());
+  LOGE("OnError: level=%d, data=%s", message->ErrorLevel(), buffer);
+  EnvHelper env(vm_);
+  v8::String::Utf8Value utf_string(isolate_, message->Get());
+  auto string = message->Get().As<v8::Value>();
+  env->CallVoidMethod(j_this_, on_error_method_id_, JsError::ToException(*env, String::Of(*env, string)));
+}
+
 jobject Runtime::Require(const uint16_t *path, int path_len) {
   auto context = context_.Get(isolate_);
   auto *argv = new v8::Local<v8::Value>[1];
@@ -396,6 +423,7 @@ jint Runtime::OnLoad(JNIEnv *env) {
   on_attach_method_id_ = env->GetMethodID(clazz, "onAttach", "(Lcom/linroid/noko/types/JsObject;)V");
   on_start_method_id_ = env->GetMethodID(clazz, "onStart", "(Lcom/linroid/noko/types/JsObject;)V");
   on_detach_method_id_ = env->GetMethodID(clazz, "onDetach", "(Lcom/linroid/noko/types/JsObject;)V");
+  on_error_method_id_ = env->GetMethodID(clazz, "onError", "(Lcom/linroid/noko/JsException;)V");
 
   return JNI_OK;
 }

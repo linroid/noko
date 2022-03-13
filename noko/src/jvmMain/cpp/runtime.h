@@ -44,7 +44,7 @@ class Runtime {
 
   bool KeepAlive();
 
-  void TryLoop();
+  bool TryLoop();
 
   void Attach();
 
@@ -98,6 +98,8 @@ class Runtime {
   jobject ThrowError(const uint16_t *message, int message_len) const;
 
   jobject Require(const uint16_t *path, int path_len);
+
+  void OnError(v8::Local<v8::Message> message, v8::Local<v8::Value> data);
 
   static Runtime *Get(JNIEnv *env, jobject obj);
 

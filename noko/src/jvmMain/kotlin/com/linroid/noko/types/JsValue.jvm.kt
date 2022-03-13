@@ -22,9 +22,13 @@ actual open class JsValue actual constructor(
   }
 
   actual override fun toString(): String {
-    if (Platform.isDebuggerConnected() && !node.isInEventLoop()) {
+    if (!node.isInEventLoop() && Platform.isDebuggerConnected()) {
       return runBlocking(node.coroutineDispatcher) {
-        nativeToString()
+        try {
+          nativeToString()
+        } catch (error: JsException) {
+          "Invalid JsValue"
+        }
       }
     }
     return nativeToString()

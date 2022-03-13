@@ -25,7 +25,7 @@ class TestApplication : Application() {
           setDnsEnv(connectionManager)
         }
       })
-    Node.setup(0, connectionManager)
+    Node.setup(4, connectionManager)
   }
 
   fun setDnsEnv(connectionManager: ConnectivityManager) {

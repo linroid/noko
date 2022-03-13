@@ -33,7 +33,7 @@ actual class Node actual constructor(
   actual var stdio: StandardIO = StandardIO(this)
   actual val coroutineDispatcher: CoroutineDispatcher = object : CoroutineDispatcher() {
     override fun dispatch(context: CoroutineContext, block: Runnable) {
-      post(block, true)
+      check(post(block, true)) { "Unable to dispatch, Node's event loop is not available"}
     }
 
     override fun isDispatchNeeded(context: CoroutineContext): Boolean {

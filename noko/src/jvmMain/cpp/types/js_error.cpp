@@ -9,8 +9,7 @@ jclass exception_class_;
 jmethodID exception_init_method_id_;
 
 jthrowable ToException(JNIEnv *env, jobject j_error) {
-  auto runtime = Runtime::Current();
-  return (jthrowable) env->NewObject(exception_class_, exception_init_method_id_, runtime->JThis(), j_error);
+  return (jthrowable) env->NewObject(exception_class_, exception_init_method_id_, j_error);
 }
 
 jobject Of(JNIEnv *env, jobject node, jlong pointer) {
@@ -52,7 +51,7 @@ jint OnLoad(JNIEnv *env) {
     return JNI_ERR;
   }
   exception_class_ = (jclass) env->NewGlobalRef(clazz);
-  exception_init_method_id_ = env->GetMethodID(clazz, "<init>", "(Lcom/linroid/noko/types/JsObject;)V");
+  exception_init_method_id_ = env->GetMethodID(clazz, "<init>", "(Ljava/lang/String;)V");
 
   return JNI_OK;
 }

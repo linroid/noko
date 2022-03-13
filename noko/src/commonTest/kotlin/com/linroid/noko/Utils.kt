@@ -1,8 +1,6 @@
 package com.linroid.noko
 
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.*
 
 fun <T> runNodeTest(action: suspend Node.() -> T): Unit = runBlocking {
   val node = Node(null, keepAlive = true)
@@ -12,11 +10,9 @@ fun <T> runNodeTest(action: suspend Node.() -> T): Unit = runBlocking {
   launch {
     node.stdio.error().collect { System.err.println(it) }
   }
-  node.start("-p", "process.pid")
-  kotlinx.coroutines.runBlocking {
-    withTimeout(3_000) {
-      node.awaitStarted()
-    }
+  node.start("-e", "process")
+  withTimeout(3_000) {
+    node.awaitStarted()
   }
   withContext(node.coroutineDispatcher) {
     node.action()

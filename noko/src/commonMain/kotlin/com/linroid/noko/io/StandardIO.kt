@@ -97,6 +97,9 @@ class StandardIO(private val node: Node) : Closeable {
   }
 
   override fun close() {
+    outputChannel.cancel()
+    errorChannel.cancel()
+    inputChannel.cancel()
     scope.cancel()
   }
 }

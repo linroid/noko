@@ -7,7 +7,6 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.system.Os
-import com.linroid.noko.Node
 
 class TestApplication : Application() {
   override fun onCreate() {

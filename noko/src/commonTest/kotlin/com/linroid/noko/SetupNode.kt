@@ -1,9 +1,5 @@
 package com.linroid.noko
 
-abstract class SetupNode {
-  companion object {
-    init {
-      Node.setup(4)
-    }
-  }
+expect abstract class SetupNode {
+  companion object
 }

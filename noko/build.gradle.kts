@@ -2,6 +2,9 @@ import com.android.build.gradle.LibraryExtension
 import de.undercouch.gradle.tasks.download.Download
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import com.android.build.gradle.tasks.ExternalNativeBuildJsonTask
+import java.io.File
+import java.util.*
+import java.io.FileInputStream
 
 plugins {
   kotlin("multiplatform")
@@ -15,6 +18,21 @@ group = "com.linroid.noko"
 version = "1.0-SNAPSHOT"
 
 val coroutinesVersion = "1.6.0"
+
+val nodeVersion = project.property("libnode.version")
+val downloadsDir = File(buildDir, "downloads")
+val prebuiltRoot = findPrebuiltRoot()
+
+fun findPrebuiltRoot(): File {
+  val prop = Properties().apply {
+    FileInputStream(File(rootProject.rootDir, "local.properties")).use(::load)
+  }
+  val customDir = prop.getProperty("prebuilt.dir")
+  if (!customDir.isNullOrEmpty() && File(customDir).exists()) {
+    return File(customDir)
+  }
+  return file("src/jvmMain/cpp/prebuilt")
+}
 
 repositories {
   google()
@@ -46,7 +64,7 @@ android {
     externalNativeBuild {
       cmake {
         cppFlags += "-std=c++11 -fexceptions"
-        arguments += setOf("-DANDROID_ARM_MODE=arm", "-DANDROID_STL=c++_shared")
+        arguments += setOf("-DANDROID_ARM_MODE=arm", "-DANDROID_STL=c++_shared", "-DPREBUILT_ROOT=$prebuiltRoot")
       }
     }
   }
@@ -75,9 +93,6 @@ java {
   targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-val nodeVersion = project.property("libnode.version")
-val downloadsDir = File(buildDir, "downloads")
-val prebuiltRoot = file("src/jvmMain/cpp/prebuilt")
 
 enum class Os {
   Android, Linux, Windows, MacOS;
@@ -164,6 +179,7 @@ val hostCmakeTask by lazy {
       "cmake", file("src/jvmMain/cpp"),
       "-DTARGET_OS=${hostOs.lowercase()}",
       "-DTARGET_ARCH=${hostArch.lowercase()}",
+      "-DPREBUILT_ROOT=$prebuiltRoot",
     )
   }.get()
 

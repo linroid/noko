@@ -62,7 +62,7 @@ JNICALL jboolean Post(JNIEnv *env, jobject j_this, jobject action, jboolean forc
     env->DeleteGlobalRef(message->action);
     delete message;
   }
-  return 1;
+  return success;
 }
 
 JNICALL void MountFile(JNIEnv *env, jobject j_this, jstring j_src, jstring j_dst, jint mode) {

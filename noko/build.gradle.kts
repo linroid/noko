@@ -24,12 +24,15 @@ val downloadsDir = File(buildDir, "downloads")
 val prebuiltRoot = findPrebuiltRoot()
 
 fun findPrebuiltRoot(): File {
-  val prop = Properties().apply {
-    FileInputStream(File(rootProject.rootDir, "local.properties")).use(::load)
-  }
-  val customDir = prop.getProperty("prebuilt.dir")
-  if (!customDir.isNullOrEmpty() && File(customDir).exists()) {
-    return File(customDir)
+  val file = File(rootProject.rootDir, "local.properties")
+  if (file.exists()) {
+    val prop = Properties().apply {
+      FileInputStream(file).use(::load)
+    }
+    val customDir = prop.getProperty("prebuilt.dir")
+    if (!customDir.isNullOrEmpty() && File(customDir).exists()) {
+      return File(customDir)
+    }
   }
   return file("src/jvmMain/cpp/prebuilt")
 }

@@ -25,6 +25,7 @@ kotlin {
       dependencies {
         api(compose.runtime)
         api(compose.foundation)
+        api(compose.ui)
         api(compose.material)
         @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
         api(compose.material3)

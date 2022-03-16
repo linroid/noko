@@ -1,7 +1,7 @@
 #include "js_function.h"
 #include "js_value.h"
 #include "js_error.h"
-#include "../util/java_callback.h"
+#include "../util/java_function.h"
 #include "../util/env_helper.h"
 
 namespace JsFunction {
@@ -23,13 +23,13 @@ bool Is(JNIEnv *env, jobject obj) {
 void StaticCallback(const v8::FunctionCallbackInfo<v8::Value> &info) {
   // CHECK(info.Data()->IsExternal());
   auto external = info.Data().As<v8::External>();
-  auto callback = reinterpret_cast<JavaCallback *>(external->Value());
+  auto callback = reinterpret_cast<JavaFunction *>(external->Value());
   callback->Call(info);
 }
 
-static void WeakCallback(const v8::WeakCallbackInfo<JavaCallback> &data) {
+static void WeakCallback(const v8::WeakCallbackInfo<JavaFunction> &data) {
   LOGI("WeakCallback");
-  JavaCallback *callback = data.GetParameter();
+  JavaFunction *callback = data.GetParameter();
   EnvHelper env(callback->runtime_->Jvm());
   JsValue::SetPointer(*env, callback->that_, nullptr);
   delete callback;
@@ -50,7 +50,7 @@ v8::Local<v8::Function> Init(JNIEnv *env, jobject j_this) {
   v8::Locker locker(isolate);
   v8::EscapableHandleScope handle_scope(isolate);
 
-  auto callback = new JavaCallback(runtime, env, j_this, object_class_, call_method_id_);
+  auto callback = new JavaFunction(runtime, env, j_this, object_class_, call_method_id_);
   auto data = v8::External::New(isolate, callback);
   auto context = runtime->Context();
   auto func = v8::FunctionTemplate::New(isolate, StaticCallback, data)->GetFunction(context).ToLocalChecked();

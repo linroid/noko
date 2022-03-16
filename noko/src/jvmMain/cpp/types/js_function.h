@@ -1,5 +1,5 @@
-#ifndef NOKO_FUNCTION_H
-#define NOKO_FUNCTION_H
+#ifndef NOKO_JSFUNCTION_H
+#define NOKO_JSFUNCTION_H
 
 #include <jni.h>
 #include <v8.h>
@@ -16,4 +16,4 @@ jint OnLoad(JNIEnv *env);
 
 }
 
-#endif //NOKO_FUNCTION_H
+#endif //NOKO_JSFUNCTION_H

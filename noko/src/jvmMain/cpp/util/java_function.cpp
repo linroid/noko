@@ -1,8 +1,8 @@
-#include "java_callback.h"
+#include "java_function.h"
 #include "env_helper.h"
 #include "jni_helper.h"
 
-JavaCallback::JavaCallback(
+JavaFunction::JavaFunction(
     Runtime *runtime,
     JNIEnv *env,
     jobject that,
@@ -12,9 +12,10 @@ JavaCallback::JavaCallback(
     that_(env->NewGlobalRef(that)),
     class_(clazz),
     method_id_(method_id) {
+  node::AddEnvironmentCleanupHook(runtime->Isolate(), CleanupHook, this);
 }
 
-void JavaCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
+void JavaFunction::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
   EnvHelper env(runtime_->Jvm());
   auto parameters = env->NewObjectArray(info.Length(), class_, nullptr);
   for (int i = 0; i < info.Length(); ++i) {
@@ -44,8 +45,14 @@ void JavaCallback::Call(const v8::FunctionCallbackInfo<v8::Value> &info) {
   }
 }
 
-JavaCallback::~JavaCallback() {
-  LOGD("~JavaCallback()");
+void JavaFunction::CleanupHook(void *arg) {
+  auto *self = static_cast<JavaFunction *>(arg);
+  delete self;
+}
+
+JavaFunction::~JavaFunction() {
+  LOGD("JavaFunction()");
+  node::RemoveEnvironmentCleanupHook(runtime_->Isolate(), CleanupHook, this);
   EnvHelper env(runtime_->Jvm());
   env->DeleteGlobalRef(that_);
 }

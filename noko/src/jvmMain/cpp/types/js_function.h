@@ -18,7 +18,7 @@ namespace JsFunction {
   class JavaCallback {
   private:
     v8::Persistent<v8::Function> value_;
-    jobject callback_;
+    jobject obj_;
 
     ~JavaCallback();
 

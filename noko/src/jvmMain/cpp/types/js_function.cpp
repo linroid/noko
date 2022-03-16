@@ -73,7 +73,7 @@ namespace JsFunction {
   JavaCallback::JavaCallback(
       JNIEnv *env,
       jobject obj
-  ) : callback_(env->NewGlobalRef(obj)) {
+  ) : obj_(env->NewGlobalRef(obj)) {
     auto runtime = Runtime::Current();
     auto isolate = runtime->Isolate();
 
@@ -96,6 +96,7 @@ namespace JsFunction {
     value_.Reset(isolate, func);
     value_.SetWeak(this, WeakCallback, v8::WeakCallbackType::kParameter);
 
+    JsValue::SetPointer(env, obj, reinterpret_cast<v8::Persistent<v8::Value> *>(&value_));
     node::AddEnvironmentCleanupHook(isolate, CleanupHook, this);
   }
 
@@ -110,7 +111,7 @@ namespace JsFunction {
     }
     auto caller = (v8::Local<v8::Value>) info.This();
     auto j_caller = JsValue::Of(*env, caller);
-    auto j_result = env->CallObjectMethod(callback_, call_method_id_, j_caller, parameters);
+    auto j_result = env->CallObjectMethod(obj_, call_method_id_, j_caller, parameters);
     env->DeleteLocalRef(j_caller);
     env->DeleteLocalRef(parameters);
 
@@ -150,7 +151,7 @@ namespace JsFunction {
     JavaCallback *callback = data.GetParameter();
     auto runtime = Runtime::Current();
     EnvHelper env(runtime->Jvm());
-    JsValue::SetPointer(*env, callback->callback_, nullptr);
+    JsValue::SetPointer(*env, callback->obj_, nullptr);
     delete callback;
   }
 
@@ -158,7 +159,7 @@ namespace JsFunction {
     auto runtime = Runtime::Current();
     node::RemoveEnvironmentCleanupHook(runtime->Isolate(), CleanupHook, this);
     EnvHelper env(runtime->Jvm());
-    env->DeleteGlobalRef(callback_);
+    env->DeleteGlobalRef(obj_);
   }
 
 }

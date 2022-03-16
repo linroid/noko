@@ -31,6 +31,9 @@ actual open class JsValue actual constructor(
         }
       }
     }
+    if (!hasValue()) {
+      return "null"
+    }
     return nativeToString()
   }
 

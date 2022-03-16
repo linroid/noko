@@ -37,7 +37,6 @@ set(SOURCES
         types/long.cpp
         types/js_array.cpp
         types/js_function.cpp
-        util/java_function.cpp
         types/js_error.cpp
         types/js_promise.cpp)
 

@@ -54,6 +54,7 @@ Runtime::~Runtime() {
 
   isolate_ = nullptr;
   running_ = false;
+  current_runtime_ = nullptr;
 }
 
 Runtime *Runtime::Current() {
@@ -150,7 +151,6 @@ int Runtime::Start(std::vector<std::string> &args) {
   global_.Reset();
 
   running_ = false;
-  current_runtime_ = nullptr;
 
   return exit_code;
 }

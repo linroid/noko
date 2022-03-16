@@ -24,7 +24,7 @@ v8::Local<v8::Value> Value(JNIEnv *env, jobject obj) {
     if (JsFunction::Is(env, obj)) {
       auto pointer = JsValue::GetPointer(env, obj);
       if (pointer == nullptr) {
-        return JsFunction::Init(env, obj);
+        return JsFunction::Value(env, obj);
       }
       return pointer->Get(isolate);
     }

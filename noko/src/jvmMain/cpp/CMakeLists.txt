@@ -41,7 +41,7 @@ set(SOURCES
         types/js_promise.cpp)
 
 add_library(noko SHARED ${SOURCES})
-include_directories(${LIBNODE_DIR}/include/node/)
+include_directories(${LIBNODE_DIR}/include/node)
 if (ANDROID)
     add_library(node SHARED IMPORTED)
     set_target_properties(node PROPERTIES IMPORTED_LOCATION ${LIBNODE_DIR}/lib/libnode.so)
@@ -50,7 +50,7 @@ if (ANDROID)
     target_link_libraries(noko node ${log-lib})
 else ()
     find_library(node-lib
-            NAMES node node.93
+            NAMES node
             HINTS ${LIBNODE_DIR}/lib
             )
     find_package(JNI REQUIRED)

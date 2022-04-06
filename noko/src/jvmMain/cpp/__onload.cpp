@@ -1,4 +1,3 @@
-#include <__bit_reference>
 #include <jni.h>
 #include <pthread.h>
 #include <unistd.h>

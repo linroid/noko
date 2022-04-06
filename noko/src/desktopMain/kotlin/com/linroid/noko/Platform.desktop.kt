@@ -26,11 +26,15 @@ actual object Platform {
       System.loadLibrary("noko")
     } catch (error: UnsatisfiedLinkError) {
       val libDir = Files.createTempDirectory("noko")
-      val libNoko = extractResourceTo(System.mapLibraryName("noko"), libDir)
-      val libNode = extractResourceTo(System.mapLibraryName("node.93"), libDir)
-      System.load(libNode.absolutePath)
-      System.load(libNoko.absolutePath)
+      loadLibraryFromResource("node", libDir)
+      loadLibraryFromResource("noko", libDir)
     }
+  }
+
+  @Suppress("UnsafeDynamicallyLoadedCode")
+  private fun loadLibraryFromResource(name: String, tempDir: Path) {
+    val file = extractResourceTo(System.mapLibraryName(name), tempDir)
+    System.load(file.absolutePath)
   }
 
   private fun extractResourceTo(path: String, targetDir: Path): File {

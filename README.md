@@ -7,6 +7,12 @@ val node = Node(keepAlive = true).also {
         it.start("-i")
       }
 ```
+
+### Features
+ - Automaticlly release JS object
+ - Work with Jetpack Compose out-of-box
+ - No data serialize/deserialize
+
 ### Supported Platforms
 
 |          | arm64  | x64  |

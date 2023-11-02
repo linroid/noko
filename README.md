@@ -3,9 +3,8 @@
 
 ### Example
 ```kotlin
-val node = Node(keepAlive = true).also {
-        it.start("-i")
-      }
+val node = Node(keepAlive = true)
+node.start("-i")
 ```
 
 ### Features

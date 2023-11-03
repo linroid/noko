@@ -10,7 +10,6 @@ node.start("-i")
 ### Features
  - Automaticlly release JS object
  - Work with Jetpack Compose out-of-box
- - No data serialize/deserialize
 
 ### Supported Platforms
 
